@@ -53,8 +53,8 @@ export default function Home() {
 
 	return (
 		<div className="md:container md:mx-auto text-center h-screen relative flex flex-col justify-between">
-			<main className="flex-1 flex flex-col justify-center">
-				<div>
+			<main className="flex-1 flex flex-col justify-center items-center">
+				<div className="max-w-5xl pt-6">
 					<Image
 						src="/assets/languagebuddy.png"
 						alt="logo"
