@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import Image from "next/image";
 
 import "./globals.css";
 
@@ -18,22 +17,7 @@ export default function RootLayout({
 }>) {
 	return (
 		<html lang="en">
-			<body className={inter.className}>
-				<div className="bg-wrap">
-					<Image
-						alt="background"
-						src={"/assets/background.png"}
-						// placeholder="blur"
-						quality={100}
-						fill
-						sizes="100vw"
-						style={{
-							objectFit: "cover",
-						}}
-					/>
-				</div>
-				{children}
-			</body>
+			<body className={inter.className}>{children}</body>
 		</html>
 	);
 }
