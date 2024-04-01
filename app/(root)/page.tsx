@@ -5,7 +5,7 @@ import Image from "next/image";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { LANGUAGES } from "@/types/types";
+import { NATIVE_LANGUAGES, ARABIC_DIALECTS } from "@/types/types";
 import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
@@ -24,11 +24,11 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import LanguageContext from "@/context/languageContext";
+import LanguageContext, { LanguageSettings } from "@/context/languageContext";
 
 const formSchema = z.object({
 	nativeLanguage: z.string().min(2).max(50),
-	targetLanguage: z.string().min(2).max(50),
+	arabicDialect: z.string().min(2).max(50),
 });
 
 export default function Home() {
@@ -46,7 +46,7 @@ export default function Home() {
 	function onSubmit(values: z.infer<typeof formSchema>) {
 		// Do something with the form values.
 		// ✅ This will be type-safe and validated.
-		setLanguages(values);
+		setLanguages(values as LanguageSettings);
 
 		router.push("/chat");
 	}
@@ -56,18 +56,18 @@ export default function Home() {
 			<main className="flex-1 flex flex-col justify-center items-center px-4">
 				<div className="max-w-5xl pt-6">
 					<Image
-						src="/assets/languagebuddy.png"
+						src="/assets/arabybuddy.png"
 						alt="logo"
 						width={250}
 						height={250}
 						className="mx-auto"
 					/>
 					<h1 className="mb-4 text-4xl font-extrabold leading-none tracking-tight text-gray-900 md:text-5xl lg:text-6xl dark:text-white">
-						Conversate with our AI tutor in your target language
+						Your AI Arabic Language Tutor
 					</h1>
 					<p className="mb-6 text-lg font-normal text-gray-500 lg:text-xl sm:px-16 xl:px-48 dark:text-gray-400">
 						Try out our AI language buddy to practice outputting your target
-						language today! 🌎 ☕
+						Arabic language dialect today! 🌎 ☕
 					</p>
 					<Form {...form}>
 						<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
@@ -83,12 +83,12 @@ export default function Home() {
 											{...field}
 										>
 											<FormControl>
-												<SelectTrigger className="w-[200px] mx-auto">
+												<SelectTrigger className="w-[250px] mx-auto">
 													<SelectValue placeholder="Select Language" />
 												</SelectTrigger>
 											</FormControl>
 											<SelectContent>
-												{LANGUAGES.map((language) => (
+												{NATIVE_LANGUAGES.map((language) => (
 													<SelectItem value={language} key={language}>
 														{language}
 													</SelectItem>
@@ -102,24 +102,24 @@ export default function Home() {
 							/>
 							<FormField
 								control={form.control}
-								name="targetLanguage"
+								name="arabicDialect"
 								render={({ field }) => (
 									<FormItem>
-										<FormLabel>Target Language</FormLabel>
+										<FormLabel>Arabic Dialect</FormLabel>
 										<Select
 											onValueChange={field.onChange}
 											defaultValue={field.value}
 											{...field}
 										>
 											<FormControl>
-												<SelectTrigger className="w-[200px] mx-auto">
-													<SelectValue placeholder="Select Language" />
+												<SelectTrigger className="w-[250px] mx-auto">
+													<SelectValue placeholder="Select Dialect" />
 												</SelectTrigger>
 											</FormControl>
 											<SelectContent>
-												{LANGUAGES.map((language) => (
-													<SelectItem value={language} key={language}>
-														{language}
+												{ARABIC_DIALECTS.map((dialect) => (
+													<SelectItem value={dialect} key={dialect}>
+														{dialect}
 													</SelectItem>
 												))}
 											</SelectContent>

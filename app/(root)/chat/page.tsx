@@ -4,10 +4,10 @@ import LanguageContext from "@/context/languageContext";
 import React, { useContext } from "react";
 
 const ChatPage = () => {
-	const { nativeLanguage, targetLanguage } = useContext(LanguageContext);
+	const { nativeLanguage, arabicDialect } = useContext(LanguageContext);
 	return (
 		<div>
-			Chat {nativeLanguage} - {targetLanguage}
+			Chat {nativeLanguage} - {arabicDialect}
 		</div>
 	);
 };
