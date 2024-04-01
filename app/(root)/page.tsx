@@ -6,7 +6,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { LANGUAGES } from "@/types/types";
-import { redirect } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -34,6 +34,8 @@ const formSchema = z.object({
 export default function Home() {
 	const { setLanguages } = useContext(LanguageContext);
 
+	const router = useRouter();
+
 	const form = useForm<z.infer<typeof formSchema>>({
 		resolver: zodResolver(formSchema),
 		defaultValues: {
@@ -46,7 +48,7 @@ export default function Home() {
 		// ✅ This will be type-safe and validated.
 		setLanguages(values);
 
-		redirect("/chat");
+		router.push("/chat");
 	}
 
 	return (
