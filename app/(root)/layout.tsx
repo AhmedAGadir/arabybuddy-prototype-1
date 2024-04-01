@@ -7,8 +7,8 @@ import LanguageContext, {
 
 const Layout = ({ children }: { children: React.ReactNode }) => {
 	const [languages, setLanguages] = useState<LanguageSettings>({
-		nativeLanguage: "",
-		targetLanguage: "",
+		nativeLanguage: null,
+		arabicDialect: null,
 	});
 
 	const updateLanguages = (newLanguages: LanguageSettings) => {
