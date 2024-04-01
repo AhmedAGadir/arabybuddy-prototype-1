@@ -137,7 +137,7 @@ export default function Home() {
 			<footer aria-labelledby="footer-heading">
 				<div className="mt-16 border-t border-white/10 pt-8 pb-4 sm:mt-20 md:flex md:items-center md:justify-between lg:mt-24">
 					<div className="flex space-x-6 md:order-2">
-						<p className="mt-8 text-xs leading-5 text-gray-400 md:order-1 md:mt-0">
+						<p className="mt-8 text-xs leading-5 text-gray-400 md:order-1 md:mt-0 px-4 md:px-0">
 							&copy; 2024 Gadir Tech Ltd. All rights reserved.
 						</p>
 					</div>
