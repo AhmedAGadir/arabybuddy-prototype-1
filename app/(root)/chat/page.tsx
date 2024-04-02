@@ -26,7 +26,7 @@ const ChatPage = () => {
 	const silenceTimerRef = useRef<any>(null);
 
 	const sendToBackend = async (message: string): Promise<void> => {
-		// setIsLoading(true);
+		setIsLoading(true);
 
 		try {
 			stopRecording();
@@ -110,7 +110,7 @@ const ChatPage = () => {
 	}, []);
 
 	return (
-		<div className="bg-araby-purple w-full h-screen">
+		<div className="bg-slate-200 w-full h-screen">
 			<p>
 				Chat {nativeLanguage} - {arabicDialect}
 				<Link href="/">
@@ -156,15 +156,16 @@ const ChatPage = () => {
 					<button
 						onClick={handleToggleRecording}
 						className="rounded-full w-20 h-20 mt-10 m-auto flex items-center justify-center bg-red-400 hover:bg-red-500"
+						// className="font-poppins font-medium shadow-lg text-white bg-gradient-to-br from-purple-600 to-blue-500 px-6 py-4 hover:bg-gradient-to-bl focus:ring-2 focus:outline-none focus:ring-blue-300 dark:focus:ring-blue-800  rounded-lg text-sm sm:text-md md:text-lg text-center mt-4 w-full sm:w-auto sm:mt-0"
 					>
-						<MicrophoneOnIcon />
+						<MicrophoneOnIcon style={{ stroke: "ghostWhite" }} />
 					</button>
 				) : (
 					<button
 						onClick={handleToggleRecording}
-						className="rounded-full w-20 h-20 mt-10 m-auto flex items-center justify-center bg-blue-400 hover:bg-blue-500"
+						className="rounded-full w-20 h-20 mt-10 m-auto flex items-center justify-center bg-cyan-500 hover:bg-cyan-600 shadow-lg shadow-cyan-500/50"
 					>
-						<MicrophoneOffIcon />
+						<MicrophoneOffIcon style={{ stroke: "ghostWhite" }} />
 					</button>
 				)}
 			</div>
