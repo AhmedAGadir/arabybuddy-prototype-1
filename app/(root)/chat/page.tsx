@@ -1,135 +1,121 @@
 "use client";
 
 import React, { useContext, useRef, useState, useEffect } from "react";
+import { useAudioRecorder } from "react-audio-voice-recorder";
 import LanguageContext from "@/context/languageContext";
 import MicrophoneOffIcon from "@/components/shared/icons/MicrophoneOff";
 import MicrophoneOnIcon from "@/components/shared/icons/MicrophoneOn";
 import Image from "next/image";
 import Link from "next/link";
-
-declare global {
-	interface Window {
-		webkitSpeechRecognition: any;
-	}
-}
+import { useOnSilenceDetected } from "@/hooks/useOnSilenceDetected";
 
 const ChatPage = () => {
 	const { nativeLanguage, arabicDialect } = useContext(LanguageContext);
-	const [isRecording, setIsRecording] = useState(false);
-	const [recordingComplete, setRecordingComplete] = useState(false);
-	const [transcript, setTranscript] = useState("");
 
+	const [recordingComplete, setRecordingComplete] = useState(false);
 	const [isPlaying, setIsPlaying] = useState(false);
 	const [isLoading, setIsLoading] = useState(false);
 
-	const recognitionRef = useRef<any>(null);
-	const silenceTimerRef = useRef<any>(null);
+	const {
+		startRecording,
+		stopRecording,
+		recordingBlob,
+		isRecording,
+		recordingTime,
+		mediaRecorder,
+	} = useAudioRecorder();
 
-	const sendToBackend = async (message: string): Promise<void> => {
+	// console.log("recordingBlob", recordingBlob);
+	// console.log("isRecording", isRecording);
+	// console.log("recordingTime", recordingTime);
+	// console.log("mediaRecorder", mediaRecorder);
+
+	const sendToBackend = async (): Promise<void> => {
+		console.log("sending to backend - recordingBlob", recordingBlob);
+
+		// if (recordingBlob) {
+		// 	const blobURL = URL.createObjectURL(recordingBlob);
+
+		// 	const audio = new Audio(blobURL);
+
+		// 	audio.play();
+
+		// 	audio.onended = () => {
+		// 		console.log("Audio playback ended.");
+		// 	};
+		// }
+
 		setIsLoading(true);
 
-		try {
-			stopRecording();
+		// try {
+		// 	stopRecording();
 
-			const response = await fetch("/api/chat", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ message, nativeLanguage, arabicDialect }),
-			});
+		// 	const response = await fetch("/api/chat", {
+		// 		method: "POST",
+		// 		headers: { "Content-Type": "application/json" },
+		// 		body: JSON.stringify({ recordingBlog, nativeLanguage, arabicDialect }),
+		// 	});
 
-			if (!response.ok)
-				throw new Error(`HTTP error! status: ${response.status}`);
+		// 	if (!response.ok)
+		// 		throw new Error(`HTTP error! status: ${response.status}`);
 
-			const data = await response.json();
-			if (data.data && data.contentType === "audio/mp3") {
-				const audioSrc = `data:audio/mp3;base64,${data.data}`;
-				const audio = new Audio(audioSrc);
-				setIsPlaying(true);
-				audio.play();
-				audio.onended = () => {
-					setIsPlaying(false);
-					startRecording();
-				};
-			}
-		} catch (error) {
-			console.error("Error sending data to backend or playing audio:", error);
-		}
-		setIsLoading(false);
-	};
-
-	const handleResult = (event: any) => {
-		if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
-		let interimTranscript = "";
-		for (let i = event.resultIndex; i < event.results.length; ++i) {
-			interimTranscript += event.results[i][0].transcript;
-		}
-
-		setTranscript(interimTranscript);
-
-		silenceTimerRef.current = setTimeout(() => {
-			sendToBackend(interimTranscript);
-			setTranscript("");
-		}, 2000);
-	};
-
-	const startRecording = () => {
-		setIsRecording(true);
-
-		recognitionRef.current = new window.webkitSpeechRecognition();
-		recognitionRef.current.continuous = true;
-		recognitionRef.current.interimResults = true;
-
-		recognitionRef.current.onresult = handleResult;
-		recognitionRef.current.onend = () => {
-			setIsRecording(false);
-			if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
-		};
-
-		recognitionRef.current.start();
-	};
-
-	const stopRecording = () => {
-		setIsRecording(false);
-		if (recognitionRef.current) {
-			recognitionRef.current.stop();
-			setRecordingComplete(true);
-		}
-	};
-
-	const handleToggleRecording = () => {
-		if (!isRecording && !isPlaying) startRecording();
-		else if (isRecording) stopRecording();
+		// 	const data = await response.json();
+		// 	if (data.data && data.contentType === "audio/mp3") {
+		// 		const audioSrc = `data:audio/mp3;base64,${data.data}`;
+		// 		const audio = new Audio(audioSrc);
+		// 		setIsPlaying(true);
+		// 		audio.play();
+		// 		audio.onended = () => {
+		// 			setIsPlaying(false);
+		// 			startRecording();
+		// 		};
+		// 	}
+		// } catch (error) {
+		// 	console.error("Error sending data to backend or playing audio:", error);
+		// }
+		// setIsLoading(false);
 	};
 
 	useEffect(() => {
-		return () => {
-			if (recognitionRef.current) {
-				recognitionRef.current.stop();
-			}
-		};
-	}, []);
+		if (!recordingBlob) return;
+
+		sendToBackend();
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [recordingBlob]);
+
+	const handleToggleRecording = () => {
+		if (!isRecording && !isPlaying) {
+			setRecordingComplete(false);
+			startRecording();
+		} else if (isRecording) {
+			setRecordingComplete(true);
+			stopRecording();
+		}
+	};
+
+	useOnSilenceDetected(mediaRecorder, stopRecording);
 
 	return (
 		<div className="bg-slate-200 w-full h-screen">
 			<p>
 				Chat {nativeLanguage} - {arabicDialect}
-				<Link href="/">
-					<div className="rounded-md p-2 bg-white w-fit ">
-						<Image
-							src="/assets/arabybuddy.svg"
-							alt="logo"
-							width={50}
-							height={50}
-						/>
-					</div>
-				</Link>
 			</p>
-			{(isRecording || transcript) && (
+			<Link href="/">
+				<div className="rounded-md p-2 bg-white w-fit ">
+					<Image
+						src="/assets/arabybuddy.svg"
+						alt="logo"
+						width={50}
+						height={50}
+					/>
+				</div>
+			</Link>
+			{isRecording && (
 				<div className="w-2/3 md:w-1/2 m-auto rounded-md border p-4 bg-white">
 					<div className="flex-1 flex w-full justify-between">
 						<div className="space-y-1">
 							<p className="text-sm font-medium leading-none">
-								{recordingComplete ? "Recorded" : "Recording"}
+								{isRecording ? "Recording" : "Recorded"}
 							</p>
 							<p className="text-sm">
 								{recordingComplete
@@ -142,12 +128,12 @@ const ChatPage = () => {
 							<div className="rounded-full w-4 h-4 bg-red-400 animate-pulse" />
 						)}
 					</div>
-
+					{/* 
 					{transcript && (
 						<div className="border rounded-md p-2 h-full mt-4 ">
 							<p className="mb-0">{transcript}</p>
 						</div>
-					)}
+					)} */}
 				</div>
 			)}
 

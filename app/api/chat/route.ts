@@ -1,19 +1,10 @@
-export async function POST(req: Request, res: Response): Promise<Response> {
-	// Example data to resolve the promise with
-	const exampleData = {
-		data: "Example data",
-		contentType: "text/plain",
-	};
+export async function POST(req: Request, res: Response) {
+	const formData = await req.formData();
+	const userAudio = formData.get("userAudio");
 
-	// Return a promise that resolves with the example data
-	return new Promise<Response>((resolve) => {
-		resolve(
-			new Response(JSON.stringify(exampleData), {
-				status: 200,
-				headers: { "Content-Type": "application/json" },
-			})
-		);
-	});
+	console.log("userAudio", userAudio);
+
+	return Response.json({ userAudio });
 }
 
 // // 0. Import Dependencies
