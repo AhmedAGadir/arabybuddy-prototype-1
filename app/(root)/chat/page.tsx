@@ -8,6 +8,7 @@ import MicrophoneOnIcon from "@/components/shared/icons/MicrophoneOn";
 import Image from "next/image";
 import Link from "next/link";
 import { useOnSilenceDetected } from "@/hooks/useOnSilenceDetected";
+import useSound from "use-sound";
 
 const ChatPage = () => {
 	const { nativeLanguage, arabicDialect } = useContext(LanguageContext);
@@ -24,6 +25,9 @@ const ChatPage = () => {
 		recordingTime,
 		mediaRecorder,
 	} = useAudioRecorder();
+
+	const [playStartSound] = useSound("/assets/sounds/start.mp3");
+	const [playStopSound] = useSound("/assets/sounds/stop.mp3");
 
 	// console.log("recordingBlob", recordingBlob);
 	// console.log("isRecording", isRecording);
@@ -83,17 +87,27 @@ const ChatPage = () => {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [recordingBlob]);
 
+	const startRecordingHandler = () => {
+		setRecordingComplete(false);
+		startRecording();
+		playStartSound();
+	};
+
+	const stopRecordingHandler = () => {
+		setRecordingComplete(true);
+		stopRecording();
+		playStopSound();
+	};
+
 	const handleToggleRecording = () => {
 		if (!isRecording && !isPlaying) {
-			setRecordingComplete(false);
-			startRecording();
+			startRecordingHandler();
 		} else if (isRecording) {
-			setRecordingComplete(true);
-			stopRecording();
+			stopRecordingHandler();
 		}
 	};
 
-	useOnSilenceDetected(mediaRecorder, stopRecording);
+	useOnSilenceDetected(mediaRecorder, stopRecordingHandler);
 
 	return (
 		<div className="bg-slate-200 w-full h-screen">
