@@ -1,20 +1,18 @@
-interface ResponseData {
-	data: string;
-	contentType: string;
-	model: string;
-}
-
-export async function POST(req: Request, res: Response): Promise<ResponseData> {
+export async function POST(req: Request, res: Response): Promise<Response> {
 	// Example data to resolve the promise with
-	const exampleData: ResponseData = {
+	const exampleData = {
 		data: "Example data",
 		contentType: "text/plain",
-		model: "ExampleModel",
 	};
 
 	// Return a promise that resolves with the example data
-	return new Promise<ResponseData>((resolve) => {
-		resolve(exampleData);
+	return new Promise<Response>((resolve) => {
+		resolve(
+			new Response(JSON.stringify(exampleData), {
+				status: 200,
+				headers: { "Content-Type": "application/json" },
+			})
+		);
 	});
 }
 
