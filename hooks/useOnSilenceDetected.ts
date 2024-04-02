@@ -34,7 +34,7 @@ export const useOnSilenceDetected = (
 
 				var average = values / length;
 
-				if (average < 10) {
+				if (average < 15) {
 					if (silenceTimerRef.current === null) {
 						silenceTimerRef.current = setTimeout(() => {
 							onSilenceDetected();

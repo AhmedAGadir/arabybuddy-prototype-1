@@ -1,10 +1,16 @@
 "use client";
 
-import React, { useContext, useRef, useState, useEffect } from "react";
+import React, {
+	useContext,
+	useRef,
+	useState,
+	useEffect,
+	useCallback,
+} from "react";
 import { useAudioRecorder } from "react-audio-voice-recorder";
 import LanguageContext from "@/context/languageContext";
+import StopIcon from "@/components/shared/icons/Stop";
 import MicrophoneOffIcon from "@/components/shared/icons/MicrophoneOff";
-import MicrophoneOnIcon from "@/components/shared/icons/MicrophoneOn";
 import Image from "next/image";
 import Link from "next/link";
 import { useOnSilenceDetected } from "@/hooks/useOnSilenceDetected";
@@ -12,7 +18,7 @@ import useSound from "use-sound";
 
 const ChatPage = () => {
 	const { nativeLanguage, arabicDialect } = useContext(LanguageContext);
-
+	const [firstRecordingDone, setFirstRecordingDone] = useState(false);
 	const [recordingComplete, setRecordingComplete] = useState(false);
 	const [isPlaying, setIsPlaying] = useState(false);
 	const [isLoading, setIsLoading] = useState(false);
@@ -87,17 +93,19 @@ const ChatPage = () => {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [recordingBlob]);
 
-	const startRecordingHandler = () => {
+	const startRecordingHandler = useCallback(() => {
 		setRecordingComplete(false);
 		startRecording();
 		playStartSound();
-	};
+	}, [playStartSound, startRecording]);
 
-	const stopRecordingHandler = () => {
-		setRecordingComplete(true);
-		stopRecording();
-		playStopSound();
-	};
+	const stopRecordingHandler = useCallback(() => {
+		if (isRecording) {
+			setRecordingComplete(true);
+			stopRecording();
+			playStopSound();
+		}
+	}, [isRecording, playStopSound, stopRecording]);
 
 	const handleToggleRecording = () => {
 		if (!isRecording && !isPlaying) {
@@ -124,12 +132,16 @@ const ChatPage = () => {
 					/>
 				</div>
 			</Link>
-			{isRecording && (
+			{
 				<div className="w-2/3 md:w-1/2 m-auto rounded-md border p-4 bg-white">
 					<div className="flex-1 flex w-full justify-between">
 						<div className="space-y-1">
 							<p className="text-sm font-medium leading-none">
-								{isRecording ? "Recording" : "Recorded"}
+								{!firstRecordingDone
+									? "هيا بِنا"
+									: isRecording
+									? "Recording"
+									: "Recorded"}
 							</p>
 							<p className="text-sm">
 								{recordingComplete
@@ -149,16 +161,16 @@ const ChatPage = () => {
 						</div>
 					)} */}
 				</div>
-			)}
+			}
 
 			<div className="flex items-center w-full">
 				{isRecording ? (
 					<button
 						onClick={handleToggleRecording}
-						className="rounded-full w-20 h-20 mt-10 m-auto flex items-center justify-center bg-red-400 hover:bg-red-500"
+						className="rounded-full w-20 h-20 mt-10 m-auto flex items-center justify-center bg-red-500 hover:bg-red-600 shadow-lg shadow-red-500/50"
 						// className="font-poppins font-medium shadow-lg text-white bg-gradient-to-br from-purple-600 to-blue-500 px-6 py-4 hover:bg-gradient-to-bl focus:ring-2 focus:outline-none focus:ring-blue-300 dark:focus:ring-blue-800  rounded-lg text-sm sm:text-md md:text-lg text-center mt-4 w-full sm:w-auto sm:mt-0"
 					>
-						<MicrophoneOnIcon style={{ stroke: "ghostWhite" }} />
+						<StopIcon style={{ stroke: "ghostWhite" }} />
 					</button>
 				) : (
 					<button
