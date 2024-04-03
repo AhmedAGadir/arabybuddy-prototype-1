@@ -1,18 +1,15 @@
 "use client";
 
-import React, {
-	useContext,
-	useRef,
-	useState,
-	useEffect,
-	useCallback,
-} from "react";
+import React, { useContext, useRef, useState, useCallback } from "react";
 import LanguageContext from "@/context/languageContext";
 import StopIcon from "@/components/shared/icons/Stop";
 import MicrophoneOffIcon from "@/components/shared/icons/MicrophoneOff";
 import Image from "next/image";
 import Link from "next/link";
 import { useOnSilenceDetected } from "@/hooks/useOnSilenceDetected";
+
+const startSound = new Audio("/assets/sounds/start.mp3");
+const stopSound = new Audio("/assets/sounds/stop.mp3");
 
 const ChatPage = () => {
 	const { nativeLanguage, arabicDialect } = useContext(LanguageContext);
@@ -71,10 +68,10 @@ const ChatPage = () => {
 	}, []);
 
 	const startRecordingHandler = useCallback(() => {
+		startSound.play();
+
 		setRecordingComplete(false);
 		setIsRecording(true);
-		const startSound = new Audio("/assets/sounds/start.mp3");
-		startSound.play();
 
 		navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
 			mediaRecorderRef.current = new MediaRecorder(stream);
@@ -93,10 +90,9 @@ const ChatPage = () => {
 
 	const stopRecordingHandler = useCallback(() => {
 		if (isRecording) {
+			stopSound.play();
 			setRecordingComplete(true);
 			setIsRecording(false);
-			const stopSound = new Audio("/assets/sounds/stop.mp3");
-			stopSound.play();
 
 			mediaRecorderRef.current?.stop();
 		}
