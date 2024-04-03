@@ -14,7 +14,6 @@ import MicrophoneOffIcon from "@/components/shared/icons/MicrophoneOff";
 import Image from "next/image";
 import Link from "next/link";
 import { useOnSilenceDetected } from "@/hooks/useOnSilenceDetected";
-import useSound from "use-sound";
 
 const ChatPage = () => {
 	const { nativeLanguage, arabicDialect } = useContext(LanguageContext);
@@ -31,9 +30,6 @@ const ChatPage = () => {
 		recordingTime,
 		mediaRecorder,
 	} = useAudioRecorder();
-
-	const [playStartSound] = useSound("/assets/sounds/start.mp3");
-	const [playStopSound] = useSound("/assets/sounds/stop.mp3");
 
 	// console.log("recordingBlob", recordingBlob);
 	// console.log("isRecording", isRecording);
@@ -94,18 +90,24 @@ const ChatPage = () => {
 	}, [recordingBlob]);
 
 	const startRecordingHandler = useCallback(() => {
+		console.log("startRecordingHandler");
 		setRecordingComplete(false);
 		startRecording();
-		playStartSound();
-	}, [playStartSound, startRecording]);
+		const startSound = new Audio("/assets/sounds/start.mp3");
+		startSound.play();
+	}, [startRecording]);
+
+	console.log("isRecording", isRecording);
 
 	const stopRecordingHandler = useCallback(() => {
+		console.log("stopRecordingHandler");
 		if (isRecording) {
 			setRecordingComplete(true);
 			stopRecording();
-			playStopSound();
+			const stopSound = new Audio("/assets/sounds/stop.mp3");
+			stopSound.play();
 		}
-	}, [isRecording, playStopSound, stopRecording]);
+	}, [isRecording, stopRecording]);
 
 	const handleToggleRecording = () => {
 		if (!isRecording && !isPlaying) {
