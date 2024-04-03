@@ -1,1 +1,2 @@
 - [ ] - set up analytics (google analytics is good but events-based product is better (mix panel?). Pick 5-10 metrics).
+    s
