@@ -13,24 +13,12 @@ import MicrophoneOffIcon from "@/components/shared/icons/MicrophoneOff";
 import Image from "next/image";
 import Link from "next/link";
 import { useSilenceDetection } from "@/hooks/useSilenceDetection";
+import { useRecording } from "@/hooks/useRecording";
 
 const ChatPage = () => {
 	const { nativeLanguage, arabicDialect } = useContext(LanguageContext);
-	const [firstRecordingDone, setFirstRecordingDone] = useState(false);
-	const [recordingComplete, setRecordingComplete] = useState(false);
 	const [isPlaying, setIsPlaying] = useState(false);
 	const [isLoading, setIsLoading] = useState(false);
-	const [isRecording, setIsRecording] = useState(false);
-	const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-	const chunksRef = useRef<Blob[]>([]);
-
-	const [startSound, setStartSound] = useState<HTMLAudioElement | null>(null);
-	const [stopSound, setStopSound] = useState<HTMLAudioElement | null>(null);
-
-	useEffect(() => {
-		setStartSound(new Audio("/assets/sounds/start.mp3"));
-		setStopSound(new Audio("/assets/sounds/stop.mp3"));
-	}, []);
 
 	const sendToBackend = useCallback(async (blob: Blob): Promise<void> => {
 		console.log("sending to backend - recordingBlob", blob);
@@ -76,45 +64,14 @@ const ChatPage = () => {
 		// setIsLoading(false);
 	}, []);
 
-	const stopRecordingHandler = useCallback(() => {
-		stopSound?.play();
-		setRecordingComplete(true);
-		setIsRecording(false);
-
-		mediaRecorderRef.current?.stop();
-	}, [stopSound]);
-
-	const { detectSilence, amplitude } = useSilenceDetection();
-
-	const startRecordingHandler = useCallback(() => {
-		startSound?.play();
-
-		setRecordingComplete(false);
-		setIsRecording(true);
-
-		console.log("start recording");
-		navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
-			console.log("setting up media recorder");
-			mediaRecorderRef.current = new MediaRecorder(stream);
-			mediaRecorderRef.current.start();
-			detectSilence(mediaRecorderRef.current, 3000, stopRecordingHandler);
-
-			mediaRecorderRef.current.ondataavailable = (e) => {
-				chunksRef.current.push(e.data);
-			};
-
-			mediaRecorderRef.current.onstop = (e) => {
-				const blob = new Blob(chunksRef.current, { type: "audio/wav" });
-				sendToBackend(blob);
-			};
-		});
-	}, [detectSilence, sendToBackend, startSound, stopRecordingHandler]);
+	const { isRecording, startRecording, stopRecording, amplitude } =
+		useRecording(sendToBackend);
 
 	const handleToggleRecording = () => {
 		if (!isRecording && !isPlaying) {
-			startRecordingHandler();
+			startRecording();
 		} else if (isRecording) {
-			stopRecordingHandler();
+			stopRecording();
 		}
 	};
 
@@ -138,18 +95,10 @@ const ChatPage = () => {
 					<div className="flex-1 flex w-full justify-between">
 						<div className="space-y-1">
 							<p className="text-sm font-medium leading-none">
-								{!firstRecordingDone
-									? "هيا بِنا"
-									: isRecording
-									? "Recording"
-									: "Recorded"}
+								{isRecording ? "Recording" : "Recorded"}
 							</p>
 							<p className="text-sm">
-								{recordingComplete
-									? "Thanks for talking."
-									: isRecording
-									? `amplitude: ${amplitude}`
-									: "Start speaking..."}
+								{isRecording ? `amplitude: ${amplitude}` : "Start speaking..."}
 							</p>
 						</div>
 
