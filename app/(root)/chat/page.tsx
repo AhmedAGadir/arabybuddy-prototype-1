@@ -1,6 +1,12 @@
 "use client";
 
-import React, { useContext, useRef, useState, useCallback } from "react";
+import React, {
+	useContext,
+	useRef,
+	useState,
+	useCallback,
+	useEffect,
+} from "react";
 import LanguageContext from "@/context/languageContext";
 import StopIcon from "@/components/shared/icons/Stop";
 import MicrophoneOffIcon from "@/components/shared/icons/MicrophoneOff";
@@ -18,8 +24,13 @@ const ChatPage = () => {
 	const mediaRecorderRef = useRef<MediaRecorder | null>(null);
 	const chunksRef = useRef<Blob[]>([]);
 
-	const startSound = new Audio("/assets/sounds/start.mp3");
-	const stopSound = new Audio("/assets/sounds/stop.mp3");
+	const [startSound, setStartSound] = useState<HTMLAudioElement | null>(null);
+	const [stopSound, setStopSound] = useState<HTMLAudioElement | null>(null);
+
+	useEffect(() => {
+		setStartSound(new Audio("/assets/sounds/start.mp3"));
+		setStopSound(new Audio("/assets/sounds/stop.mp3"));
+	}, []);
 
 	const sendToBackend = useCallback(async (blob: Blob): Promise<void> => {
 		console.log("sending to backend - recordingBlob", blob);
@@ -68,7 +79,7 @@ const ChatPage = () => {
 	}, []);
 
 	const startRecordingHandler = useCallback(() => {
-		startSound.play();
+		startSound?.play();
 
 		setRecordingComplete(false);
 		setIsRecording(true);
@@ -86,17 +97,17 @@ const ChatPage = () => {
 				sendToBackend(blob);
 			};
 		});
-	}, [sendToBackend]);
+	}, [sendToBackend, startSound]);
 
 	const stopRecordingHandler = useCallback(() => {
 		if (isRecording) {
-			stopSound.play();
+			stopSound?.play();
 			setRecordingComplete(true);
 			setIsRecording(false);
 
 			mediaRecorderRef.current?.stop();
 		}
-	}, [isRecording]);
+	}, [isRecording, stopSound]);
 
 	const handleToggleRecording = () => {
 		if (!isRecording && !isPlaying) {
