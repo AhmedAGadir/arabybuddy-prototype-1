@@ -7,7 +7,6 @@ import React, {
 	useEffect,
 	useCallback,
 } from "react";
-import { useAudioRecorder } from "react-audio-voice-recorder";
 import LanguageContext from "@/context/languageContext";
 import StopIcon from "@/components/shared/icons/Stop";
 import MicrophoneOffIcon from "@/components/shared/icons/MicrophoneOff";
@@ -21,23 +20,12 @@ const ChatPage = () => {
 	const [recordingComplete, setRecordingComplete] = useState(false);
 	const [isPlaying, setIsPlaying] = useState(false);
 	const [isLoading, setIsLoading] = useState(false);
+	const [isRecording, setIsRecording] = useState(false);
+	const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+	const chunksRef = useRef<Blob[]>([]);
 
-	const {
-		startRecording,
-		stopRecording,
-		recordingBlob,
-		isRecording,
-		recordingTime,
-		mediaRecorder,
-	} = useAudioRecorder();
-
-	// console.log("recordingBlob", recordingBlob);
-	// console.log("isRecording", isRecording);
-	// console.log("recordingTime", recordingTime);
-	// console.log("mediaRecorder", mediaRecorder);
-
-	const sendToBackend = async (): Promise<void> => {
-		console.log("sending to backend - recordingBlob", recordingBlob);
+	const sendToBackend = useCallback(async (blob: Blob): Promise<void> => {
+		console.log("sending to backend - recordingBlob", blob);
 
 		// if (recordingBlob) {
 		// 	const blobURL = URL.createObjectURL(recordingBlob);
@@ -80,34 +68,39 @@ const ChatPage = () => {
 		// 	console.error("Error sending data to backend or playing audio:", error);
 		// }
 		// setIsLoading(false);
-	};
-
-	useEffect(() => {
-		if (!recordingBlob) return;
-
-		sendToBackend();
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [recordingBlob]);
+	}, []);
 
 	const startRecordingHandler = useCallback(() => {
-		console.log("startRecordingHandler");
 		setRecordingComplete(false);
-		startRecording();
+		setIsRecording(true);
 		const startSound = new Audio("/assets/sounds/start.mp3");
 		startSound.play();
-	}, [startRecording]);
 
-	console.log("isRecording", isRecording);
+		navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
+			mediaRecorderRef.current = new MediaRecorder(stream);
+			mediaRecorderRef.current.start();
+
+			mediaRecorderRef.current.ondataavailable = (e) => {
+				chunksRef.current.push(e.data);
+			};
+
+			mediaRecorderRef.current.onstop = (e) => {
+				const blob = new Blob(chunksRef.current, { type: "audio/wav" });
+				sendToBackend(blob);
+			};
+		});
+	}, [sendToBackend]);
 
 	const stopRecordingHandler = useCallback(() => {
-		console.log("stopRecordingHandler");
 		if (isRecording) {
 			setRecordingComplete(true);
-			stopRecording();
+			setIsRecording(false);
 			const stopSound = new Audio("/assets/sounds/stop.mp3");
 			stopSound.play();
+
+			mediaRecorderRef.current?.stop();
 		}
-	}, [isRecording, stopRecording]);
+	}, [isRecording]);
 
 	const handleToggleRecording = () => {
 		if (!isRecording && !isPlaying) {
@@ -117,7 +110,7 @@ const ChatPage = () => {
 		}
 	};
 
-	useOnSilenceDetected(mediaRecorder, stopRecordingHandler);
+	useOnSilenceDetected(mediaRecorderRef.current, stopRecordingHandler);
 
 	return (
 		<div className="bg-slate-200 w-full h-screen">

@@ -1,7 +1,7 @@
 import { useRef, useEffect } from "react";
 
 export const useOnSilenceDetected = (
-	mediaRecorder: MediaRecorder | undefined,
+	mediaRecorder: MediaRecorder | null,
 	onSilenceDetected: () => void
 ) => {
 	const silenceTimerRef = useRef<any>(null);
