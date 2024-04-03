@@ -12,7 +12,7 @@ import StopIcon from "@/components/shared/icons/Stop";
 import MicrophoneOffIcon from "@/components/shared/icons/MicrophoneOff";
 import Image from "next/image";
 import Link from "next/link";
-import { useOnSilenceDetected } from "@/hooks/useOnSilenceDetected";
+import { useSilenceDetection } from "@/hooks/useSilenceDetection";
 
 const ChatPage = () => {
 	const { nativeLanguage, arabicDialect } = useContext(LanguageContext);
@@ -35,17 +35,15 @@ const ChatPage = () => {
 	const sendToBackend = useCallback(async (blob: Blob): Promise<void> => {
 		console.log("sending to backend - recordingBlob", blob);
 
-		// if (recordingBlob) {
-		// 	const blobURL = URL.createObjectURL(recordingBlob);
+		const blobURL = URL.createObjectURL(blob);
 
-		// 	const audio = new Audio(blobURL);
+		const userAudio = new Audio(blobURL);
 
-		// 	audio.play();
+		userAudio.play();
 
-		// 	audio.onended = () => {
-		// 		console.log("Audio playback ended.");
-		// 	};
-		// }
+		userAudio.onended = () => {
+			console.log("Audio playback ended.");
+		};
 
 		setIsLoading(true);
 
@@ -78,6 +76,16 @@ const ChatPage = () => {
 		// setIsLoading(false);
 	}, []);
 
+	const stopRecordingHandler = useCallback(() => {
+		stopSound?.play();
+		setRecordingComplete(true);
+		setIsRecording(false);
+
+		mediaRecorderRef.current?.stop();
+	}, [stopSound]);
+
+	const { detectSilence } = useSilenceDetection();
+
 	const startRecordingHandler = useCallback(() => {
 		startSound?.play();
 
@@ -87,6 +95,7 @@ const ChatPage = () => {
 		navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
 			mediaRecorderRef.current = new MediaRecorder(stream);
 			mediaRecorderRef.current.start();
+			detectSilence(mediaRecorderRef.current, 3000, stopRecordingHandler);
 
 			mediaRecorderRef.current.ondataavailable = (e) => {
 				chunksRef.current.push(e.data);
@@ -97,17 +106,7 @@ const ChatPage = () => {
 				sendToBackend(blob);
 			};
 		});
-	}, [sendToBackend, startSound]);
-
-	const stopRecordingHandler = useCallback(() => {
-		if (isRecording) {
-			stopSound?.play();
-			setRecordingComplete(true);
-			setIsRecording(false);
-
-			mediaRecorderRef.current?.stop();
-		}
-	}, [isRecording, stopSound]);
+	}, [detectSilence, sendToBackend, startSound, stopRecordingHandler]);
 
 	const handleToggleRecording = () => {
 		if (!isRecording && !isPlaying) {
@@ -116,8 +115,6 @@ const ChatPage = () => {
 			stopRecordingHandler();
 		}
 	};
-
-	useOnSilenceDetected(mediaRecorderRef.current, stopRecordingHandler);
 
 	return (
 		<div className="bg-slate-200 w-full h-screen">
