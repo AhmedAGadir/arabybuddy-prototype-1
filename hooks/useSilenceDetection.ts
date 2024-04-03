@@ -1,7 +1,8 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 
 export const useSilenceDetection = () => {
 	const silenceTimerRef = useRef<any>(null);
+	const [amplitude, setAmplitude] = useState<number>();
 
 	const detectSilence = (
 		mediaRecorder: MediaRecorder,
@@ -33,6 +34,7 @@ export const useSilenceDetection = () => {
 			}
 
 			var average = values / length;
+			setAmplitude(Math.floor(average));
 
 			if (average < 10) {
 				if (silenceTimerRef.current === null) {
@@ -54,5 +56,5 @@ export const useSilenceDetection = () => {
 		};
 	};
 
-	return { detectSilence };
+	return { detectSilence, amplitude };
 };

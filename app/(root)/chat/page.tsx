@@ -84,7 +84,7 @@ const ChatPage = () => {
 		mediaRecorderRef.current?.stop();
 	}, [stopSound]);
 
-	const { detectSilence } = useSilenceDetection();
+	const { detectSilence, amplitude } = useSilenceDetection();
 
 	const startRecordingHandler = useCallback(() => {
 		startSound?.play();
@@ -92,7 +92,9 @@ const ChatPage = () => {
 		setRecordingComplete(false);
 		setIsRecording(true);
 
+		console.log("start recording");
 		navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
+			console.log("setting up media recorder");
 			mediaRecorderRef.current = new MediaRecorder(stream);
 			mediaRecorderRef.current.start();
 			detectSilence(mediaRecorderRef.current, 3000, stopRecordingHandler);
@@ -145,6 +147,8 @@ const ChatPage = () => {
 							<p className="text-sm">
 								{recordingComplete
 									? "Thanks for talking."
+									: isRecording
+									? `amplitude: ${amplitude}`
 									: "Start speaking..."}
 							</p>
 						</div>
