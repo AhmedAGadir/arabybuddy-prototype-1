@@ -8,9 +8,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { useOnSilenceDetected } from "@/hooks/useOnSilenceDetected";
 
-const startSound = new Audio("/assets/sounds/start.mp3");
-const stopSound = new Audio("/assets/sounds/stop.mp3");
-
 const ChatPage = () => {
 	const { nativeLanguage, arabicDialect } = useContext(LanguageContext);
 	const [firstRecordingDone, setFirstRecordingDone] = useState(false);
@@ -20,6 +17,9 @@ const ChatPage = () => {
 	const [isRecording, setIsRecording] = useState(false);
 	const mediaRecorderRef = useRef<MediaRecorder | null>(null);
 	const chunksRef = useRef<Blob[]>([]);
+
+	const startSound = new Audio("/assets/sounds/start.mp3");
+	const stopSound = new Audio("/assets/sounds/stop.mp3");
 
 	const sendToBackend = useCallback(async (blob: Blob): Promise<void> => {
 		console.log("sending to backend - recordingBlob", blob);
