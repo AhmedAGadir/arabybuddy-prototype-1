@@ -69,7 +69,11 @@ export const useSilenceDetection = () => {
 			var average = values / length;
 			setAmplitude(Math.floor(average));
 
-			if (average < 10) {
+			const MIN_AMPLITUDE = 10;
+
+			const isSilent = average < MIN_AMPLITUDE;
+
+			if (isSilent) {
 				if (silenceTimerRef.current === null) {
 					silenceTimerRef.current = setTimeout(() => {
 						disconnect();

@@ -20,4 +20,4 @@ const Stop = (props: any) => {
 	);
 };
 
-export default Stop;
+export { Stop };

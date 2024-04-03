@@ -15,4 +15,4 @@ const MicrophoneOn = (props: any) => {
 	);
 };
 
-export default MicrophoneOn;
+export { MicrophoneOn };

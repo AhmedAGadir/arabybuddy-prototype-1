@@ -1,18 +1,11 @@
 "use client";
 
-import React, {
-	useContext,
-	useRef,
-	useState,
-	useCallback,
-	useEffect,
-} from "react";
+import React, { useContext, useState, useCallback } from "react";
 import LanguageContext from "@/context/languageContext";
-import StopIcon from "@/components/shared/icons/Stop";
-import MicrophoneOffIcon from "@/components/shared/icons/MicrophoneOff";
+import { MicrophoneOff, Stop } from "@/components/shared/icons";
+import { BlobSvg } from "@/components/shared";
 import Image from "next/image";
 import Link from "next/link";
-import { useSilenceDetection } from "@/hooks/useSilenceDetection";
 import { useRecording } from "@/hooks/useRecording";
 
 const ChatPage = () => {
@@ -116,22 +109,29 @@ const ChatPage = () => {
 			}
 
 			<div className="flex items-center w-full">
-				{isRecording ? (
+				<button
+					onClick={handleToggleRecording}
+					className="mt-10 m-auto"
+					// className="font-poppins font-medium shadow-lg text-white bg-gradient-to-br from-purple-600 to-blue-500 px-6 py-4 hover:bg-gradient-to-bl focus:ring-2 focus:outline-none focus:ring-blue-300 dark:focus:ring-blue-800  rounded-lg text-sm sm:text-md md:text-lg text-center mt-4 w-full sm:w-auto sm:mt-0"
+				>
+					<BlobSvg amplitude={amplitude} />
+				</button>
+				{/* {isRecording ? (
 					<button
 						onClick={handleToggleRecording}
 						className="rounded-full w-20 h-20 mt-10 m-auto flex items-center justify-center bg-red-500 hover:bg-red-600 shadow-lg shadow-red-500/50"
 						// className="font-poppins font-medium shadow-lg text-white bg-gradient-to-br from-purple-600 to-blue-500 px-6 py-4 hover:bg-gradient-to-bl focus:ring-2 focus:outline-none focus:ring-blue-300 dark:focus:ring-blue-800  rounded-lg text-sm sm:text-md md:text-lg text-center mt-4 w-full sm:w-auto sm:mt-0"
 					>
-						<StopIcon style={{ stroke: "ghostWhite" }} />
+						<BlobSvg amplitude={amplitude} />
 					</button>
 				) : (
 					<button
 						onClick={handleToggleRecording}
 						className="rounded-full w-20 h-20 mt-10 m-auto flex items-center justify-center bg-cyan-500 hover:bg-cyan-600 shadow-lg shadow-cyan-500/50"
 					>
-						<MicrophoneOffIcon style={{ stroke: "ghostWhite" }} />
+						<MicrophoneOff style={{ stroke: "ghostWhite" }} />
 					</button>
-				)}
+				)} */}
 			</div>
 		</div>
 	);
