@@ -100,7 +100,7 @@ const BlobSvg = ({ size, fill }: { size: number; fill: string }) => {
 				pathProps={{
 					fill,
 					fillOpacity: 0.5,
-					filter: "blur(20px)",
+					filter: "blur(10px)",
 				}}
 			/>
 		</div>

@@ -1,8 +1,13 @@
 "use client";
 
-import React, { useContext, useState, useCallback, useEffect } from "react";
+import React, {
+	useContext,
+	useState,
+	useCallback,
+	useEffect,
+	useRef,
+} from "react";
 import LanguageContext from "@/context/languageContext";
-import { MicrophoneOff, Stop } from "@/components/shared/icons";
 import { BlobSvg } from "@/components/shared";
 import Image from "next/image";
 import Link from "next/link";
@@ -12,10 +17,12 @@ const ChatPage = () => {
 	const { nativeLanguage, arabicDialect } = useContext(LanguageContext);
 	const [isPlaying, setIsPlaying] = useState(false);
 	const [isLoading, setIsLoading] = useState(false);
+
+	const responseAudioRef = useRef<HTMLAudioElement>();
+
 	const [responseSound, setResponseSound] = useState<HTMLAudioElement | null>(
 		null
 	);
-
 	useEffect(() => {
 		setResponseSound(new Audio("/assets/sounds/response.mp3"));
 	}, []);
@@ -26,21 +33,14 @@ const ChatPage = () => {
 		setIsLoading(true);
 
 		// wait 3 seconds
-		await new Promise((resolve) => setTimeout(resolve, 3000));
+		// await new Promise((resolve) => setTimeout(resolve, 1000));
 
 		const blobURL = URL.createObjectURL(blob);
 
-		const userAudio = new Audio(blobURL);
+		// const userAudio = new Audio(blobURL);
 
-		setIsPlaying(true);
-		responseSound?.play();
-		userAudio.play();
-
-		userAudio.onended = () => {
-			console.log("Audio playback ended.");
-			setIsPlaying(false);
-			setIsLoading(false);
-		};
+		responseAudioRef.current = new Audio(blobURL);
+		playResponse();
 
 		// try {
 		// 	stopRecording();
@@ -75,10 +75,43 @@ const ChatPage = () => {
 		useRecording(sendToBackend);
 
 	const handleToggleRecording = () => {
-		if (!isRecording && !isPlaying) {
-			startRecording();
-		} else if (isRecording) {
+		if (isPlaying) {
+			stopPlayingResponse();
+			return;
+		}
+		if (isRecording) {
 			stopRecording();
+			return;
+		}
+
+		if (!isRecording) {
+			startRecording();
+			return;
+		}
+	};
+
+	const playResponse = () => {
+		setIsPlaying(true);
+		responseSound?.play();
+
+		if (responseAudioRef.current) {
+			responseAudioRef.current.play();
+
+			responseAudioRef.current.onended = () => {
+				console.log("Audio playback ended.");
+				stopPlayingResponse();
+			};
+		}
+	};
+
+	const stopPlayingResponse = () => {
+		setIsPlaying(false);
+		setIsLoading(false);
+		if (responseAudioRef.current) {
+			responseAudioRef.current.pause();
+			responseAudioRef.current.remove();
+			responseAudioRef.current.src = "";
+			responseAudioRef.current = undefined;
 		}
 	};
 
