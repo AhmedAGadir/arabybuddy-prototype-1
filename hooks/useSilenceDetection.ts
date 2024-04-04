@@ -1,8 +1,8 @@
-import { useCallback, useRef, useState } from "react";
+import { useRef, useState } from "react";
 
 export const useSilenceDetection = () => {
 	const silenceTimerRef = useRef<any>(null);
-	const [amplitude, setAmplitude] = useState<number>();
+	const [amplitude, setAmplitude] = useState<number | null>(null);
 
 	const [stopListeningFromExternalSource, setStopListeningFromExternalSource] =
 		useState(false);
@@ -79,6 +79,7 @@ export const useSilenceDetection = () => {
 						disconnect();
 						clearSilenceTimer();
 
+						setAmplitude(null);
 						onSilenceDetected();
 					}, ms);
 				}

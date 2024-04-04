@@ -5,4 +5,7 @@ export function cn(...inputs: ClassValue[]) {
 	return twMerge(clsx(inputs));
 }
 
-export const isDefined = (value: any): boolean => value !== undefined;
+export const isDefined = <T>(value: T | undefined): value is T =>
+	value !== undefined;
+
+export const isNotNull = <T>(value: T | null): value is T => value !== null;

@@ -1,7 +1,3 @@
-import { isDefined } from "@/lib/utils";
-import styles from "@/styles/Blob.module.css";
-import { useState, useEffect, useCallback, useRef, useMemo } from "react";
-
 const blobDValues = [
 	"M64.7,-37.8C78.4,-13.5,80.5,17.1,67.8,39.3C55.1,61.5,27.5,75.2,0.1,75.2C-27.4,75.2,-54.8,61.3,-69.2,38.2C-83.5,15.1,-84.8,-17.3,-71.1,-41.6C-57.4,-65.9,-28.7,-82.1,-1.6,-81.2C25.5,-80.3,50.9,-62.2,64.7,-37.8Z",
 	"M65,-35.3C79.2,-12.8,82.3,18.2,69.6,38.6C57,59,28.5,68.8,1,68.2C-26.4,67.6,-52.8,56.6,-64.7,36.7C-76.5,16.8,-73.9,-12.2,-60.7,-34C-47.5,-55.9,-23.7,-70.6,0.8,-71.1C25.4,-71.6,50.7,-57.8,65,-35.3Z",
@@ -35,54 +31,52 @@ const blobDValues = [
 const circleDValue =
 	"M65,-37.2C78.2,-14.7,78.6,15.5,65.7,38.9C52.7,62.4,26.4,79,-0.8,79.5C-28,80,-56,64.2,-69.7,40.4C-83.3,16.6,-82.6,-15.4,-68.6,-38.4C-54.6,-61.4,-27.3,-75.4,-0.7,-75C25.9,-74.6,51.8,-59.7,65,-37.2Z";
 
+const BlobInner = ({
+	size,
+	active,
+	duration,
+	values,
+	pathProps,
+	containerStyles,
+}: {
+	size: number;
+	active: boolean;
+	duration: number;
+	values: string;
+	pathProps?: { [key: string]: any };
+	containerStyles?: { [key: string]: any };
+}) => (
+	<div
+		style={{ width: size, height: size, ...containerStyles }}
+		className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
+	>
+		<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+			<path
+				fill={active ? "#FF0066" : "#38B6FF"}
+				transform="translate(100 100)"
+				{...pathProps}
+				// {...(!active && { d: circleDValue })}
+			>
+				<animate
+					attributeName="d"
+					dur={`${duration}s`}
+					repeatCount="indefinite"
+					values={values}
+				></animate>
+			</path>
+		</svg>
+	</div>
+);
+
 const BlobSvg = ({
 	amplitude,
-	animate,
-	...props
+	active,
 }: {
-	amplitude: number | undefined;
-	animate: boolean;
-	[key: string]: any;
+	amplitude: number | null;
+	active: boolean;
 }) => {
-	// random value between 0 and dValues.length - 1
-
-	// const [rand, setRand] = useState(
-	// 	Math.floor(Math.random() * blobDValues.length)
-	// );
-
-	// const isThrottled = useRef(false);
-
-	// useEffect(() => {
-	// 	if (isThrottled.current) return;
-	// 	isThrottled.current = true;
-
-	// 	setRand((prevRand) => {
-	// 		if (!isDefined(amplitude) || (amplitude as number) < 10) {
-	// 			return prevRand;
-	// 		}
-	// 		return Math.floor(Math.random() * blobDValues.length);
-	// 	});
-
-	// 	setTimeout(() => {
-	// 		isThrottled.current = false;
-	// 	}, 50); // Throttle duration in milliseconds
-	// }, [amplitude]); // Depend on amplitude to trigger the effect
-
 	const size = amplitude ? 200 + amplitude * 2 : 200;
-
-	const duration = useMemo(() => {
-		if (!amplitude || amplitude < 10) {
-			return 10;
-		}
-		const dur = Math.floor(100 / amplitude);
-
-		if (dur < 5) {
-			return 5;
-		}
-		return dur;
-	}, [amplitude]);
-
-	console.log("animate", animate);
+	const duration = 10;
 
 	return (
 		<div
@@ -92,47 +86,30 @@ const BlobSvg = ({
 				height: 300,
 			}}
 		>
-			<p>duration: {duration}</p>
-			<div
-				style={{ width: size, height: size }}
-				className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
-			>
-				<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-					<path
-						fill="#38B6FF"
-						transform="translate(100 100)"
-						{...props}
-						{...(!animate && { d: blobDValues[2] })}
-					>
-						{animate && (
-							<animate
-								attributeName="d"
-								dur={`${duration}s`}
-								repeatCount="indefinite"
-								values={blobDValues.join(";")}
-							></animate>
-						)}
-					</path>
-				</svg>
-				{/* ) : (
-					<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-						<path
-							fill="#38B6FF"
-							// fill="#FF0066"
-							d={circleDValue}
-							transform="translate(100 100)"
-							{...props}
-						/>
-					</svg>
-				)} */}
-			</div>
+			<BlobInner
+				size={size}
+				active={active}
+				duration={duration}
+				values={blobDValues.join(";")}
+			/>
 
-			{/* <div
-				style={{ width: size, height: size, filter: "blur(10px)" }}
-				className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
-			>
-				<BlobInner />
-			</div> */}
+			<BlobInner
+				size={size}
+				active={active}
+				duration={duration}
+				values={blobDValues.reverse().join(";")}
+				pathProps={{
+					fillOpacity: 0.5,
+				}}
+			/>
+
+			<BlobInner
+				size={size}
+				active={active}
+				duration={duration}
+				values={blobDValues.reverse().join(";")}
+				containerStyles={{ filter: "blur(20px)" }}
+			/>
 		</div>
 	);
 };
