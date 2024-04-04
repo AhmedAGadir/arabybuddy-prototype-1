@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useContext, useState, useCallback } from "react";
+import React, { useContext, useState, useCallback, useEffect } from "react";
 import LanguageContext from "@/context/languageContext";
 import { MicrophoneOff, Stop } from "@/components/shared/icons";
 import { BlobSvg } from "@/components/shared";
@@ -12,23 +12,34 @@ const ChatPage = () => {
 	const { nativeLanguage, arabicDialect } = useContext(LanguageContext);
 	const [isPlaying, setIsPlaying] = useState(false);
 	const [isLoading, setIsLoading] = useState(false);
+	const [responseSound, setResponseSound] = useState<HTMLAudioElement | null>(
+		null
+	);
+
+	useEffect(() => {
+		setResponseSound(new Audio("/assets/sounds/response.mp3"));
+	}, []);
 
 	const sendToBackend = useCallback(async (blob: Blob): Promise<void> => {
 		console.log("sending to backend - recordingBlob", blob);
 
 		setIsLoading(true);
 
-		setIsLoading(false);
+		// wait 3 seconds
+		await new Promise((resolve) => setTimeout(resolve, 3000));
+
 		const blobURL = URL.createObjectURL(blob);
 
 		const userAudio = new Audio(blobURL);
 
 		setIsPlaying(true);
+		// responseSound?.play();
 		userAudio.play();
 
 		userAudio.onended = () => {
 			console.log("Audio playback ended.");
 			setIsPlaying(false);
+			setIsLoading(false);
 		};
 
 		// try {
