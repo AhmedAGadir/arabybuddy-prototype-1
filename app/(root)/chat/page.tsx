@@ -33,7 +33,7 @@ const ChatPage = () => {
 		const userAudio = new Audio(blobURL);
 
 		setIsPlaying(true);
-		// responseSound?.play();
+		responseSound?.play();
 		userAudio.play();
 
 		userAudio.onended = () => {
