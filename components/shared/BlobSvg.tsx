@@ -67,7 +67,7 @@ const BlobSvg = ({
 		}, 50); // Throttle duration in milliseconds
 	}, [amplitude]); // Depend on amplitude to trigger the effect
 
-	const size = amplitude ? 350 + amplitude * 4 : 350;
+	const size = amplitude ? 200 + amplitude * 2 : 200;
 
 	return (
 		<div
@@ -76,14 +76,15 @@ const BlobSvg = ({
 				flexDirection: "column",
 				alignItems: "center",
 				justifyContent: "center",
-				width: 500,
-				height: 500,
+				width: 300,
+				height: 300,
 			}}
 		>
 			<div style={{ width: size, height: size }}>
 				<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
 					<path
 						fill="#FF0066"
+						fillOpacity={0.7}
 						// 		"araby-blue": "#38B6FF",
 						// "araby-purple": "#5E17EB",
 						// "araby-light-blue": "#00ffff",
