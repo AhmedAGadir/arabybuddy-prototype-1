@@ -35,72 +35,86 @@ const blobDValues = [
 const circleDValue =
 	"M65,-37.2C78.2,-14.7,78.6,15.5,65.7,38.9C52.7,62.4,26.4,79,-0.8,79.5C-28,80,-56,64.2,-69.7,40.4C-83.3,16.6,-82.6,-15.4,-68.6,-38.4C-54.6,-61.4,-27.3,-75.4,-0.7,-75C25.9,-74.6,51.8,-59.7,65,-37.2Z";
 
-// seed is a random number from 0 - 200, but may be more;
 const BlobSvg = ({
 	amplitude,
+	animate,
 	...props
 }: {
 	amplitude: number | undefined;
+	animate: boolean;
 	[key: string]: any;
 }) => {
 	// random value between 0 and dValues.length - 1
 
-	const [rand, setRand] = useState(
-		Math.floor(Math.random() * blobDValues.length)
-	);
+	// const [rand, setRand] = useState(
+	// 	Math.floor(Math.random() * blobDValues.length)
+	// );
 
-	const isThrottled = useRef(false);
+	// const isThrottled = useRef(false);
 
-	useEffect(() => {
-		if (isThrottled.current) return;
-		isThrottled.current = true;
+	// useEffect(() => {
+	// 	if (isThrottled.current) return;
+	// 	isThrottled.current = true;
 
-		setRand((prevRand) => {
-			if (!isDefined(amplitude) || (amplitude as number) < 10) {
-				return prevRand;
-			}
-			return Math.floor(Math.random() * blobDValues.length);
-		});
+	// 	setRand((prevRand) => {
+	// 		if (!isDefined(amplitude) || (amplitude as number) < 10) {
+	// 			return prevRand;
+	// 		}
+	// 		return Math.floor(Math.random() * blobDValues.length);
+	// 	});
 
-		setTimeout(() => {
-			isThrottled.current = false;
-		}, 50); // Throttle duration in milliseconds
-	}, [amplitude]); // Depend on amplitude to trigger the effect
+	// 	setTimeout(() => {
+	// 		isThrottled.current = false;
+	// 	}, 50); // Throttle duration in milliseconds
+	// }, [amplitude]); // Depend on amplitude to trigger the effect
 
 	const size = amplitude ? 200 + amplitude * 2 : 200;
+
+	// console.log("amplitude", amplitude);
+	// console.log("animate", animate);
 
 	return (
 		<div
 			style={{
-				display: "flex",
-				flexDirection: "column",
-				alignItems: "center",
-				justifyContent: "center",
+				position: "relative",
 				width: 300,
 				height: 300,
 			}}
 		>
-			<div style={{ width: size, height: size }}>
-				<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-					<path
-						fill="#FF0066"
-						fillOpacity={0.7}
-						// 		"araby-blue": "#38B6FF",
-						// "araby-purple": "#5E17EB",
-						// "araby-light-blue": "#00ffff",
-						// "araby-pink": "#ff00ff",
-						// fill="#ff00ff"
-						{...(isDefined(amplitude)
-							? { d: blobDValues[rand] }
-							: { d: circleDValue })}
-						transform="translate(100 100)"
-						style={{
-							transition: "d 0.2s",
-						}}
-						{...props}
-					/>
-				</svg>
+			<div
+				style={{ width: size, height: size }}
+				className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
+			>
+				{animate ? (
+					<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+						<path fill="#38B6FF" transform="translate(100 100)" {...props}>
+							<animate
+								attributeName="d"
+								dur="3s"
+								repeatCount="indefinite"
+								values={blobDValues.join(";")}
+							></animate>
+						</path>
+					</svg>
+				) : (
+					<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+						<path
+							fill="#38B6FF"
+							// fill="#FF0066"
+							d={circleDValue}
+							transform="translate(100 100)"
+							{...props}
+						/>
+					</svg>
+				)}
 			</div>
+
+			{/* <div
+				style={{ width: size, height: size, filter: "blur(10px)" }}
+				className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
+			>
+				<BlobInner />
+			</div> */}
 		</div>
 	);
 };

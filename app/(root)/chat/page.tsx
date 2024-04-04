@@ -114,7 +114,7 @@ const ChatPage = () => {
 					className="mt-10 m-auto"
 					// className="font-poppins font-medium shadow-lg text-white bg-gradient-to-br from-purple-600 to-blue-500 px-6 py-4 hover:bg-gradient-to-bl focus:ring-2 focus:outline-none focus:ring-blue-300 dark:focus:ring-blue-800  rounded-lg text-sm sm:text-md md:text-lg text-center mt-4 w-full sm:w-auto sm:mt-0"
 				>
-					<BlobSvg amplitude={amplitude} />
+					<BlobSvg amplitude={amplitude} animate={isRecording} />
 				</button>
 				{/* {isRecording ? (
 					<button
