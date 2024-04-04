@@ -82,7 +82,7 @@ const BlobSvg = ({
 		return dur;
 	}, [amplitude]);
 
-	// console.log("animate", animate);
+	console.log("animate", animate);
 
 	return (
 		<div
