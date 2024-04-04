@@ -27,6 +27,8 @@ const ChatPage = () => {
 		setResponseSound(new Audio("/assets/sounds/response.mp3"));
 	}, []);
 
+	const [playingMessage, setPlayingMessage] = useState("");
+
 	const sendToBackend = useCallback(async (blob: Blob): Promise<void> => {
 		console.log("sending to backend - recordingBlob", blob);
 
@@ -85,6 +87,7 @@ const ChatPage = () => {
 		}
 
 		if (!isRecording) {
+			setPlayingMessage("");
 			startRecording();
 			return;
 		}
@@ -92,13 +95,15 @@ const ChatPage = () => {
 
 	const playResponse = () => {
 		setIsPlaying(true);
+		setPlayingMessage("starting to play response");
 		responseSound?.play();
 
 		if (responseAudioRef.current) {
 			responseAudioRef.current.play();
 
 			responseAudioRef.current.onended = () => {
-				console.log("Audio playback ended.");
+				console.log("audio finished playing");
+				setPlayingMessage("finished playing response");
 				stopPlayingResponse();
 			};
 		}
@@ -135,11 +140,16 @@ const ChatPage = () => {
 					<div className="flex-1 flex w-full justify-between">
 						<div className="space-y-1">
 							<p className="text-sm font-medium leading-none">
-								{isRecording ? "Recording" : "Recorded"}
+								{isPlaying ? "Playing" : isRecording ? "Recording" : "Recorded"}
 							</p>
 							<p className="text-sm">
-								{isRecording ? "listening" : "Start speaking..."}
+								{isPlaying
+									? "playing response"
+									: isRecording
+									? "listening"
+									: "Press the blue blob to start recording"}
 							</p>
+							{playingMessage && <p>{playingMessage}</p>}
 						</div>
 
 						{isRecording && (
