@@ -98,10 +98,10 @@ const ChatPage = () => {
 		setPlayingMessage("starting to play response");
 		responseSound?.play();
 
-		if ((responseAudioRef.current) {
-			alert('audio exists')
+		if (responseAudioRef.current) {
+			alert("audio exists");
 		} else {
-			alert('DOES NOT EXIST')
+			alert("DOES NOT EXIST");
 		}
 
 		if (responseAudioRef.current) {
