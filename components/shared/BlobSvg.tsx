@@ -37,17 +37,15 @@ const BlobInner = ({
 	duration,
 	values,
 	pathProps,
-	containerStyles,
 }: {
 	size: number;
 	active: boolean;
 	duration: number;
 	values: string;
 	pathProps?: { [key: string]: any };
-	containerStyles?: { [key: string]: any };
 }) => (
 	<div
-		style={{ width: size, height: size, ...containerStyles }}
+		style={{ width: size, height: size }}
 		className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
 	>
 		<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
@@ -108,7 +106,10 @@ const BlobSvg = ({
 				active={active}
 				duration={duration}
 				values={blobDValues.reverse().join(";")}
-				containerStyles={{ filter: "blur(20px)" }}
+				pathProps={{
+					fillOpacity: 0.5,
+					filter: "blur(20px)",
+				}}
 			/>
 		</div>
 	);
