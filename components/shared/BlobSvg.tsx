@@ -33,13 +33,11 @@ const circleDValue =
 
 const BlobInner = ({
 	size,
-	active,
 	duration,
 	values,
 	pathProps,
 }: {
 	size: number;
-	active: boolean;
 	duration: number;
 	values: string;
 	pathProps?: { [key: string]: any };
@@ -50,7 +48,6 @@ const BlobInner = ({
 	>
 		<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
 			<path
-				fill={active ? "#FF0066" : "#38B6FF"}
 				transform="translate(100 100)"
 				{...pathProps}
 				// {...(!active && { d: circleDValue })}
@@ -66,14 +63,7 @@ const BlobInner = ({
 	</div>
 );
 
-const BlobSvg = ({
-	amplitude,
-	active,
-}: {
-	amplitude: number | null;
-	active: boolean;
-}) => {
-	const size = amplitude ? 200 + amplitude * 2 : 200;
+const BlobSvg = ({ size, fill }: { size: number; fill: string }) => {
 	const duration = 10;
 
 	return (
@@ -86,27 +76,29 @@ const BlobSvg = ({
 		>
 			<BlobInner
 				size={size}
-				active={active}
 				duration={duration}
 				values={blobDValues.join(";")}
-			/>
-
-			<BlobInner
-				size={size}
-				active={active}
-				duration={duration}
-				values={blobDValues.reverse().join(";")}
 				pathProps={{
-					fillOpacity: 0.5,
+					fill,
 				}}
 			/>
 
 			<BlobInner
 				size={size}
-				active={active}
 				duration={duration}
 				values={blobDValues.reverse().join(";")}
 				pathProps={{
+					fill,
+					fillOpacity: 0.5,
+				}}
+			/>
+
+			<BlobInner
+				size={200}
+				duration={duration}
+				values={blobDValues.reverse().join(";")}
+				pathProps={{
+					fill,
 					fillOpacity: 0.5,
 					filter: "blur(20px)",
 				}}

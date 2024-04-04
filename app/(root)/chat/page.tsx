@@ -16,17 +16,20 @@ const ChatPage = () => {
 	const sendToBackend = useCallback(async (blob: Blob): Promise<void> => {
 		console.log("sending to backend - recordingBlob", blob);
 
+		setIsLoading(true);
+
+		setIsLoading(false);
 		const blobURL = URL.createObjectURL(blob);
 
 		const userAudio = new Audio(blobURL);
 
+		setIsPlaying(true);
 		userAudio.play();
 
 		userAudio.onended = () => {
 			console.log("Audio playback ended.");
+			setIsPlaying(false);
 		};
-
-		setIsLoading(true);
 
 		// try {
 		// 	stopRecording();
@@ -113,7 +116,10 @@ const ChatPage = () => {
 					onClick={handleToggleRecording}
 					className="mt-10 m-auto cursor-pointer"
 				>
-					<BlobSvg amplitude={amplitude} active={isRecording} />
+					<BlobSvg
+						size={amplitude ? 200 + amplitude * 2 : 200}
+						fill={isPlaying ? "#5E17EB" : isRecording ? "#FF0066" : "#38B6FF"}
+					/>
 				</button>
 			</div>
 		</div>
