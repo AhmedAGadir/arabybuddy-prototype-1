@@ -1,6 +1,6 @@
 import { isDefined } from "@/lib/utils";
 import styles from "@/styles/Blob.module.css";
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 
 const blobDValues = [
 	"M64.7,-37.8C78.4,-13.5,80.5,17.1,67.8,39.3C55.1,61.5,27.5,75.2,0.1,75.2C-27.4,75.2,-54.8,61.3,-69.2,38.2C-83.5,15.1,-84.8,-17.3,-71.1,-41.6C-57.4,-65.9,-28.7,-82.1,-1.6,-81.2C25.5,-80.3,50.9,-62.2,64.7,-37.8Z",
@@ -70,7 +70,18 @@ const BlobSvg = ({
 
 	const size = amplitude ? 200 + amplitude * 2 : 200;
 
-	// console.log("amplitude", amplitude);
+	const duration = useMemo(() => {
+		if (!amplitude || amplitude < 10) {
+			return 10;
+		}
+		const dur = Math.floor(100 / amplitude);
+
+		if (dur < 5) {
+			return 5;
+		}
+		return dur;
+	}, [amplitude]);
+
 	// console.log("animate", animate);
 
 	return (
@@ -81,22 +92,29 @@ const BlobSvg = ({
 				height: 300,
 			}}
 		>
+			<p>duration: {duration}</p>
 			<div
 				style={{ width: size, height: size }}
 				className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
 			>
-				{animate ? (
-					<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-						<path fill="#38B6FF" transform="translate(100 100)" {...props}>
+				<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+					<path
+						fill="#38B6FF"
+						transform="translate(100 100)"
+						{...props}
+						{...(!animate && { d: blobDValues[2] })}
+					>
+						{animate && (
 							<animate
 								attributeName="d"
-								dur="3s"
+								dur={`${duration}s`}
 								repeatCount="indefinite"
 								values={blobDValues.join(";")}
 							></animate>
-						</path>
-					</svg>
-				) : (
+						)}
+					</path>
+				</svg>
+				{/* ) : (
 					<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
 						<path
 							fill="#38B6FF"
@@ -106,7 +124,7 @@ const BlobSvg = ({
 							{...props}
 						/>
 					</svg>
-				)}
+				)} */}
 			</div>
 
 			{/* <div
