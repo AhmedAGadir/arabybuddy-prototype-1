@@ -64,7 +64,7 @@ const useRecording = (onRecordingComplete?: (blob: Blob) => void) => {
 				// audio/ogg
 				// audio/ogg; codecs=opus
 				// audio/wav or audio/wave
-				const options = { mimeType: "audio/webm" };
+				const options = { mimeType: "audio/ogg" };
 
 				const workerOptions = {
 					OggOpusEncoderWasmPath:
