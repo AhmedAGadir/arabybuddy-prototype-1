@@ -5,6 +5,7 @@ import { MediaRecorder } from "@zappar/mediarecorder";
 const useRecording = (onRecordingComplete?: (blob: Blob) => void) => {
 	const [isRecording, setIsRecording] = useState(false);
 	const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+
 	const chunksRef = useRef<Blob[]>([]);
 
 	const [startSound, setStartSound] = useState<HTMLAudioElement | null>(null);
