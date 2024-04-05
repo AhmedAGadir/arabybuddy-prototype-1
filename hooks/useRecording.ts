@@ -21,6 +21,7 @@ const useRecording = (
 	const stopSound = useSound("/assets/sounds/stop.mp3");
 
 	const cleanup = useCallback(() => {
+		setMessage("cleanup");
 		if (streamRef.current) {
 			streamRef.current.getTracks().forEach((track) => {
 				track.stop();
@@ -54,13 +55,12 @@ const useRecording = (
 	const startRecording = useCallback(async () => {
 		cleanup();
 		setMessage("requesting permission");
-		// request permission
+
 		const stream = await navigator.mediaDevices.getUserMedia({
 			audio: true,
 		});
 		streamRef.current = stream;
 
-		// setup recorder
 		mediaRecorderRef.current = new MediaRecorder(streamRef.current);
 
 		mediaRecorderRef.current.ondataavailable = (e) => {
@@ -81,6 +81,7 @@ const useRecording = (
 		mediaRecorderRef.current.start();
 		detectSilence(mediaRecorderRef.current, 3000, stopRecording);
 	}, [
+		cleanup,
 		detectSilence,
 		onRecordingComplete,
 		setMessage,
