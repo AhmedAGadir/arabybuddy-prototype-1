@@ -29,9 +29,6 @@ const ChatPage = () => {
 	const { nativeLanguage, arabicDialect } = useContext(LanguageContext);
 	const [isPlaying, setIsPlaying] = useState(false);
 	const [isLoading, setIsLoading] = useState(false);
-	const [blobURL, setBlobURL] = useState("");
-
-	const responseAudioRef = useRef<HTMLAudioElement>();
 
 	const [responseSound, setResponseSound] = useState<HTMLAudioElement | null>(
 		null
@@ -42,52 +39,60 @@ const ChatPage = () => {
 
 	const [playingMessage, setPlayingMessage] = useState("");
 
-	const sendToBackend = useCallback(async (blob: Blob): Promise<void> => {
-		console.log("sending to backend - recordingBlob", blob);
+	const sendToBackend = useCallback(
+		async (blob: Blob): Promise<void> => {
+			console.log("sending to backend - recordingBlob", blob);
 
-		setIsLoading(true);
+			setIsLoading(true);
 
-		// wait 3 seconds
-		// await new Promise((resolve) => setTimeout(resolve, 1000));
+			// wait 3 seconds
+			// await new Promise((resolve) => setTimeout(resolve, 1000));
 
-		const blobURL = URL.createObjectURL(blob);
-		setBlobURL(blobURL);
+			const blobURL = URL.createObjectURL(blob);
+			const userAudio = new Audio(blobURL);
 
-		// const userAudio = new Audio(blobURL);
-		if (responseAudioRef.current) {
-			responseAudioRef.current.src = blobURL;
-		}
-		// responseAudioRef.current = new Audio(blobURL);
-		playResponse();
+			setIsPlaying(true);
+			setPlayingMessage("starting to play response");
+			responseSound?.play();
 
-		// try {
-		// 	stopRecording();
+			userAudio.play();
 
-		// 	const response = await fetch("/api/chat", {
-		// 		method: "POST",
-		// 		headers: { "Content-Type": "application/json" },
-		// 		body: JSON.stringify({ recordingBlog, nativeLanguage, arabicDialect }),
-		// 	});
+			userAudio.onended = () => {
+				console.log("audio finished playing");
+				setPlayingMessage("finished playing response");
+				stopPlayingResponse();
+			};
 
-		// 	if (!response.ok)
-		// 		throw new Error(`HTTP error! status: ${response.status}`);
+			// try {
+			// 	stopRecording();
 
-		// 	const data = await response.json();
-		// 	if (data.data && data.contentType === "audio/mp3") {
-		// 		const audioSrc = `data:audio/mp3;base64,${data.data}`;
-		// 		const audio = new Audio(audioSrc);
-		// 		setIsPlaying(true);
-		// 		audio.play();
-		// 		audio.onended = () => {
-		// 			setIsPlaying(false);
-		// 			startRecording();
-		// 		};
-		// 	}
-		// } catch (error) {
-		// 	console.error("Error sending data to backend or playing audio:", error);
-		// }
-		// setIsLoading(false);
-	}, []);
+			// 	const response = await fetch("/api/chat", {
+			// 		method: "POST",
+			// 		headers: { "Content-Type": "application/json" },
+			// 		body: JSON.stringify({ recordingBlog, nativeLanguage, arabicDialect }),
+			// 	});
+
+			// 	if (!response.ok)
+			// 		throw new Error(`HTTP error! status: ${response.status}`);
+
+			// 	const data = await response.json();
+			// 	if (data.data && data.contentType === "audio/mp3") {
+			// 		const audioSrc = `data:audio/mp3;base64,${data.data}`;
+			// 		const audio = new Audio(audioSrc);
+			// 		setIsPlaying(true);
+			// 		audio.play();
+			// 		audio.onended = () => {
+			// 			setIsPlaying(false);
+			// 			startRecording();
+			// 		};
+			// 	}
+			// } catch (error) {
+			// 	console.error("Error sending data to backend or playing audio:", error);
+			// }
+			// setIsLoading(false);
+		},
+		[responseSound]
+	);
 
 	const { isRecording, startRecording, stopRecording, amplitude } =
 		useRecording(sendToBackend);
@@ -104,26 +109,9 @@ const ChatPage = () => {
 
 		if (!isRecording) {
 			setPlayingMessage("");
-			responseAudioRef.current = new Audio();
 
 			startRecording();
 			return;
-		}
-	};
-
-	const playResponse = () => {
-		setIsPlaying(true);
-		setPlayingMessage("starting to play response");
-		responseSound?.play();
-
-		if (responseAudioRef.current) {
-			responseAudioRef.current.play();
-
-			responseAudioRef.current.onended = () => {
-				console.log("audio finished playing");
-				setPlayingMessage("finished playing response");
-				stopPlayingResponse();
-			};
 		}
 	};
 
@@ -138,26 +126,11 @@ const ChatPage = () => {
 		// }
 	};
 
-	const testPlay = () => {
-		responseAudioRef.current?.play();
-	};
-
-	const testPlay2 = () => {
-		responseAudioRef.current?.play();
-	};
-
 	return (
 		<div className="bg-slate-200 w-full h-screen">
 			<p>
 				Chat {nativeLanguage} - {arabicDialect}
 			</p>
-			<p>Blob URL: {blobURL}</p>
-			<button style={{ background: "blue", margin: 10 }} onClick={testPlay}>
-				play response
-			</button>
-			<button style={{ background: "yellow", margin: 10 }} onClick={testPlay2}>
-				play response
-			</button>
 			<Link href="/">
 				<div className="rounded-md p-2 bg-white w-fit ">
 					<Image
@@ -179,10 +152,10 @@ const ChatPage = () => {
 								{isPlaying
 									? "playing response"
 									: isRecording
-									? "listening"
+									? `listening - amplitude: ${amplitude}`
 									: "Press the blue blob to start recording"}
 							</p>
-							{playingMessage && <p>{playingMessage}</p>}
+							<p>{playingMessage ?? "No playing message"}</p>
 						</div>
 
 						{isRecording && (
