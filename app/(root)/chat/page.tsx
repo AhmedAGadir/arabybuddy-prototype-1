@@ -93,6 +93,7 @@ const ChatPage = () => {
 		if (!isRecording) {
 			setPlayingMessage("");
 			responseAudioRef.current = new Audio();
+
 			startRecording();
 			return;
 		}
@@ -117,12 +118,16 @@ const ChatPage = () => {
 	const stopPlayingResponse = () => {
 		setIsPlaying(false);
 		setIsLoading(false);
-		if (responseAudioRef.current) {
-			responseAudioRef.current.pause();
-			responseAudioRef.current.remove();
-			responseAudioRef.current.src = "";
-			responseAudioRef.current = undefined;
-		}
+		// if (responseAudioRef.current) {
+		// 	responseAudioRef.current.pause();
+		// 	responseAudioRef.current.remove();
+		// 	responseAudioRef.current.src = "";
+		// 	responseAudioRef.current = undefined;
+		// }
+	};
+
+	const testPlay = () => {
+		responseAudioRef.current?.play();
 	};
 
 	return (
@@ -131,6 +136,9 @@ const ChatPage = () => {
 				Chat {nativeLanguage} - {arabicDialect}
 			</p>
 			<p>Blob URL: {blobURL}</p>
+			<button style={{ background: "blue" }} onClick={testPlay}>
+				play response
+			</button>
 			<Link href="/">
 				<div className="rounded-md p-2 bg-white w-fit ">
 					<Image
