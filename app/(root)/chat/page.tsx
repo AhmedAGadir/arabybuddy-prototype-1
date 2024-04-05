@@ -13,6 +13,18 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRecording } from "@/hooks/useRecording";
 
+function getSupportedAudioFormat(audio) {
+	if (audio.canPlayType("audio/ogg").length > 0) {
+		return "audio/ogg";
+	} else if (audio.canPlayType("audio/mp3").length > 0) {
+		return "audio/mp3";
+	} else if (audio.canPlayType("audio/aac").length > 0) {
+		return "audio/aac";
+	} else {
+		return ""; // No supported audio format found
+	}
+}
+
 const ChatPage = () => {
 	const { nativeLanguage, arabicDialect } = useContext(LanguageContext);
 	const [isPlaying, setIsPlaying] = useState(false);
@@ -130,13 +142,20 @@ const ChatPage = () => {
 		responseAudioRef.current?.play();
 	};
 
+	const testPlay2 = () => {
+		responseAudioRef.current?.play();
+	};
+
 	return (
 		<div className="bg-slate-200 w-full h-screen">
 			<p>
 				Chat {nativeLanguage} - {arabicDialect}
 			</p>
 			<p>Blob URL: {blobURL}</p>
-			<button style={{ background: "blue" }} onClick={testPlay}>
+			<button style={{ background: "blue", margin: 10 }} onClick={testPlay}>
+				play response
+			</button>
+			<button style={{ background: "yellow", margin: 10 }} onClick={testPlay2}>
 				play response
 			</button>
 			<Link href="/">
