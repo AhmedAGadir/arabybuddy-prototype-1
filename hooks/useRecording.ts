@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSilenceDetection } from "./useSilenceDetection";
 // iOS/android polyfill
-// import { MediaRecorder } from "@zappar/mediarecorder";
+import { MediaRecorder } from "@zappar/mediarecorder";
 
 const useRecording = (onRecordingComplete?: (blob: Blob) => void) => {
 	const [isRecording, setIsRecording] = useState(false);
