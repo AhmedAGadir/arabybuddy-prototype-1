@@ -133,12 +133,14 @@ const ChatPage = () => {
 	);
 
 	const [message, setMessage] = useState<string[]>([]);
+	const setmessage2 = useCallback(
+		(message: string) =>
+			setMessage((prevMessages) => [...prevMessages, message]),
+		[]
+	);
 
 	const { isRecording, startRecording, stopRecording, amplitude } =
-		useRecording(
-			(message) => setMessage((prevMessages) => [...prevMessages, message]),
-			sendToBackend
-		);
+		useRecording(setmessage2, sendToBackend);
 
 	const toggleRecording = () => {
 		if (isPlaying) {

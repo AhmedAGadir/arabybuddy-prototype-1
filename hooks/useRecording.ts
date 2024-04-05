@@ -52,19 +52,19 @@ const useRecording = (
 		requestPermissionAndSetupRecorder();
 
 		return () => {
-			setMessage("cleanup - doing nothing atm");
+			setMessage("cleanup");
 			// cleanup
-			// if (streamRef.current) {
-			// 	streamRef.current.getTracks().forEach((track) => {
-			// 		track.stop();
-			// 	});
-			// 	streamRef.current = undefined;
-			// }
-			// if (mediaRecorderRef.current) {
-			// 	mediaRecorderRef.current.ondataavailable = null;
-			// 	mediaRecorderRef.current.onstop = null;
-			// 	mediaRecorderRef.current = null;
-			// }
+			if (streamRef.current) {
+				streamRef.current.getTracks().forEach((track) => {
+					track.stop();
+				});
+				streamRef.current = undefined;
+			}
+			if (mediaRecorderRef.current) {
+				mediaRecorderRef.current.ondataavailable = null;
+				mediaRecorderRef.current.onstop = null;
+				mediaRecorderRef.current = null;
+			}
 		};
 	}, []);
 
@@ -86,8 +86,8 @@ const useRecording = (
 		startSound?.play();
 		setIsRecording(true);
 		mediaRecorderRef.current.start();
-		// detectSilence(mediaRecorderRef.current, 3000, stopRecording);
-	}, [setMessage, startSound]);
+		detectSilence(mediaRecorderRef.current, 3000, stopRecording);
+	}, [detectSilence, setMessage, startSound, stopRecording]);
 
 	return {
 		isRecording,
