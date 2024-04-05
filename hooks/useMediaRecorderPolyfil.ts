@@ -37,7 +37,7 @@ const useMediaRecorderPolyfill = () => {
 			// audio/ogg
 			// audio/ogg; codecs=opus
 			// audio/wav or audio/wave
-			const options = { mimeType: "audio/ogg" };
+			const options = { mimeType: "audio/mp3" };
 
 			const workerOptions = {
 				OggOpusEncoderWasmPath:

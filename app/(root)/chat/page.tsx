@@ -14,6 +14,26 @@ import Link from "next/link";
 import { useRecording } from "@/hooks/useRecording";
 import { useSound } from "@/hooks/useSound";
 
+// AUDIO FORMATS SUPPORTED ON DESKTOP
+// audio/ogg - yes
+// audio/mp3 - yes
+// audio/aac - yes
+// audio/webm - yes
+// audio/webm; codecs=opus - yes
+// audio/wav - yes
+// audio/wave - no
+// should fail - no
+
+// AUDIO FORMATS SUPPORTED ON MOBILE
+// audio/ogg - no
+// audio/mp3 - yes
+// audio/aac - yes
+// audio/webm - no
+// audio/webm; codecs=opus - no
+// audio/wav - yes
+// audio/wave - yes
+// should fail - no
+
 const audioFormats = [
 	"audio/ogg",
 	"audio/mp3",
