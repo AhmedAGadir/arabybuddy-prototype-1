@@ -1,21 +1,20 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSilenceDetection } from "./useSilenceDetection";
 
-const useExternalScript = (src) => {
+declare var OpusMediaRecorder: MediaRecorder;
+
+const useExternalScript = (src: string) => {
 	useEffect(() => {
-		// Create script element
 		const script = document.createElement("script");
 		script.src = src;
 		script.async = true;
 
-		// Append script to the body
 		document.body.appendChild(script);
 
-		// Remove script on cleanup
 		return () => {
 			document.body.removeChild(script);
 		};
-	}, [src]); // Re-run effect if src changes
+	}, [src]);
 };
 
 const useRecording = (onRecordingComplete?: (blob: Blob) => void) => {
@@ -74,11 +73,13 @@ const useRecording = (onRecordingComplete?: (blob: Blob) => void) => {
 						"https://cdn.jsdelivr.net/npm/opus-media-recorder@latest/WebMOpusEncoder.wasm",
 				};
 
+				// @ts-ignore
 				window.MediaRecorder = OpusMediaRecorder;
 
 				mediaRecorderRef.current = new MediaRecorder(
 					stream,
 					options,
+					// @ts-ignore
 					workerOptions
 				);
 			} else {
