@@ -39,7 +39,7 @@ const useRecording = (onRecordingComplete?: (blob: Blob) => void) => {
 			};
 
 			mediaRecorderRef.current.onstop = (e) => {
-				const blob = new Blob(chunksRef.current, { type: "audio/webm" });
+				const blob = new Blob(chunksRef.current, { type: "audio/wav" });
 				onRecordingComplete?.(blob);
 				chunksRef.current = [];
 
