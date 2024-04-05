@@ -12,6 +12,7 @@ import { BlobSvg } from "@/components/shared";
 import Image from "next/image";
 import Link from "next/link";
 import { useRecording } from "@/hooks/useRecording";
+import { useSound } from "@/hooks/useSound";
 
 function getSupportedAudioFormat(audio: HTMLAudioElement) {
 	if (audio.canPlayType("audio/ogg").length > 0) {
@@ -30,12 +31,7 @@ const ChatPage = () => {
 	const [isPlaying, setIsPlaying] = useState(false);
 	const [isLoading, setIsLoading] = useState(false);
 
-	const [responseSound, setResponseSound] = useState<HTMLAudioElement | null>(
-		null
-	);
-	useEffect(() => {
-		setResponseSound(new Audio("/assets/sounds/response.mp3"));
-	}, []);
+	const bell = useSound("/assets/sounds/response.mp3");
 
 	const [playingMessage, setPlayingMessage] = useState("");
 
@@ -53,7 +49,7 @@ const ChatPage = () => {
 
 			setIsPlaying(true);
 			setPlayingMessage("starting to play response");
-			responseSound?.play();
+			bell?.play();
 
 			userAudio.play();
 
@@ -91,7 +87,7 @@ const ChatPage = () => {
 			// }
 			// setIsLoading(false);
 		},
-		[responseSound]
+		[bell]
 	);
 
 	const { isRecording, startRecording, stopRecording, amplitude } =

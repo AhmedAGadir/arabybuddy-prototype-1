@@ -1,41 +1,17 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useSilenceDetection } from "./useSilenceDetection";
-
-declare var OpusMediaRecorder: MediaRecorder;
-
-const useExternalScript = (src: string) => {
-	useEffect(() => {
-		const script = document.createElement("script");
-		script.src = src;
-		script.async = true;
-
-		document.body.appendChild(script);
-
-		return () => {
-			document.body.removeChild(script);
-		};
-	}, [src]);
-};
+import { useSound } from "./useSound";
+import { usePolyfill } from "./usePolyfil";
 
 const useRecording = (onRecordingComplete?: (blob: Blob) => void) => {
 	const [isRecording, setIsRecording] = useState(false);
 	const mediaRecorderRef = useRef<MediaRecorder | null>(null);
 	const chunksRef = useRef<Blob[]>([]);
 
-	useExternalScript(
-		"https://cdn.jsdelivr.net/npm/opus-media-recorder@latest/OpusMediaRecorder.umd.js"
-	);
-	useExternalScript(
-		"https://cdn.jsdelivr.net/npm/opus-media-recorder@latest/encoderWorker.umd.js"
-	);
+	const { getMediaRecorder } = usePolyfill();
 
-	const [startSound, setStartSound] = useState<HTMLAudioElement | null>(null);
-	const [stopSound, setStopSound] = useState<HTMLAudioElement | null>(null);
-
-	useEffect(() => {
-		setStartSound(new Audio("/assets/sounds/start.mp3"));
-		setStopSound(new Audio("/assets/sounds/stop.mp3"));
-	}, []);
+	const startSound = useSound("/assets/sounds/start.mp3");
+	const stopSound = useSound("/assets/sounds/stop.mp3");
 
 	const { detectSilence, amplitude, stopSilenceDetection } =
 		useSilenceDetection();
@@ -54,37 +30,7 @@ const useRecording = (onRecordingComplete?: (blob: Blob) => void) => {
 		setIsRecording(true);
 
 		navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
-			// if (
-			// 	!window.MediaRecorder ||
-			// 	!window.MediaRecorder.isTypeSupported("audio/ogg;codecs=opus")
-			// ) {
-			// 	// Choose desired format like audio/webm. Default is audio/ogg
-			// 	// audio/webm
-			// 	// audio/webm; codecs=opus
-			// 	// audio/ogg
-			// 	// audio/ogg; codecs=opus
-			// 	// audio/wav or audio/wave
-			// 	const options = { mimeType: "audio/ogg" };
-
-			// 	const workerOptions = {
-			// 		OggOpusEncoderWasmPath:
-			// 			"https://cdn.jsdelivr.net/npm/opus-media-recorder@latest/OggOpusEncoder.wasm",
-			// 		WebMOpusEncoderWasmPath:
-			// 			"https://cdn.jsdelivr.net/npm/opus-media-recorder@latest/WebMOpusEncoder.wasm",
-			// 	};
-
-			// 	// @ts-ignore
-			// 	window.MediaRecorder = OpusMediaRecorder;
-
-			// 	mediaRecorderRef.current = new MediaRecorder(
-			// 		stream,
-			// 		options,
-			// 		// @ts-ignore
-			// 		workerOptions
-			// 	);
-			// } else {
-			mediaRecorderRef.current = new MediaRecorder(stream);
-			// }
+			mediaRecorderRef.current = getMediaRecorder(stream);
 
 			mediaRecorderRef.current.start();
 
@@ -106,7 +52,13 @@ const useRecording = (onRecordingComplete?: (blob: Blob) => void) => {
 
 			detectSilence(mediaRecorderRef.current, 3000, stopRecording);
 		});
-	}, [detectSilence, onRecordingComplete, startSound, stopRecording]);
+	}, [
+		detectSilence,
+		getMediaRecorder,
+		onRecordingComplete,
+		startSound,
+		stopRecording,
+	]);
 
 	return {
 		isRecording,
