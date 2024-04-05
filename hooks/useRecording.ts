@@ -23,6 +23,7 @@ const useRecording = (
 	useEffect(() => {
 		const requestPermissionAndSetupRecorder = async () => {
 			try {
+				setMessage("requesting permission");
 				// request permission
 				const stream = await navigator.mediaDevices.getUserMedia({
 					audio: true,
@@ -51,19 +52,19 @@ const useRecording = (
 		requestPermissionAndSetupRecorder();
 
 		return () => {
-			setMessage("cleanup");
+			setMessage("cleanup - doing nothing atm");
 			// cleanup
-			if (streamRef.current) {
-				streamRef.current.getTracks().forEach((track) => {
-					track.stop();
-				});
-				streamRef.current = undefined;
-			}
-			if (mediaRecorderRef.current) {
-				mediaRecorderRef.current.ondataavailable = null;
-				mediaRecorderRef.current.onstop = null;
-				mediaRecorderRef.current = null;
-			}
+			// if (streamRef.current) {
+			// 	streamRef.current.getTracks().forEach((track) => {
+			// 		track.stop();
+			// 	});
+			// 	streamRef.current = undefined;
+			// }
+			// if (mediaRecorderRef.current) {
+			// 	mediaRecorderRef.current.ondataavailable = null;
+			// 	mediaRecorderRef.current.onstop = null;
+			// 	mediaRecorderRef.current = null;
+			// }
 		};
 	}, []);
 
@@ -74,7 +75,7 @@ const useRecording = (
 		stopSilenceDetection();
 
 		stopSound?.play();
-	}, [stopSilenceDetection, stopSound]);
+	}, [setMessage, stopSilenceDetection, stopSound]);
 
 	const startRecording = useCallback(() => {
 		if (!streamRef.current || !mediaRecorderRef.current) {
@@ -85,8 +86,8 @@ const useRecording = (
 		startSound?.play();
 		setIsRecording(true);
 		mediaRecorderRef.current.start();
-		detectSilence(mediaRecorderRef.current, 3000, stopRecording);
-	}, [detectSilence, startSound, stopRecording]);
+		// detectSilence(mediaRecorderRef.current, 3000, stopRecording);
+	}, [setMessage, startSound]);
 
 	return {
 		isRecording,

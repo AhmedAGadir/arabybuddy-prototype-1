@@ -140,7 +140,7 @@ const ChatPage = () => {
 			sendToBackend
 		);
 
-	const handleToggleRecording = () => {
+	const toggleRecording = () => {
 		if (isPlaying) {
 			stopPlayingResponse();
 			return;
@@ -228,7 +228,7 @@ const ChatPage = () => {
 
 			<div className="flex items-center w-full">
 				<button
-					onClick={handleToggleRecording}
+					onClick={toggleRecording}
 					className="mt-10 m-auto cursor-pointer"
 				>
 					<BlobSvg
