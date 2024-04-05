@@ -17,6 +17,7 @@ const ChatPage = () => {
 	const { nativeLanguage, arabicDialect } = useContext(LanguageContext);
 	const [isPlaying, setIsPlaying] = useState(false);
 	const [isLoading, setIsLoading] = useState(false);
+	const [blobURL, setBlobURL] = useState("");
 
 	const responseAudioRef = useRef<HTMLAudioElement>();
 
@@ -38,10 +39,13 @@ const ChatPage = () => {
 		// await new Promise((resolve) => setTimeout(resolve, 1000));
 
 		const blobURL = URL.createObjectURL(blob);
+		setBlobURL(blobURL);
 
 		// const userAudio = new Audio(blobURL);
-
-		responseAudioRef.current = new Audio(blobURL);
+		if (responseAudioRef.current) {
+			responseAudioRef.current.src = blobURL;
+		}
+		// responseAudioRef.current = new Audio(blobURL);
 		playResponse();
 
 		// try {
@@ -88,6 +92,7 @@ const ChatPage = () => {
 
 		if (!isRecording) {
 			setPlayingMessage("");
+			responseAudioRef.current = new Audio();
 			startRecording();
 			return;
 		}
@@ -125,6 +130,7 @@ const ChatPage = () => {
 			<p>
 				Chat {nativeLanguage} - {arabicDialect}
 			</p>
+			<p>Blob URL: {blobURL}</p>
 			<Link href="/">
 				<div className="rounded-md p-2 bg-white w-fit ">
 					<Image
