@@ -14,6 +14,22 @@ import Link from "next/link";
 import { useRecording } from "@/hooks/useRecording";
 import { useSound } from "@/hooks/useSound";
 
+const audioFormats = [
+	"audio/ogg",
+	"audio/mp3",
+	"audio/aac",
+	"audio/webm",
+	"audio/webm; codecs=opus",
+	"audio/ogg",
+	"audio/ogg; codecs=opus",
+	"audio/wav",
+	"audio/wave",
+	"should fail",
+];
+
+const supportsFormat = (audio: HTMLAudioElement, format: string) =>
+	audio.canPlayType(format).length > 0;
+
 function getSupportedAudioFormat(audio: HTMLAudioElement) {
 	if (audio.canPlayType("audio/ogg").length > 0) {
 		return "audio/ogg";
@@ -27,6 +43,19 @@ function getSupportedAudioFormat(audio: HTMLAudioElement) {
 }
 
 const ChatPage = () => {
+	const audioRef = useRef(new Audio());
+
+	return (
+		<div>
+			{audioFormats.map((format) => (
+				<p key={format}>
+					format: {format} -
+					{supportsFormat(audioRef.current, format) ? "YES" : "NO"}
+				</p>
+			))}
+		</div>
+	);
+
 	const { nativeLanguage, arabicDialect } = useContext(LanguageContext);
 	const [isPlaying, setIsPlaying] = useState(false);
 	const [isLoading, setIsLoading] = useState(false);
