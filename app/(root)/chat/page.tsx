@@ -13,7 +13,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRecording } from "@/hooks/useRecording";
 
-function getSupportedAudioFormat(audio) {
+function getSupportedAudioFormat(audio: HTMLAudioElement) {
 	if (audio.canPlayType("audio/ogg").length > 0) {
 		return "audio/ogg";
 	} else if (audio.canPlayType("audio/mp3").length > 0) {
