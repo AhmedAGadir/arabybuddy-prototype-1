@@ -132,7 +132,7 @@ const ChatPage = () => {
 		[bell]
 	);
 
-	const [message, setMessage] = useState([]);
+	const [message, setMessage] = useState<string[]>([]);
 
 	const { isRecording, startRecording, stopRecording, amplitude } =
 		useRecording(
