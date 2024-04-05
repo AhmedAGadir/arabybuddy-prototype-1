@@ -3,7 +3,10 @@ import { useSilenceDetection } from "./useSilenceDetection";
 import { useSound } from "./useSound";
 // import { usePolyfill } from "./useMediaRecorderPolyfil";
 
-const useRecording = (onRecordingComplete?: (blob: Blob) => void) => {
+const useRecording = (
+	setMessage: (message: string) => void,
+	onRecordingComplete?: (blob: Blob) => void
+) => {
 	const [isRecording, setIsRecording] = useState(false);
 
 	const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -30,10 +33,12 @@ const useRecording = (onRecordingComplete?: (blob: Blob) => void) => {
 				mediaRecorderRef.current = new MediaRecorder(streamRef.current);
 
 				mediaRecorderRef.current.ondataavailable = (e) => {
+					setMessage("data available");
 					chunksRef.current.push(e.data);
 				};
 
 				mediaRecorderRef.current.onstop = (e) => {
+					setMessage("stopped");
 					const blob = new Blob(chunksRef.current, { type: "audio/mp3" });
 					onRecordingComplete?.(blob);
 					chunksRef.current = [];
@@ -46,6 +51,7 @@ const useRecording = (onRecordingComplete?: (blob: Blob) => void) => {
 		requestPermissionAndSetupRecorder();
 
 		return () => {
+			setMessage("cleanup");
 			// cleanup
 			if (streamRef.current) {
 				streamRef.current.getTracks().forEach((track) => {
@@ -62,6 +68,7 @@ const useRecording = (onRecordingComplete?: (blob: Blob) => void) => {
 	}, []);
 
 	const stopRecording = useCallback(() => {
+		setMessage("stopping");
 		setIsRecording(false);
 		mediaRecorderRef.current?.stop();
 		stopSilenceDetection();
@@ -70,7 +77,11 @@ const useRecording = (onRecordingComplete?: (blob: Blob) => void) => {
 	}, [stopSilenceDetection, stopSound]);
 
 	const startRecording = useCallback(() => {
-		if (!streamRef.current || !mediaRecorderRef.current) return;
+		if (!streamRef.current || !mediaRecorderRef.current) {
+			setMessage("rejecting start");
+			return;
+		}
+		setMessage("allowing start");
 		startSound?.play();
 		setIsRecording(true);
 		mediaRecorderRef.current.start();

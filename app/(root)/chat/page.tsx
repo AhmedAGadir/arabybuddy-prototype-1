@@ -132,8 +132,13 @@ const ChatPage = () => {
 		[bell]
 	);
 
+	const [message, setMessage] = useState([]);
+
 	const { isRecording, startRecording, stopRecording, amplitude } =
-		useRecording(sendToBackend);
+		useRecording(
+			(message) => setMessage((prevMessages) => [...prevMessages, message]),
+			sendToBackend
+		);
 
 	const handleToggleRecording = () => {
 		if (isPlaying) {
@@ -166,10 +171,11 @@ const ChatPage = () => {
 
 	return (
 		<div className="bg-slate-200 w-full h-screen">
-			<p>
+			<p>message: {message.map((message) => `${message}, `)}</p>
+			{/* <p>
 				Chat {nativeLanguage} - {arabicDialect}
-			</p>
-			<p>
+			</p> */}
+			{/* <p>
 				{details.length > 0 && (
 					<p>
 						{details.map(({ format, supported }) => (
@@ -179,7 +185,7 @@ const ChatPage = () => {
 						))}
 					</p>
 				)}
-			</p>
+			</p> */}
 			<Link href="/">
 				<div className="rounded-md p-2 bg-white w-fit ">
 					<Image
