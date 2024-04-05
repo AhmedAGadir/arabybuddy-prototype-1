@@ -24,7 +24,7 @@ import { useSound } from "@/hooks/useSound";
 // audio/wave - no
 // should fail - no
 
-// AUDIO FORMATS SUPPORTED ON MOBILE
+// AUDIO FORMATS SUPPORTED ON IPHONE
 // audio/ogg - no
 // audio/mp3 - yes
 // audio/aac - yes
@@ -32,6 +32,16 @@ import { useSound } from "@/hooks/useSound";
 // audio/webm; codecs=opus - no
 // audio/wav - yes
 // audio/wave - yes
+// should fail - no
+
+// AUDIO FORMATS SUPPORTED ON XIAMO (ANDROID)
+// audio/ogg - yes
+// audio/mp3 - yes
+// audio/aac - yes
+// audio/webm - yes
+// audio/webm; codecs=opus - yes
+// audio/wav - yes
+// audio/wave - no
 // should fail - no
 
 const audioFormats = [
@@ -51,14 +61,15 @@ const supportsFormat = (audio: HTMLAudioElement, format: string) =>
 const ChatPage = () => {
 	const { nativeLanguage, arabicDialect } = useContext(LanguageContext);
 	const [isPlaying, setIsPlaying] = useState(false);
+	const [playingMessage, setPlayingMessage] = useState("");
+
 	const [isLoading, setIsLoading] = useState(false);
+
 	const [details, setDetails] = useState<
 		{ format: string; supported: boolean }[]
 	>([]);
 
 	const bell = useSound("/assets/sounds/response.mp3");
-
-	const [playingMessage, setPlayingMessage] = useState("");
 
 	const sendToBackend = useCallback(
 		async (blob: Blob): Promise<void> => {
@@ -160,13 +171,13 @@ const ChatPage = () => {
 			</p>
 			<p>
 				{details.length > 0 && (
-					<div>
+					<p>
 						{details.map(({ format, supported }) => (
-							<div key="format">
+							<p key="format">
 								{format} - {supported ? "yes" : "no"}
-							</div>
+							</p>
 						))}
-					</div>
+					</p>
 				)}
 			</p>
 			<Link href="/">
