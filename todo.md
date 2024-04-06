@@ -1,1 +1,5 @@
 - [ ] - set up analytics (google analytics is good but events-based product is better (mix panel?). Pick 5-10 metrics).
+- [ ] - add polyfills for supporting diff browsers MediaRecorder
+    - (already implemented but doesn't really work so its commented out - see useMediaRecorderPolyfill) https://www.npmjs.com/package/opus-media-recorder
+    - https://www.npmjs.com/package/audio-recorder-polyfill
+- [ ] - add fallbacks for supported audio types across different browsers/OS's

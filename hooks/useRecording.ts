@@ -34,7 +34,6 @@ const useRecording = (onRecordingComplete: (blob: Blob) => void) => {
 
 	const onDataRequested = useCallback(
 		(event: BlobEvent) => {
-			console.log("onDataRequested - event", event);
 			if (comingFromStartRecordingFn.current) {
 				startSound?.play();
 				if (mediaRecorderRef.current) {
@@ -50,31 +49,30 @@ const useRecording = (onRecordingComplete: (blob: Blob) => void) => {
 				stopSound?.play();
 
 				const chunks = event.data;
-				console.log("chunks", chunks);
 				const blob = new Blob([chunks], { type: MIME_TYPE });
-				const url = URL.createObjectURL(blob);
-				const audio = new Audio(url);
-				audio.preload = "none";
-				audio.onloadeddata = (data) => {
-					console.log("AUDIO ONLOADED DATA", data);
-				};
-				audio.load();
-				audio
-					.play()
-					.then((prop) => {
-						console.log("successfully playing audio - prop", prop);
-					})
-					.catch((err) => {
-						console.log("error playing audio", err);
-					});
+				// const url = URL.createObjectURL(blob);
+				// const audio = new Audio(url);
+				// audio.preload = "none";
+				// audio.onloadeddata = (data) => {
+				// 	console.log("AUDIO ONLOADED DATA", data);
+				// };
+				// audio.load();
+				// audio
+				// 	.play()
+				// 	.then((prop) => {
+				// 		console.log("successfully playing audio - prop", prop);
+				// 	})
+				// 	.catch((err) => {
+				// 		console.log("error playing audio", err);
+				// 	});
 
-				audio.onended = () => {
-					console.log("destroying audio");
-					// destroy audio and clear
-					URL.revokeObjectURL(url);
-					// audio.remove();
-					// audio.src = "";
-				};
+				// audio.onended = () => {
+				// 	console.log("destroying audio");
+				// 	// destroy audio and clear
+				// 	URL.revokeObjectURL(url);
+				// 	// audio.remove();
+				// 	// audio.src = "";
+				// };
 
 				onRecordingComplete?.(blob);
 

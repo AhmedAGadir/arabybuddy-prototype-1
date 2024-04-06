@@ -66,15 +66,10 @@ const ChatPage = () => {
 
 	const [isLoading, setIsLoading] = useState(false);
 
-	const [details, setDetails] = useState<
-		{ format: string; supported: boolean }[]
-	>([]);
-
 	const bell = useSound("/assets/sounds/response.mp3");
 
 	const sendToBackend = useCallback(
 		async (blob: Blob): Promise<void> => {
-			return;
 			console.log("sending to backend - recordingBlob", blob);
 
 			setIsLoading(true);
@@ -84,12 +79,6 @@ const ChatPage = () => {
 
 			const blobURL = URL.createObjectURL(blob);
 			const userAudio = new Audio(blobURL);
-
-			const details = audioFormats.map((format) => ({
-				format,
-				supported: supportsFormat(userAudio, format),
-			}));
-			setDetails(details);
 
 			setIsPlaying(true);
 			setPlayingMessage("starting to play response");
@@ -134,8 +123,6 @@ const ChatPage = () => {
 		[bell]
 	);
 
-	const [message, setMessage] = useState<string[]>([]);
-
 	const { isRecording, startRecording, stopRecording, amplitude } =
 		useRecording(sendToBackend);
 
@@ -159,31 +146,14 @@ const ChatPage = () => {
 	const stopPlayingResponse = () => {
 		setIsPlaying(false);
 		setIsLoading(false);
-		// if (responseAudioRef.current) {
-		// 	responseAudioRef.current.pause();
-		// 	responseAudioRef.current.remove();
-		// 	responseAudioRef.current.src = "";
-		// 	responseAudioRef.current = undefined;
-		// }
 	};
 
 	return (
 		<div className="bg-slate-200 w-full h-screen">
-			<p>message: {message.map((message) => `${message}, `)}</p>
-			{/* <p>
+			<p>
 				Chat {nativeLanguage} - {arabicDialect}
-			</p> */}
-			{/* <p>
-				{details.length > 0 && (
-					<p>
-						{details.map(({ format, supported }) => (
-							<p key="format">
-								{format} - {supported ? "yes" : "no"}
-							</p>
-						))}
-					</p>
-				)}
-			</p> */}
+			</p>
+
 			<Link href="/">
 				<div className="rounded-md p-2 bg-white w-fit ">
 					<Image
