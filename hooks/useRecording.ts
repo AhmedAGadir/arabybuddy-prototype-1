@@ -54,6 +54,7 @@ const useRecording = (onRecordingComplete: (blob: Blob) => void) => {
 				const blob = new Blob([chunks], { type: MIME_TYPE });
 				const url = URL.createObjectURL(blob);
 				const audio = new Audio(url);
+				audio.preload = "none";
 				audio.onloadeddata = (data) => {
 					console.log("AUDIO ONLOADED DATA", data);
 				};
@@ -89,10 +90,23 @@ const useRecording = (onRecordingComplete: (blob: Blob) => void) => {
 				comingFromStopRecordingFn.current = false;
 				setIsRecording(false);
 
-				// disconnect and destroy everything
+				// disconnect
+				mediaRecorderRef.current?.removeEventListener(
+					"dataavailable",
+					onDataRequested
+				);
+				mediaRecorderRef.current?.stop();
+				mediaRecorderRef.current = null;
 			}
 		},
-		[detectSilence, startSound, stopRecording, stopSilenceDetection, stopSound]
+		[
+			detectSilence,
+			onRecordingComplete,
+			startSound,
+			stopRecording,
+			stopSilenceDetection,
+			stopSound,
+		]
 	);
 
 	const requestPermission = useCallback(async () => {
@@ -101,20 +115,10 @@ const useRecording = (onRecordingComplete: (blob: Blob) => void) => {
 				audio: true,
 			});
 			streamRef.current = stream;
-			mediaRecorderRef.current = new MediaRecorder(stream, {
-				mimeType: MIME_TYPE,
-			});
-
-			mediaRecorderRef.current.addEventListener(
-				"dataavailable",
-				onDataRequested
-			);
-
-			mediaRecorderRef.current.start();
 		} catch (err) {
 			console.error("Failed to get user media", err);
 		}
-	}, [onDataRequested]);
+	}, []);
 
 	// const cleanup = useCallback(() => {
 	// 	setMessage("cleanup");
@@ -146,6 +150,13 @@ const useRecording = (onRecordingComplete: (blob: Blob) => void) => {
 			await requestPermission();
 			setMicrophonePermissionRequested(true);
 		}
+		mediaRecorderRef.current = new MediaRecorder(streamRef.current!, {
+			mimeType: MIME_TYPE,
+		});
+
+		mediaRecorderRef.current.addEventListener("dataavailable", onDataRequested);
+
+		mediaRecorderRef.current.start();
 
 		// calling MediaRecorder.requestData() will trigger the ondataavailable event handler
 		// passing all media data which has been captured since either (a) the recording began
@@ -158,7 +169,7 @@ const useRecording = (onRecordingComplete: (blob: Blob) => void) => {
 		mediaRecorderRef.current?.requestData();
 		// cant do anything reliably here (after calling .requestData()), as the ondataavailable event is async
 		// so instead we've set comingFromStartRecording to true, and then do whatever we want in the ondataavailable handler
-	}, [microphonePermissionRequested, requestPermission]);
+	}, [microphonePermissionRequested, onDataRequested, requestPermission]);
 
 	return {
 		isRecording,
