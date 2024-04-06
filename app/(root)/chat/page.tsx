@@ -1,19 +1,12 @@
 "use client";
 
-import React, {
-	useContext,
-	useState,
-	useCallback,
-	useEffect,
-	useRef,
-} from "react";
+import React, { useContext, useState, useCallback } from "react";
 import LanguageContext from "@/context/languageContext";
 import { BlobSvg } from "@/components/shared";
 import Image from "next/image";
 import Link from "next/link";
 import { useRecording } from "@/hooks/useRecording";
 import { useSound } from "@/hooks/useSound";
-import { set } from "zod";
 
 // AUDIO FORMATS SUPPORTED ON DESKTOP
 // audio/ogg - yes

@@ -3,7 +3,7 @@ import { useSilenceDetection } from "./useSilenceDetection";
 import { useSound } from "./useSound";
 // import { usePolyfill } from "./useMediaRecorderPolyfil";
 
-const MIME_TYPE = "audio/webm";
+const MIME_TYPES = ["audio/webm", "audio/mp3", "audio/aac", "audio/wav"];
 
 const useRecording = (
 	onRecordingComplete: (blob: Blob) => void,
@@ -29,11 +29,33 @@ const useRecording = (
 	const startSound = useSound("/assets/sounds/start.mp3");
 	const stopSound = useSound("/assets/sounds/stop.mp3");
 
+	const getFirstSupportedMimeType = useCallback(() => {
+		if (!mediaRecorderRef.current) {
+			throw new Error("MediaRecorder not initialized");
+		}
+		try {
+			for (const mimeType of MIME_TYPES) {
+				if ((mediaRecorderRef.current as any).isTypeSupported!(mimeType)) {
+					return mimeType;
+				}
+			}
+		} catch (err) {
+			throw new Error("No supported mime type found");
+			setMessage("No supported mime type found");
+		}
+	}, [setMessage]);
+
 	const stopRecording = useCallback(() => {
-		comingFromStopRecordingFn.current = true;
-		// trigger another ondataavilable event handler call,
-		mediaRecorderRef.current?.requestData();
-	}, []);
+		try {
+			comingFromStopRecordingFn.current = true;
+			// trigger another ondataavilable event handler call,
+			mediaRecorderRef.current?.requestData();
+		} catch (err) {
+			setMessage(
+				`Failed to stop recording: ${JSON.stringify((err as any).message)}`
+			);
+		}
+	}, [setMessage]);
 
 	const onDataRequested = useCallback(
 		(event: BlobEvent) => {
@@ -52,7 +74,7 @@ const useRecording = (
 				stopSound?.play();
 
 				const chunks = event.data;
-				const blob = new Blob([chunks], { type: MIME_TYPE });
+				const blob = new Blob([chunks], { type: getFirstSupportedMimeType() });
 				// const url = URL.createObjectURL(blob);
 				// const audio = new Audio(url);
 				// audio.preload = "none";
@@ -102,6 +124,7 @@ const useRecording = (
 		},
 		[
 			detectSilence,
+			getFirstSupportedMimeType,
 			onRecordingComplete,
 			startSound,
 			stopRecording,
@@ -117,9 +140,13 @@ const useRecording = (
 			});
 			streamRef.current = stream;
 		} catch (err) {
-			console.error("Failed to get user media", err);
+			setMessage(
+				`Failed to get microphone permission: ${JSON.stringify(
+					(err as any).message
+				)}`
+			);
 		}
-	}, []);
+	}, [setMessage]);
 
 	// const cleanup = useCallback(() => {
 	// 	setMessage("cleanup");
@@ -140,22 +167,19 @@ const useRecording = (
 	// }, [onDataRequested, setMessage]);
 
 	const startRecording = useCallback(async () => {
-		// cleanup();
-		if (!microphonePermissionRequested) {
-			// PAUSING THIS SINCE ITS NOT WORKING: // request permission only on the first call to startRecording
-			// PAUSING THIS SINCE ITS NOT WORKING: // we keep the mic on the whole time, and use flags to determine when to start and stop recording
-			// browser forces us to request permission on every call - limitation of browser
-			// to demonstrate uncomment the code around microphonePermissionRequested, setMicrophonePermissionRequested
-			// I dont know how but this website managed to get the mic working by only requesting permission once
-			// https://restream.io/tools/mic-test
-			await requestPermission();
-			setMicrophonePermissionRequested(true);
-		}
-
 		try {
-			mediaRecorderRef.current = new MediaRecorder(streamRef.current!, {
-				mimeType: MIME_TYPE,
-			});
+			// cleanup();
+			if (!microphonePermissionRequested) {
+				// PAUSING THIS SINCE ITS NOT WORKING: // request permission only on the first call to startRecording
+				// PAUSING THIS SINCE ITS NOT WORKING: // we keep the mic on the whole time, and use flags to determine when to start and stop recording
+				// browser forces us to request permission on every call - limitation of browser
+				// to demonstrate uncomment the code around microphonePermissionRequested, setMicrophonePermissionRequested
+				// I dont know how but this website managed to get the mic working by only requesting permission once
+				// https://restream.io/tools/mic-test
+				await requestPermission();
+				setMicrophonePermissionRequested(true);
+			}
+			mediaRecorderRef.current = new MediaRecorder(streamRef.current!);
 
 			mediaRecorderRef.current.addEventListener(
 				"dataavailable",
