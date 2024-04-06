@@ -43,15 +43,7 @@ export const useSilenceDetection = () => {
 		analyser.connect(javascriptNode);
 		javascriptNode.connect(audioContext.destination);
 
-		const disconnect = () => {
-			javascriptNode.disconnect();
-			analyser.disconnect();
-			microphone.disconnect();
-			audioContext.close();
-			javascriptNode.onaudioprocess = null;
-		};
-
-		javascriptNode.onaudioprocess = () => {
+		const audioProcessHandler = () => {
 			if (stopListeningFromExternalSourceRef.current) {
 				disconnect();
 				clearSilenceTimer();
@@ -87,6 +79,16 @@ export const useSilenceDetection = () => {
 				clearSilenceTimer();
 			}
 		};
+
+		const disconnect = () => {
+			javascriptNode.disconnect();
+			analyser.disconnect();
+			microphone.disconnect();
+			audioContext.close();
+			javascriptNode.removeEventListener("audioprocess", audioProcessHandler);
+		};
+
+		javascriptNode.addEventListener("audioprocess", audioProcessHandler);
 	};
 
 	return {

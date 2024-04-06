@@ -74,6 +74,7 @@ const ChatPage = () => {
 
 	const sendToBackend = useCallback(
 		async (blob: Blob): Promise<void> => {
+			return;
 			console.log("sending to backend - recordingBlob", blob);
 
 			setIsLoading(true);
@@ -134,14 +135,9 @@ const ChatPage = () => {
 	);
 
 	const [message, setMessage] = useState<string[]>([]);
-	const setmessage2 = useCallback(
-		(message: string) =>
-			setMessage((prevMessages) => [...prevMessages, message]),
-		[]
-	);
 
 	const { isRecording, startRecording, stopRecording, amplitude } =
-		useRecording(setmessage2, sendToBackend);
+		useRecording(sendToBackend);
 
 	const toggleRecording = () => {
 		if (isPlaying) {
@@ -155,7 +151,6 @@ const ChatPage = () => {
 
 		if (!isRecording) {
 			setPlayingMessage("");
-			console.log("chat page calls useRecording");
 			startRecording();
 			return;
 		}
