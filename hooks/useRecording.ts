@@ -155,11 +155,14 @@ const useRecording = (
 			streamRef.current = undefined;
 		}
 		if (mediaRecorderRef.current) {
-			mediaRecorderRef.current.ondataavailable = null;
+			mediaRecorderRef.current.removeEventListener(
+				"dataavailable",
+				onDataRequested
+			);
 			mediaRecorderRef.current.onstop = null;
 			mediaRecorderRef.current = null;
 		}
-	}, []);
+	}, [onDataRequested, setMessage]);
 
 	const startRecording = useCallback(async () => {
 		cleanup();
@@ -187,7 +190,7 @@ const useRecording = (
 		mediaRecorderRef.current?.requestData();
 		// cant do anything reliably here (after calling .requestData()), as the ondataavailable event is async
 		// so instead we've set comingFromStartRecording to true, and then do whatever we want in the ondataavailable handler
-	}, [microphonePermissionRequested, requestPermission]);
+	}, [cleanup, microphonePermissionRequested, requestPermission]);
 
 	return {
 		isRecording,
