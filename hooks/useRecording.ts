@@ -174,7 +174,9 @@ const useRecording = (
 			comingFromStartRecordingFn.current = true;
 			mediaRecorderRef.current?.requestData();
 		} catch (err) {
-			setMessage(`Failed to start recording: ${JSON.stringify(err)}`);
+			setMessage(
+				`Failed to start recording: ${JSON.stringify((err as any).message)}`
+			);
 		}
 		// cant do anything reliably here (after calling .requestData()), as the ondataavailable event is async
 		// so instead we've set comingFromStartRecording to true, and then do whatever we want in the ondataavailable handler
