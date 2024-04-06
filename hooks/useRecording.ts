@@ -196,7 +196,7 @@ const useRecording = (
 				setMicrophonePermissionRequested(true);
 			}
 			mediaRecorderRef.current = new MediaRecorder(streamRef.current!, {
-				mimeType: SUPPORTED_MIME_TYPES[0],
+				mimeType: "audio/webm",
 			});
 
 			mediaRecorderRef.current.addEventListener(
