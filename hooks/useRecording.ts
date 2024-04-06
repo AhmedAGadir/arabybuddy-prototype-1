@@ -30,13 +30,28 @@ import { useSound } from "./useSound";
 // audio/wav - yes
 // audio/wave - no
 
-// all of these are supported on desktop, android and
-const SUPPORTED_MIME_TYPES = [
+const MIME_TYPES = [
+	"audio/webm",
+	"audio/webm;codecs=opus",
+	"audio/ogg",
+	"audio/ogg;codecs=opus",
+	"audio/wav",
+	"audio/wave",
 	"audio/mp3",
 	"audio/aac",
-	"audio/wav",
-	"audio/wave - yes",
+	"audio/mpeg",
+	"audio/mp4",
 ];
+
+const getFirstSupportedMimeType = () => {
+	for (const mimeType of MIME_TYPES) {
+		if (MediaRecorder.isTypeSupported(mimeType)) {
+			return mimeType;
+		}
+	}
+	throw new Error("No supported MIME type found");
+	return "";
+};
 
 const useRecording = (
 	onRecordingComplete: (blob: Blob) => void,
@@ -91,7 +106,7 @@ const useRecording = (
 				stopSound?.play();
 
 				const chunks = event.data;
-				const blob = new Blob([chunks], { type: SUPPORTED_MIME_TYPES[0] });
+				const blob = new Blob([chunks], { type: getFirstSupportedMimeType() });
 				// const url = URL.createObjectURL(blob);
 				// const audio = new Audio(url);
 				// audio.preload = "none";
@@ -196,7 +211,7 @@ const useRecording = (
 				setMicrophonePermissionRequested(true);
 			}
 			mediaRecorderRef.current = new MediaRecorder(streamRef.current!, {
-				mimeType: "audio/webm",
+				mimeType: getFirstSupportedMimeType(),
 			});
 
 			mediaRecorderRef.current.addEventListener(
