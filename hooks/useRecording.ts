@@ -3,7 +3,40 @@ import { useSilenceDetection } from "./useSilenceDetection";
 import { useSound } from "./useSound";
 // import { usePolyfill } from "./useMediaRecorderPolyfil";
 
-const MIME_TYPES = ["audio/webm", "audio/mp3", "audio/aac", "audio/wav"];
+// AUDIO FORMATS SUPPORTED ON DESKTOP
+// audio/ogg - yes
+// audio/mp3 - yes
+// audio/aac - yes
+// audio/webm - yes
+// audio/webm; codecs=opus - yes
+// audio/wav - yes
+// audio/wave - no
+
+// AUDIO FORMATS SUPPORTED ON iOS
+// audio/ogg - no
+// audio/mp3 - yes
+// audio/aac - yes
+// audio/webm - no
+// audio/webm; codecs=opus - no
+// audio/wav - yes
+// audio/wave - yes
+
+// AUDIO FORMATS SUPPORTED ON XIAMO (ANDROID)
+// audio/ogg - yes
+// audio/mp3 - yes
+// audio/aac - yes
+// audio/webm - yes
+// audio/webm; codecs=opus - yes
+// audio/wav - yes
+// audio/wave - no
+
+// all of these are supported on desktop, android and
+const SUPPORTED_MIME_TYPES = [
+	"audio/mp3",
+	"audio/aac",
+	"audio/wav",
+	"audio/wave - yes",
+];
 
 const useRecording = (
 	onRecordingComplete: (blob: Blob) => void,
@@ -28,22 +61,6 @@ const useRecording = (
 
 	const startSound = useSound("/assets/sounds/start.mp3");
 	const stopSound = useSound("/assets/sounds/stop.mp3");
-
-	const getFirstSupportedMimeType = useCallback(() => {
-		if (!mediaRecorderRef.current) {
-			throw new Error("MediaRecorder not initialized");
-		}
-		try {
-			for (const mimeType of MIME_TYPES) {
-				if ((mediaRecorderRef.current as any).isTypeSupported!(mimeType)) {
-					return mimeType;
-				}
-			}
-		} catch (err) {
-			throw new Error("No supported mime type found");
-			setMessage("No supported mime type found");
-		}
-	}, [setMessage]);
 
 	const stopRecording = useCallback(() => {
 		try {
@@ -74,7 +91,7 @@ const useRecording = (
 				stopSound?.play();
 
 				const chunks = event.data;
-				const blob = new Blob([chunks], { type: getFirstSupportedMimeType() });
+				const blob = new Blob([chunks], { type: SUPPORTED_MIME_TYPES[0] });
 				// const url = URL.createObjectURL(blob);
 				// const audio = new Audio(url);
 				// audio.preload = "none";
@@ -124,7 +141,6 @@ const useRecording = (
 		},
 		[
 			detectSilence,
-			getFirstSupportedMimeType,
 			onRecordingComplete,
 			startSound,
 			stopRecording,
