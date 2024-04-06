@@ -13,6 +13,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRecording } from "@/hooks/useRecording";
 import { useSound } from "@/hooks/useSound";
+import { set } from "zod";
 
 // AUDIO FORMATS SUPPORTED ON DESKTOP
 // audio/ogg - yes
@@ -154,7 +155,7 @@ const ChatPage = () => {
 
 		if (!isRecording) {
 			setPlayingMessage("");
-
+			console.log("chat page calls useRecording");
 			startRecording();
 			return;
 		}
@@ -202,6 +203,7 @@ const ChatPage = () => {
 				<div className="w-2/3 md:w-1/2 m-auto rounded-md border p-4 bg-white">
 					<div className="flex-1 flex w-full justify-between">
 						<div className="space-y-1">
+							<p>IS RECORDING: {isRecording ? "TRUE" : "FALSE"}</p>
 							<p className="text-sm font-medium leading-none">
 								{isPlaying ? "Playing" : isRecording ? "Recording" : "Recorded"}
 							</p>
