@@ -5,7 +5,10 @@ import { useSound } from "./useSound";
 
 const MIME_TYPE = "audio/webm";
 
-const useRecording = (onRecordingComplete: (blob: Blob) => void) => {
+const useRecording = (
+	onRecordingComplete: (blob: Blob) => void,
+	setMessage: (message: string) => void
+) => {
 	const comingFromStartRecordingFn = useRef(false);
 	const comingFromStopRecordingFn = useRef(false);
 
@@ -148,23 +151,31 @@ const useRecording = (onRecordingComplete: (blob: Blob) => void) => {
 			await requestPermission();
 			setMicrophonePermissionRequested(true);
 		}
-		mediaRecorderRef.current = new MediaRecorder(streamRef.current!, {
-			mimeType: MIME_TYPE,
-		});
 
-		mediaRecorderRef.current.addEventListener("dataavailable", onDataRequested);
+		try {
+			mediaRecorderRef.current = new MediaRecorder(streamRef.current!, {
+				mimeType: MIME_TYPE,
+			});
 
-		mediaRecorderRef.current.start();
+			mediaRecorderRef.current.addEventListener(
+				"dataavailable",
+				onDataRequested
+			);
 
-		// calling MediaRecorder.requestData() will trigger the ondataavailable event handler
-		// passing all media data which has been captured since either (a) the recording began
-		// or (b) since the last time a dataavailable event occurred.
-		// were calling it now because we want to clear out any data between the end of the last call
-		// and the start of this one
-		// https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder/dataavailable_event
-		// https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder/requestData
-		comingFromStartRecordingFn.current = true;
-		mediaRecorderRef.current?.requestData();
+			mediaRecorderRef.current.start();
+
+			// calling MediaRecorder.requestData() will trigger the ondataavailable event handler
+			// passing all media data which has been captured since either (a) the recording began
+			// or (b) since the last time a dataavailable event occurred.
+			// were calling it now because we want to clear out any data between the end of the last call
+			// and the start of this one
+			// https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder/dataavailable_event
+			// https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder/requestData
+			comingFromStartRecordingFn.current = true;
+			mediaRecorderRef.current?.requestData();
+		} catch (err) {
+			setMessage("Failed to start recording", err);
+		}
 		// cant do anything reliably here (after calling .requestData()), as the ondataavailable event is async
 		// so instead we've set comingFromStartRecording to true, and then do whatever we want in the ondataavailable handler
 	}, [microphonePermissionRequested, onDataRequested, requestPermission]);

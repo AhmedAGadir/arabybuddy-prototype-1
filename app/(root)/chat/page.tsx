@@ -123,8 +123,9 @@ const ChatPage = () => {
 		[bell]
 	);
 
+	const [message, setMessage] = useState("no message");
 	const { isRecording, startRecording, stopRecording, amplitude } =
-		useRecording(sendToBackend);
+		useRecording(sendToBackend, setMessage);
 
 	const toggleRecording = () => {
 		if (isPlaying) {
@@ -150,6 +151,7 @@ const ChatPage = () => {
 
 	return (
 		<div className="bg-slate-200 w-full h-screen">
+			<p>{message}</p>
 			<p>
 				Chat {nativeLanguage} - {arabicDialect}
 			</p>
