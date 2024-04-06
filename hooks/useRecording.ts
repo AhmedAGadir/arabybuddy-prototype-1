@@ -146,7 +146,23 @@ const useRecording = (
 		}
 	}, [detectSilence, onDataRequested, stopRecording]);
 
+	const cleanup = useCallback(() => {
+		setMessage("cleanup");
+		if (streamRef.current) {
+			streamRef.current.getTracks().forEach((track) => {
+				track.stop();
+			});
+			streamRef.current = undefined;
+		}
+		if (mediaRecorderRef.current) {
+			mediaRecorderRef.current.ondataavailable = null;
+			mediaRecorderRef.current.onstop = null;
+			mediaRecorderRef.current = null;
+		}
+	}, []);
+
 	const startRecording = useCallback(async () => {
+		cleanup();
 		console.log("microphonePermissionRequested", microphonePermissionRequested);
 		// if (!microphonePermissionRequested) {
 		// PAUSING THIS SINCE ITS NOT WORKING: // request permission only on the first call to startRecording
