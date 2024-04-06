@@ -195,7 +195,9 @@ const useRecording = (
 				await requestPermission();
 				setMicrophonePermissionRequested(true);
 			}
-			mediaRecorderRef.current = new MediaRecorder(streamRef.current!);
+			mediaRecorderRef.current = new MediaRecorder(streamRef.current!, {
+				mimeType: SUPPORTED_MIME_TYPES[0],
+			});
 
 			mediaRecorderRef.current.addEventListener(
 				"dataavailable",
