@@ -210,6 +210,9 @@ const useRecording = (
 				await requestPermission();
 				setMicrophonePermissionRequested(true);
 			}
+
+			setMessage(`supported mime type: ${getFirstSupportedMimeType()}`);
+
 			mediaRecorderRef.current = new MediaRecorder(streamRef.current!, {
 				mimeType: getFirstSupportedMimeType(),
 			});
