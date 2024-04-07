@@ -8,7 +8,7 @@ import Link from "next/link";
 import { useSound } from "@/hooks/useSound";
 import { useRecording } from "@/hooks/useRecording/useRecording";
 import { isMobile } from "react-device-detect";
-import useLongPress from "@/hooks/useLongPress";
+import { useLongPress } from "use-long-press";
 
 const ChatPage = () => {
 	const { nativeLanguage, arabicDialect } = useContext(LanguageContext);
@@ -83,6 +83,7 @@ const ChatPage = () => {
 	};
 
 	const toggleRecordingDesktop = () => {
+		setPlayingMessage("");
 		stopPlayingResponse();
 
 		if (isRecording) {
@@ -91,31 +92,36 @@ const ChatPage = () => {
 		}
 
 		if (!isRecording) {
-			setPlayingMessage("");
 			startRecording();
 			return;
 		}
 	};
 
 	const onLongPressStartMobile = () => {
+		setPlayingMessage("");
+		stopPlayingResponse();
+
 		if (!isRecording) {
 			startRecording();
 		}
 	};
 
 	const onLongPressEndMobile = () => {
+		setPlayingMessage("");
+		stopPlayingResponse();
+
 		if (isRecording) {
 			stopRecording();
 		}
 	};
 
-	const longPressHandlersMobile = useLongPress({
-		onLongPressStart: onLongPressStartMobile,
-		onLongPressEnd: onLongPressEndMobile,
+	const longPressHandlersMobile = useLongPress(null, {
+		onStart: onLongPressStartMobile,
+		onFinish: onLongPressEndMobile,
 	});
 
 	const microphoneEventHandlers = isMobile
-		? longPressHandlersMobile
+		? { ...longPressHandlersMobile() }
 		: { onClick: toggleRecordingDesktop };
 
 	return (
