@@ -5,7 +5,7 @@ import LanguageContext from "@/context/languageContext";
 import { BlobSvg } from "@/components/shared";
 import Image from "next/image";
 import Link from "next/link";
-import { useRecording as useRecordingContinuousStream } from "@/hooks/useRecording";
+import { useRecordingPermissionRequestedOnce } from "@/hooks/useRecordingPermissionRequestedOnce";
 import { useRecordingIOSCompatible } from "@/hooks/useRecordingIOSCompatible";
 import { useSound } from "@/hooks/useSound";
 import { getFirstSupportedMimeType } from "@/lib/utils";
@@ -99,10 +99,8 @@ const ChatPage = () => {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 
-	const useRecordingContinuousStreamReturn = useRecordingContinuousStream(
-		sendToBackend,
-		setMessage
-	);
+	const useRecordingPermissionRequestedOnceReturn =
+		useRecordingPermissionRequestedOnce(sendToBackend, setMessage);
 
 	const useRecordingIOSCompatibleReturn = useRecordingIOSCompatible(
 		sendToBackend,
@@ -111,7 +109,7 @@ const ChatPage = () => {
 
 	const { isRecording, startRecording, stopRecording, amplitude } = iOS()
 		? useRecordingIOSCompatibleReturn
-		: useRecordingContinuousStreamReturn;
+		: useRecordingPermissionRequestedOnceReturn;
 
 	const toggleRecording = () => {
 		if (isPlaying) {

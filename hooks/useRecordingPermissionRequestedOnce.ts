@@ -7,7 +7,7 @@ import { getFirstSupportedMimeType } from "@/lib/utils";
 // this version of useRecording IS NOT compatible with iOS
 // but for everywhere else it offers a continuos stream of audio recording
 // so users only have to allow microphone permission once
-const useRecording = (
+const useRecordingPermissionRequestedOnce = (
 	onRecordingComplete: (blob: Blob) => void,
 	setMessage: (message: string) => void
 ) => {
@@ -161,4 +161,4 @@ const useRecording = (
 	};
 };
 
-export { useRecording };
+export { useRecordingPermissionRequestedOnce };
