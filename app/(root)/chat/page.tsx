@@ -10,7 +10,7 @@ import { useRecordingIOSCompatible } from "@/hooks/useRecordingIOSCompatible";
 import { useSound } from "@/hooks/useSound";
 import { getFirstSupportedMimeType } from "@/lib/utils";
 
-export const iOS = () => {
+const iOS = () => {
 	return (
 		[
 			"iPad Simulator",
