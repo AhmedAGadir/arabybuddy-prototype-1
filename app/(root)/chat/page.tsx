@@ -5,11 +5,10 @@ import LanguageContext from "@/context/languageContext";
 import { BlobSvg } from "@/components/shared";
 import Image from "next/image";
 import Link from "next/link";
-import { useRecordingPermissionRequestedOnce } from "@/hooks/useRecording/useRecordingPermissionRequestedOnce";
-import { useRecordingIOSCompatible } from "@/hooks/useRecording/useRecordingIOSCompatible";
 import { useSound } from "@/hooks/useSound";
-import { getFirstSupportedMimeType } from "@/lib/utils";
 import { useRecording } from "@/hooks/useRecording/useRecording";
+import { isMobile } from "react-device-detect";
+import useLongPress from "@/hooks/useLongPress";
 
 const ChatPage = () => {
 	const { nativeLanguage, arabicDialect } = useContext(LanguageContext);
@@ -75,21 +74,17 @@ const ChatPage = () => {
 		[bell]
 	);
 
-	const [message, setMessage] = useState("no message");
-
-	React.useEffect(() => {
-		setMessage(`supported mime type: ${getFirstSupportedMimeType()}`);
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, []);
-
 	const { isRecording, startRecording, stopRecording, amplitude } =
 		useRecording(sendToBackend);
 
-	const toggleRecording = () => {
-		if (isPlaying) {
-			stopPlayingResponse();
-			return;
-		}
+	const stopPlayingResponse = () => {
+		setIsPlaying(false);
+		setIsLoading(false);
+	};
+
+	const toggleRecordingDesktop = () => {
+		stopPlayingResponse();
+
 		if (isRecording) {
 			stopRecording();
 			return;
@@ -102,14 +97,29 @@ const ChatPage = () => {
 		}
 	};
 
-	const stopPlayingResponse = () => {
-		setIsPlaying(false);
-		setIsLoading(false);
+	const onLongPressStartMobile = () => {
+		if (!isRecording) {
+			startRecording();
+		}
 	};
+
+	const onLongPressEndMobile = () => {
+		if (isRecording) {
+			stopRecording();
+		}
+	};
+
+	const longPressHandlersMobile = useLongPress({
+		onLongPressStart: onLongPressStartMobile,
+		onLongPressEnd: onLongPressEndMobile,
+	});
+
+	const microphoneEventHandlers = isMobile
+		? longPressHandlersMobile
+		: { onClick: toggleRecordingDesktop };
 
 	return (
 		<div className="bg-slate-200 w-full h-screen">
-			<p>{message}</p>
 			<p>
 				Chat {nativeLanguage} - {arabicDialect}
 			</p>
@@ -157,8 +167,8 @@ const ChatPage = () => {
 
 			<div className="flex items-center w-full">
 				<button
-					onClick={toggleRecording}
 					className="mt-10 m-auto cursor-pointer"
+					{...microphoneEventHandlers}
 				>
 					<BlobSvg
 						size={amplitude ? 200 + amplitude * 2 : 200}
