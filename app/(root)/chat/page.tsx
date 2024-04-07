@@ -9,6 +9,18 @@ import { useSound } from "@/hooks/useSound";
 import { useRecording } from "@/hooks/useRecording/useRecording";
 import { BackgroundGradient } from "@/components/ui/background-gradient";
 
+const blobToBase64 = async (blob: Blob): Promise<string> => {
+	return new Promise((resolve, reject) => {
+		const reader = new FileReader();
+		reader.onload = function () {
+			const base64data = (reader?.result as string).split(",")[1];
+			resolve(base64data);
+		};
+		reader.onerror = reject; // Handle errors
+		reader.readAsDataURL(blob);
+	});
+};
+
 const ChatPage = () => {
 	const { nativeLanguage, arabicDialect } = useContext(LanguageContext);
 	const [isPlaying, setIsPlaying] = useState(false);
@@ -18,29 +30,61 @@ const ChatPage = () => {
 
 	const bell = useSound("/assets/sounds/response.mp3");
 
+	const [result, setResult] = useState<string | null>(null);
+
 	const sendToBackend = useCallback(
-		async (blob: Blob): Promise<void> => {
-			console.log("sending to backend - recordingBlob", blob);
+		async (audioBlob: Blob): Promise<void> => {
+			console.log("sending to backend - audioBlob", audioBlob);
 
 			setIsLoading(true);
 
-			// wait 3 seconds
-			// await new Promise((resolve) => setTimeout(resolve, 1000));
+			try {
+				const base64Audio = await blobToBase64(audioBlob);
 
-			const blobURL = URL.createObjectURL(blob);
-			const userAudio = new Audio(blobURL);
+				console.log({
+					type: audioBlob.type.split("/")[1],
+					base64Audio,
+				});
 
-			setIsPlaying(true);
-			setPlayingMessage("starting to play response");
-			bell?.play();
+				const response = await fetch("/api/chat/speech-to-text", {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+					},
+					body: JSON.stringify({
+						base64Audio,
+						type: audioBlob.type.split("/")[1],
+					}),
+				});
 
-			userAudio.play();
+				const data = await response.json();
 
-			userAudio.onended = () => {
-				console.log("audio finished playing");
-				setPlayingMessage("finished playing response");
-				stopPlayingResponse();
-			};
+				if (response.status !== 200) {
+					throw (
+						data.error ||
+						new Error(`Request failed with status ${response.status}`)
+					);
+				}
+
+				setResult(data.result);
+			} catch (error) {
+				console.error(error);
+				console.log((error as Error).message);
+			}
+
+			// setIsPlaying(true);
+			// setPlayingMessage("starting to play response");
+			// bell?.play();
+
+			// const blobURL = URL.createObjectURL(blob);
+			// const userAudio = new Audio(blobURL);
+			// userAudio.play();
+
+			// userAudio.onended = () => {
+			// 	console.log("audio finished playing");
+			// 	setPlayingMessage("finished playing response");
+			// 	stopPlayingResponse();
+			// };
 
 			// try {
 			// 	stopRecording();
@@ -112,6 +156,7 @@ const ChatPage = () => {
 					/>
 				</div>
 			</Link>
+
 			{
 				<div className="w-2/3 md:w-1/2 m-auto">
 					<BackgroundGradient
@@ -149,6 +194,17 @@ const ChatPage = () => {
 					</BackgroundGradient>
 				</div>
 			}
+
+			{result && (
+				<div className="w-2/3 md:w-1/2 m-auto my-4">
+					<BackgroundGradient
+						className="rounded-[22px] p-4 bg-white"
+						animate={false}
+					>
+						{result}
+					</BackgroundGradient>
+				</div>
+			)}
 
 			<div className="flex items-center w-full">
 				<button
