@@ -1,73 +1,12 @@
-import React, { useCallback, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useSilenceDetection } from "./useSilenceDetection";
 import { useSound } from "./useSound";
+import { getFirstSupportedMimeType } from "@/lib/utils";
 // import { usePolyfill } from "./useMediaRecorderPolyfil";
 
-// AUDIO FORMATS SUPPORTED ON DESKTOP
-// audio/ogg - yes
-// audio/mp3 - yes
-// audio/aac - yes
-// audio/webm - yes
-// audio/webm; codecs=opus - yes
-// audio/wav - yes
-// audio/wave - no
-
-// AUDIO FORMATS SUPPORTED ON iOS
-// audio/ogg - no
-// audio/mp3 - yes
-// audio/aac - yes
-// audio/webm - no
-// audio/webm; codecs=opus - no
-// audio/wav - yes
-// audio/wave - yes
-
-// AUDIO FORMATS SUPPORTED ON XIAMO (ANDROID)
-// audio/ogg - yes
-// audio/mp3 - yes
-// audio/aac - yes
-// audio/webm - yes
-// audio/webm; codecs=opus - yes
-// audio/wav - yes
-// audio/wave - no
-
-function iOS() {
-	return (
-		[
-			"iPad Simulator",
-			"iPhone Simulator",
-			"iPod Simulator",
-			"iPad",
-			"iPhone",
-			"iPod",
-		].includes(navigator.platform) ||
-		// iPad on iOS 13 detection
-		(navigator.userAgent.includes("Mac") && "ontouchend" in document)
-	);
-}
-
-const MIME_TYPES = [
-	"audio/webm",
-	"audio/webm;codecs=opus",
-	"audio/ogg",
-	"audio/ogg;codecs=opus",
-	"audio/wav",
-	"audio/wave",
-	"audio/mp3",
-	"audio/aac",
-	"audio/mpeg",
-	"audio/mp4",
-];
-
-const getFirstSupportedMimeType = () => {
-	for (const mimeType of MIME_TYPES) {
-		if (MediaRecorder.isTypeSupported(mimeType)) {
-			return mimeType;
-		}
-	}
-	throw new Error("No supported MIME type found");
-	return "";
-};
-
+// this version of useRecording IS NOT compatible with iOS
+// but for everywhere else it offers a continuos stream of audio recording
+// so users only have to allow microphone permission once
 const useRecording = (
 	onRecordingComplete: (blob: Blob) => void,
 	setMessage: (message: string) => void
@@ -92,11 +31,6 @@ const useRecording = (
 	const stopSound = useSound("/assets/sounds/stop.mp3");
 
 	// const { getMediaRecorder } = usePolyfill();
-
-	React.useEffect(() => {
-		setMessage(`supported mime type: ${getFirstSupportedMimeType()}`);
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, []);
 
 	const stopRecording = useCallback(() => {
 		try {
@@ -130,10 +64,6 @@ const useRecording = (
 					const blob = new Blob([chunks], {
 						type: getFirstSupportedMimeType(),
 					});
-
-					const blobURL = URL.createObjectURL(blob);
-					const userAudio = new Audio(blobURL);
-					userAudio.play();
 
 					onRecordingComplete?.(blob);
 					stopSilenceDetection();
@@ -183,11 +113,8 @@ const useRecording = (
 
 	const startRecording = useCallback(async () => {
 		try {
-			if (iOS()) {
-				// we have to request permission every time on iOS
-				await requestPermission();
-			} else if (!microphonePermissionRequested) {
-				// request permission only on the first call to startRecording (on everything except iOS)
+			if (!microphonePermissionRequested) {
+				// request permission only on the first call to startRecording
 				// we keep the mic on the whole time, and use flags to determine when to start and stop recording
 				// it doesn't work on iOS, I dont know how but this website managed to get the mic working by only requesting permission once on iOS
 				// https://restream.io/tools/mic-test

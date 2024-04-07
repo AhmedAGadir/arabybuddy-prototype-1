@@ -18,6 +18,7 @@ export const useSilenceDetection = () => {
 	};
 
 	const stopSilenceDetection = () => {
+		console.log("stopping silence detection");
 		clearSilenceTimer();
 		setStopListeningFromExternalSource(true);
 	};
@@ -27,6 +28,7 @@ export const useSilenceDetection = () => {
 		ms: number,
 		onSilenceDetected: () => void
 	) => {
+		console.log("detecting silence");
 		setStopListeningFromExternalSource(false);
 
 		const audioContext = new AudioContext();

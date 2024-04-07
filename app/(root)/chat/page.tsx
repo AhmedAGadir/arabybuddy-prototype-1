@@ -5,8 +5,10 @@ import LanguageContext from "@/context/languageContext";
 import { BlobSvg } from "@/components/shared";
 import Image from "next/image";
 import Link from "next/link";
-import { useRecording } from "@/hooks/useRecording";
+import { useRecording as useRecordingContinuousStream } from "@/hooks/useRecording";
+import { useRecordingIOSCompatible } from "@/hooks/useRecordingIOSCompatible";
 import { useSound } from "@/hooks/useSound";
+import { getFirstSupportedMimeType, iOS } from "@/lib/utils";
 
 const ChatPage = () => {
 	const { nativeLanguage, arabicDialect } = useContext(LanguageContext);
@@ -19,7 +21,6 @@ const ChatPage = () => {
 
 	const sendToBackend = useCallback(
 		async (blob: Blob): Promise<void> => {
-			return;
 			console.log("sending to backend - recordingBlob", blob);
 
 			setIsLoading(true);
@@ -74,8 +75,25 @@ const ChatPage = () => {
 	);
 
 	const [message, setMessage] = useState("no message");
-	const { isRecording, startRecording, stopRecording, amplitude } =
-		useRecording(sendToBackend, setMessage);
+
+	React.useEffect(() => {
+		setMessage(`supported mime type: ${getFirstSupportedMimeType()}`);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, []);
+
+	const useRecordingContinuousStreamReturn = useRecordingContinuousStream(
+		sendToBackend,
+		setMessage
+	);
+
+	const useRecordingIOSCompatibleReturn = useRecordingIOSCompatible(
+		sendToBackend,
+		setMessage
+	);
+
+	const { isRecording, startRecording, stopRecording, amplitude } = iOS()
+		? useRecordingIOSCompatibleReturn
+		: useRecordingContinuousStreamReturn;
 
 	const toggleRecording = () => {
 		if (isPlaying) {
