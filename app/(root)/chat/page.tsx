@@ -7,9 +7,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { useSound } from "@/hooks/useSound";
 import { useRecording } from "@/hooks/useRecording/useRecording";
-import { isMobile } from "react-device-detect";
-import { useLongPress } from "use-long-press";
-import { iOS } from "@/lib/utils";
 
 const ChatPage = () => {
 	const { nativeLanguage, arabicDialect } = useContext(LanguageContext);
@@ -83,7 +80,7 @@ const ChatPage = () => {
 		setIsLoading(false);
 	};
 
-	const toggleRecordingDesktop = () => {
+	const toggleRecording = () => {
 		setPlayingMessage("");
 		stopPlayingResponse();
 
@@ -97,35 +94,6 @@ const ChatPage = () => {
 			return;
 		}
 	};
-
-	const onLongPressStartMobile = () => {
-		setPlayingMessage("");
-		stopPlayingResponse();
-
-		if (!isRecording) {
-			startRecording();
-		}
-	};
-
-	const onLongPressEndMobile = () => {
-		setPlayingMessage("");
-		stopPlayingResponse();
-
-		if (isRecording) {
-			stopRecording();
-		}
-	};
-
-	const longPressHandlersMobile = useLongPress(() => {}, {
-		onStart: onLongPressStartMobile,
-		onFinish: onLongPressEndMobile,
-	});
-
-	// long press only for android
-	const isAndroid = isMobile && !iOS();
-	const microphoneEventHandlers = isAndroid
-		? { ...longPressHandlersMobile() }
-		: { onClick: toggleRecordingDesktop };
 
 	return (
 		<div className="bg-slate-200 w-full h-screen">
@@ -156,9 +124,7 @@ const ChatPage = () => {
 									? "playing response"
 									: isRecording
 									? `listening - amplitude: ${amplitude}`
-									: `${
-											isAndroid ? "Hold" : "Press"
-									  } the blue blob to start recording`}
+									: "Press the blue blob to start recording"}
 							</p>
 							<p>{playingMessage ?? "No playing message"}</p>
 						</div>
@@ -179,7 +145,7 @@ const ChatPage = () => {
 			<div className="flex items-center w-full">
 				<button
 					className="mt-10 m-auto cursor-pointer"
-					{...microphoneEventHandlers}
+					onClick={toggleRecording}
 				>
 					<BlobSvg
 						size={amplitude ? 200 + amplitude * 2 : 200}
