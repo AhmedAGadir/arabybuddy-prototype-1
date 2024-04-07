@@ -43,7 +43,7 @@ const openAISpeechToText = async (base64Audio: string, type: string) => {
 	const audioData = Buffer.from(base64Audio, "base64");
 
 	// Write the audio data to a temporary file
-	const dirPath = "public/tmp";
+	const dirPath = "./tmp";
 	const filePath = path.join(dirPath, `input.${type}`);
 	// Ensure the directory exists
 	await fs.promises.mkdir(dirPath, { recursive: true });
