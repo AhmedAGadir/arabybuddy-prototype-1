@@ -9,6 +9,7 @@ import { useSound } from "@/hooks/useSound";
 import { useRecording } from "@/hooks/useRecording/useRecording";
 import { isMobile } from "react-device-detect";
 import { useLongPress } from "use-long-press";
+import { iOS } from "@/lib/utils";
 
 const ChatPage = () => {
 	const { nativeLanguage, arabicDialect } = useContext(LanguageContext);
@@ -120,9 +121,10 @@ const ChatPage = () => {
 		onFinish: onLongPressEndMobile,
 	});
 
-	const microphoneEventHandlers = isMobile
-		? { ...longPressHandlersMobile() }
-		: { onClick: toggleRecordingDesktop };
+	const microphoneEventHandlers =
+		isMobile && !iOS()
+			? { ...longPressHandlersMobile() }
+			: { onClick: toggleRecordingDesktop };
 
 	return (
 		<div className="bg-slate-200 w-full h-screen">

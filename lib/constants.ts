@@ -1,3 +1,4 @@
+// https://platform.openai.com/docs/guides/speech-to-text
 export const MIME_TYPES = [
 	"audio/webm",
 	"audio/webm;codecs=opus",

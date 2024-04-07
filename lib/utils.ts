@@ -20,3 +20,26 @@ export const getFirstSupportedMimeType = () => {
 	throw new Error("No supported MIME type found");
 	return "";
 };
+
+// next js complains about window and navigator being undefined
+declare global {
+	interface Window {}
+	interface Navigator {}
+}
+export const iOS = () => {
+	if (typeof window !== "undefined") {
+		return (
+			[
+				"iPad Simulator",
+				"iPhone Simulator",
+				"iPod Simulator",
+				"iPad",
+				"iPhone",
+				"iPod",
+			].includes(navigator.platform) ||
+			// iPad on iOS 13 detection
+			(navigator.userAgent.includes("Mac") && "ontouchend" in document)
+		);
+	}
+	return false;
+};
