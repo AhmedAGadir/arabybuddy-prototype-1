@@ -1,3 +1,5 @@
+"use client";
+
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { MIME_TYPES } from "./constants";
