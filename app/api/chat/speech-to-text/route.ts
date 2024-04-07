@@ -42,15 +42,15 @@ const openAISpeechToText = async (base64Audio: string, type: string) => {
 	// Convert the Base64 audio data back to a Buffer
 	const audioData = Buffer.from(base64Audio, "base64");
 
-	// Write the audio data to a temporary file
-	const dirPath = "./tmp";
+	// Correctly resolve the path to the temporary directory
+	const dirPath = path.join(process.cwd(), "public", "tmp");
 	const filePath = path.join(dirPath, `input.${type}`);
+
 	// Ensure the directory exists
 	await fs.promises.mkdir(dirPath, { recursive: true });
+
 	// Write the file
 	fs.writeFileSync(filePath, audioData);
-
-	// console.log("readStream", readStream);
 
 	const transcription = await openai.audio.transcriptions.create({
 		file: fs.createReadStream(filePath),
@@ -59,7 +59,7 @@ const openAISpeechToText = async (base64Audio: string, type: string) => {
 
 	// Remove the file after use
 	fs.unlinkSync(filePath);
-	// remove the tmp directory
+	// Remove the tmp directory
 	fs.rmdirSync(dirPath);
 
 	return { transcription: transcription.text };
