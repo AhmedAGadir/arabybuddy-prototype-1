@@ -121,10 +121,11 @@ const ChatPage = () => {
 		onFinish: onLongPressEndMobile,
 	});
 
-	const microphoneEventHandlers =
-		isMobile && !iOS()
-			? { ...longPressHandlersMobile() }
-			: { onClick: toggleRecordingDesktop };
+	// long press only for android
+	const isAndroid = isMobile && !iOS();
+	const microphoneEventHandlers = isAndroid
+		? { ...longPressHandlersMobile() }
+		: { onClick: toggleRecordingDesktop };
 
 	return (
 		<div className="bg-slate-200 w-full h-screen">
@@ -156,7 +157,7 @@ const ChatPage = () => {
 									: isRecording
 									? `listening - amplitude: ${amplitude}`
 									: `${
-											isMobile ? "Hold" : "Press"
+											isAndroid ? "Hold" : "Press"
 									  } the blue blob to start recording`}
 							</p>
 							<p>{playingMessage ?? "No playing message"}</p>
