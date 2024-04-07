@@ -7,6 +7,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useSound } from "@/hooks/useSound";
 import { useRecording } from "@/hooks/useRecording/useRecording";
+import { BackgroundGradient } from "@/components/ui/background-gradient";
 
 const ChatPage = () => {
 	const { nativeLanguage, arabicDialect } = useContext(LanguageContext);
@@ -112,33 +113,40 @@ const ChatPage = () => {
 				</div>
 			</Link>
 			{
-				<div className="w-2/3 md:w-1/2 m-auto rounded-md border p-4 bg-white">
-					<div className="flex-1 flex w-full justify-between">
-						<div className="space-y-1">
-							<p>IS RECORDING: {isRecording ? "TRUE" : "FALSE"}</p>
-							<p className="text-sm font-medium leading-none">
-								{isPlaying ? "Playing" : isRecording ? "Recording" : "Recorded"}
-							</p>
-							<p className="text-sm">
-								{isPlaying
-									? "playing response"
-									: isRecording
-									? `listening - amplitude: ${amplitude}`
-									: "Press the blue blob to start recording"}
-							</p>
-							<p>{playingMessage ?? "No playing message"}</p>
-						</div>
+				<div className="w-2/3 md:w-1/2 m-auto">
+					<BackgroundGradient
+						className="rounded-[22px] p-4 bg-white"
+						animate={false}
+					>
+						<div className="flex-1 flex w-full justify-between">
+							<div className="space-y-1">
+								<p className="text-sm font-medium leading-none">
+									{isPlaying
+										? "Playing"
+										: isRecording
+										? "Recording"
+										: "Recorded"}
+								</p>
+								<p className="text-sm">
+									{isPlaying
+										? "playing response"
+										: isRecording
+										? `listening - amplitude: ${amplitude}`
+										: "Press the blue blob to start recording"}
+								</p>
+							</div>
 
-						{isRecording && (
-							<div className="rounded-full w-4 h-4 bg-red-400 animate-pulse" />
-						)}
-					</div>
-					{/*
+							{isRecording && (
+								<div className="rounded-full w-4 h-4 bg-red-400 animate-pulse" />
+							)}
+							{/*
 					{transcript && (
 						<div className="border rounded-md p-2 h-full mt-4 ">
 							<p className="mb-0">{transcript}</p>
 						</div>
 					)} */}
+						</div>
+					</BackgroundGradient>
 				</div>
 			}
 
