@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import React, { useCallback, useRef, useState } from "react";
 import { useSilenceDetection } from "./useSilenceDetection";
 import { useSound } from "./useSound";
 // import { usePolyfill } from "./useMediaRecorderPolyfil";
@@ -68,7 +68,6 @@ const useRecording = (
 	isRecordingRef.current = isRecording;
 
 	const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-	// const { getMediaRecorder } = usePolyfill();
 	const streamRef = useRef<MediaStream>();
 
 	const { detectSilence, amplitude, stopSilenceDetection } =
@@ -76,6 +75,13 @@ const useRecording = (
 
 	const startSound = useSound("/assets/sounds/start.mp3");
 	const stopSound = useSound("/assets/sounds/stop.mp3");
+
+	// const { getMediaRecorder } = usePolyfill();
+
+	React.useEffect(() => {
+		setMessage(`supported mime type: ${getFirstSupportedMimeType()}`);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, []);
 
 	const stopRecording = useCallback(() => {
 		try {
@@ -104,47 +110,12 @@ const useRecording = (
 
 			if (comingFromStopRecordingFn.current) {
 				stopSound?.play();
-
 				const chunks = event.data;
 				const blob = new Blob([chunks], { type: getFirstSupportedMimeType() });
-				// const url = URL.createObjectURL(blob);
-				// const audio = new Audio(url);
-				// audio.preload = "none";
-				// audio.onloadeddata = (data) => {
-				// 	console.log("AUDIO ONLOADED DATA", data);
-				// };
-				// audio.load();
-				// audio
-				// 	.play()
-				// 	.then((prop) => {
-				// 		console.log("successfully playing audio - prop", prop);
-				// 	})
-				// 	.catch((err) => {
-				// 		console.log("error playing audio", err);
-				// 	});
-
-				// audio.onended = () => {
-				// 	console.log("destroying audio");
-				// 	// destroy audio and clear
-				// 	URL.revokeObjectURL(url);
-				// 	// audio.remove();
-				// 	// audio.src = "";
-				// };
-
 				onRecordingComplete?.(blob);
-
-				// const a = document.createElement("a");
-				// document.body.appendChild(a);
-				// a.href = URL.createObjectURL(blob);
-				// a.download = "audio.webm";
-				// a.click();
-				// window.URL.revokeObjectURL(a.href);
-				// a.remove();
-
 				stopSilenceDetection();
 				comingFromStopRecordingFn.current = false;
 				setIsRecording(false);
-
 				// disconnect
 				mediaRecorderRef.current?.removeEventListener(
 					"dataavailable",
@@ -179,39 +150,20 @@ const useRecording = (
 		}
 	}, [setMessage]);
 
-	// const cleanup = useCallback(() => {
-	// 	setMessage("cleanup");
-	// 	if (streamRef.current) {
-	// 		streamRef.current.getTracks().forEach((track) => {
-	// 			track.stop();
-	// 		});
-	// 		streamRef.current = undefined;
-	// 	}
-	// 	if (mediaRecorderRef.current) {
-	// 		mediaRecorderRef.current.removeEventListener(
-	// 			"dataavailable",
-	// 			onDataRequested
-	// 		);
-	// 		mediaRecorderRef.current.onstop = null;
-	// 		mediaRecorderRef.current = null;
-	// 	}
-	// }, [onDataRequested, setMessage]);
-
 	const startRecording = useCallback(async () => {
 		try {
-			// cleanup();
-			if (!microphonePermissionRequested) {
-				// PAUSING THIS SINCE ITS NOT WORKING: // request permission only on the first call to startRecording
-				// PAUSING THIS SINCE ITS NOT WORKING: // we keep the mic on the whole time, and use flags to determine when to start and stop recording
-				// browser forces us to request permission on every call - limitation of browser
-				// to demonstrate uncomment the code around microphonePermissionRequested, setMicrophonePermissionRequested
-				// I dont know how but this website managed to get the mic working by only requesting permission once
+			if (getFirstSupportedMimeType() !== "audio/mp4") {
+				// we have to request permission every time on iOS
+				await requestPermission();
+				setMicrophonePermissionRequested(true);
+			} else if (!microphonePermissionRequested) {
+				// request permission only on the first call to startRecording (on everything except iOS)
+				// we keep the mic on the whole time, and use flags to determine when to start and stop recording
+				// it doesn't work on iOS, I dont know how but this website managed to get the mic working by only requesting permission once on iOS
 				// https://restream.io/tools/mic-test
 				await requestPermission();
 				setMicrophonePermissionRequested(true);
 			}
-
-			setMessage(`supported mime type: ${getFirstSupportedMimeType()}`);
 
 			mediaRecorderRef.current = new MediaRecorder(streamRef.current!, {
 				mimeType: getFirstSupportedMimeType(),
@@ -225,10 +177,9 @@ const useRecording = (
 			mediaRecorderRef.current.start();
 
 			// calling MediaRecorder.requestData() will trigger the ondataavailable event handler
-			// passing all media data which has been captured since either (a) the recording began
-			// or (b) since the last time a dataavailable event occurred.
-			// were calling it now because we want to clear out any data between the end of the last call
-			// and the start of this one
+			// passing all media data which has been captured since either the last time a dataavailable event occurred.
+			// or since the MediaRecorder was created if no dataavailable event has occurred yet.
+			// were calling it now because we want to clear out any data between the end of the last call and the start of this one
 			// https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder/dataavailable_event
 			// https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder/requestData
 			comingFromStartRecordingFn.current = true;
@@ -238,8 +189,6 @@ const useRecording = (
 				`Failed to start recording: ${JSON.stringify((err as any).message)}`
 			);
 		}
-		// cant do anything reliably here (after calling .requestData()), as the ondataavailable event is async
-		// so instead we've set comingFromStartRecording to true, and then do whatever we want in the ondataavailable handler
 	}, [
 		microphonePermissionRequested,
 		onDataRequested,
