@@ -112,42 +112,53 @@ const useRecording = (
 
 	const onDataRequested = useCallback(
 		(event: BlobEvent) => {
-			if (comingFromStartRecordingFn.current) {
-				startSound?.play();
-				if (mediaRecorderRef.current) {
-					detectSilence(mediaRecorderRef.current, 3000, stopRecording);
+			try {
+				if (comingFromStartRecordingFn.current) {
+					startSound?.play();
+					if (mediaRecorderRef.current) {
+						detectSilence(mediaRecorderRef.current, 3000, stopRecording);
+					}
+
+					comingFromStartRecordingFn.current = false;
+					setIsRecording(true);
+					return;
 				}
 
-				comingFromStartRecordingFn.current = false;
-				setIsRecording(true);
-				return;
-			}
+				if (comingFromStopRecordingFn.current) {
+					stopSound?.play();
+					const chunks = event.data;
+					const blob = new Blob([chunks], {
+						type: getFirstSupportedMimeType(),
+					});
 
-			if (comingFromStopRecordingFn.current) {
-				stopSound?.play();
-				const chunks = event.data;
-				const blob = new Blob([chunks], { type: getFirstSupportedMimeType() });
+					const blobURL = URL.createObjectURL(blob);
+					const userAudio = new Audio(blobURL);
+					userAudio.play();
 
-				const blobURL = URL.createObjectURL(blob);
-				const userAudio = new Audio(blobURL);
-				userAudio.play();
-
-				onRecordingComplete?.(blob);
-				stopSilenceDetection();
-				comingFromStopRecordingFn.current = false;
-				setIsRecording(false);
-				// disconnect
-				mediaRecorderRef.current?.removeEventListener(
-					"dataavailable",
-					onDataRequested
+					onRecordingComplete?.(blob);
+					stopSilenceDetection();
+					comingFromStopRecordingFn.current = false;
+					setIsRecording(false);
+					// disconnect
+					mediaRecorderRef.current?.removeEventListener(
+						"dataavailable",
+						onDataRequested
+					);
+					mediaRecorderRef.current?.stop();
+					mediaRecorderRef.current = null;
+				}
+			} catch (err) {
+				setMessage(
+					`Failed to process recording data: ${JSON.stringify(
+						(err as any).message
+					)}`
 				);
-				mediaRecorderRef.current?.stop();
-				mediaRecorderRef.current = null;
 			}
 		},
 		[
 			detectSilence,
 			onRecordingComplete,
+			setMessage,
 			startSound,
 			stopRecording,
 			stopSilenceDetection,
