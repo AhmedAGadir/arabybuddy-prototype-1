@@ -115,7 +115,7 @@ const ChatPage = () => {
 		}
 	};
 
-	const longPressHandlersMobile = useLongPress(null, {
+	const longPressHandlersMobile = useLongPress(() => {}, {
 		onStart: onLongPressStartMobile,
 		onFinish: onLongPressEndMobile,
 	});
@@ -153,7 +153,9 @@ const ChatPage = () => {
 									? "playing response"
 									: isRecording
 									? `listening - amplitude: ${amplitude}`
-									: "Press the blue blob to start recording"}
+									: `${
+											isMobile ? "Hold" : "Press"
+									  } the blue blob to start recording`}
 							</p>
 							<p>{playingMessage ?? "No playing message"}</p>
 						</div>
