@@ -1,26 +1,8 @@
-import { getFirstSupportedMimeType } from "@/lib/utils";
+import { getFirstSupportedMimeType, iOS } from "@/lib/utils";
 import { useEffect } from "react";
 import { useRecordingIOSCompatible } from "./useRecordingIOSCompatible";
 import { useRecordingPermissionRequestedOnce } from "./useRecordingPermissionRequestedOnce";
 import { useRecordingLogger } from "./logger";
-
-const iOS = () => {
-	if (typeof window !== "undefined") {
-		return (
-			[
-				"iPad Simulator",
-				"iPhone Simulator",
-				"iPod Simulator",
-				"iPad",
-				"iPhone",
-				"iPod",
-			].includes(navigator.platform) ||
-			// iPad on iOS 13 detection
-			(navigator.userAgent.includes("Mac") && "ontouchend" in document)
-		);
-	}
-	return false;
-};
 
 export type UseRecordingProps = {
 	onRecordingComplete: (blob: Blob) => void;
