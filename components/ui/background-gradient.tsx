@@ -6,7 +6,6 @@ export const BackgroundGradient = ({
 	children,
 	className,
 	containerClassName,
-	gradientContainerClassName,
 	animate = true,
 }: {
 	children?: React.ReactNode;
