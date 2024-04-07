@@ -1,4 +1,4 @@
-import { ArabicDialect, NativeLanguage } from "@/types/types";
+import { ArabicDialect, NativeLanguage } from "@/types/languagesTypes";
 import React from "react";
 
 export type LanguageSettings = {

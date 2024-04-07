@@ -5,28 +5,11 @@ import LanguageContext from "@/context/languageContext";
 import { BlobSvg } from "@/components/shared";
 import Image from "next/image";
 import Link from "next/link";
-import { useRecordingPermissionRequestedOnce } from "@/hooks/useRecordingPermissionRequestedOnce";
-import { useRecordingIOSCompatible } from "@/hooks/useRecordingIOSCompatible";
+import { useRecordingPermissionRequestedOnce } from "@/hooks/useRecording/useRecordingPermissionRequestedOnce";
+import { useRecordingIOSCompatible } from "@/hooks/useRecording/useRecordingIOSCompatible";
 import { useSound } from "@/hooks/useSound";
 import { getFirstSupportedMimeType } from "@/lib/utils";
-
-const iOS = () => {
-	if (typeof window !== "undefined") {
-		return (
-			[
-				"iPad Simulator",
-				"iPhone Simulator",
-				"iPod Simulator",
-				"iPad",
-				"iPhone",
-				"iPod",
-			].includes(navigator.platform) ||
-			// iPad on iOS 13 detection
-			(navigator.userAgent.includes("Mac") && "ontouchend" in document)
-		);
-	}
-	return false;
-};
+import { useRecording } from "@/hooks/useRecording/useRecording";
 
 const ChatPage = () => {
 	const { nativeLanguage, arabicDialect } = useContext(LanguageContext);
@@ -99,17 +82,8 @@ const ChatPage = () => {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 
-	const useRecordingPermissionRequestedOnceReturn =
-		useRecordingPermissionRequestedOnce(sendToBackend, setMessage);
-
-	const useRecordingIOSCompatibleReturn = useRecordingIOSCompatible(
-		sendToBackend,
-		setMessage
-	);
-
-	const { isRecording, startRecording, stopRecording, amplitude } = iOS()
-		? useRecordingIOSCompatibleReturn
-		: useRecordingPermissionRequestedOnceReturn;
+	const { isRecording, startRecording, stopRecording, amplitude } =
+		useRecording(sendToBackend);
 
 	const toggleRecording = () => {
 		if (isPlaying) {

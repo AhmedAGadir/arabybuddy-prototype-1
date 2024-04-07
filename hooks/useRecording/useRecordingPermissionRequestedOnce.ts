@@ -1,26 +1,25 @@
 import { useCallback, useRef, useState } from "react";
 import { useSilenceDetection } from "./useSilenceDetection";
-import { useSound } from "./useSound";
+import { useSound } from "../useSound";
 import { getFirstSupportedMimeType } from "@/lib/utils";
+import { useRecordingLogger } from "./logger";
 // import { usePolyfill } from "./useMediaRecorderPolyfil";
 
 // this version of useRecording IS NOT compatible with iOS
 // but for everywhere else it offers a continuos stream of audio recording
 // so users only have to allow microphone permission once
 const useRecordingPermissionRequestedOnce = (
-	onRecordingComplete: (blob: Blob) => void,
-	setMessage: (message: string) => void
+	onRecordingComplete: (blob: Blob) => void
 ) => {
+	const logger = useRecordingLogger();
+
 	const comingFromStartRecordingFn = useRef(false);
 	const comingFromStopRecordingFn = useRef(false);
 
-	const [microphonePermissionRequested, setMicrophonePermissionRequested] =
+	const [microphonePermissionGranted, setMicrophonePermissionRequested] =
 		useState(false);
 
 	const [isRecording, setIsRecording] = useState(false);
-	const isRecordingRef = useRef(false);
-	isRecordingRef.current = isRecording;
-
 	const mediaRecorderRef = useRef<MediaRecorder | null>(null);
 	const streamRef = useRef<MediaStream>();
 
@@ -38,11 +37,11 @@ const useRecordingPermissionRequestedOnce = (
 			// trigger another ondataavilable event handler call,
 			mediaRecorderRef.current?.requestData();
 		} catch (err) {
-			setMessage(
+			logger.log(
 				`Failed to stop recording: ${JSON.stringify((err as any).message)}`
 			);
 		}
-	}, [setMessage]);
+	}, [logger]);
 
 	const onDataRequested = useCallback(
 		(event: BlobEvent) => {
@@ -69,6 +68,7 @@ const useRecordingPermissionRequestedOnce = (
 					stopSilenceDetection();
 					comingFromStopRecordingFn.current = false;
 					setIsRecording(false);
+
 					// disconnect
 					mediaRecorderRef.current?.removeEventListener(
 						"dataavailable",
@@ -78,7 +78,7 @@ const useRecordingPermissionRequestedOnce = (
 					mediaRecorderRef.current = null;
 				}
 			} catch (err) {
-				setMessage(
+				logger.log(
 					`Failed to process recording data: ${JSON.stringify(
 						(err as any).message
 					)}`
@@ -87,8 +87,8 @@ const useRecordingPermissionRequestedOnce = (
 		},
 		[
 			detectSilence,
+			logger,
 			onRecordingComplete,
-			setMessage,
 			startSound,
 			stopRecording,
 			stopSilenceDetection,
@@ -103,17 +103,17 @@ const useRecordingPermissionRequestedOnce = (
 			});
 			streamRef.current = stream;
 		} catch (err) {
-			setMessage(
+			logger.log(
 				`Failed to get microphone permission: ${JSON.stringify(
 					(err as any).message
 				)}`
 			);
 		}
-	}, [setMessage]);
+	}, [logger]);
 
 	const startRecording = useCallback(async () => {
 		try {
-			if (!microphonePermissionRequested) {
+			if (!microphonePermissionGranted) {
 				// request permission only on the first call to startRecording
 				// we keep the mic on the whole time, and use flags to determine when to start and stop recording
 				// it doesn't work on iOS, I dont know how but this website managed to get the mic working by only requesting permission once on iOS
@@ -122,6 +122,7 @@ const useRecordingPermissionRequestedOnce = (
 				setMicrophonePermissionRequested(true);
 			}
 
+			// must recreate and destroy the Media Recorder on every start and stop
 			mediaRecorderRef.current = new MediaRecorder(streamRef.current!, {
 				mimeType: getFirstSupportedMimeType(),
 			});
@@ -142,16 +143,11 @@ const useRecordingPermissionRequestedOnce = (
 			comingFromStartRecordingFn.current = true;
 			mediaRecorderRef.current?.requestData();
 		} catch (err) {
-			setMessage(
+			logger.log(
 				`Failed to start recording: ${JSON.stringify((err as any).message)}`
 			);
 		}
-	}, [
-		microphonePermissionRequested,
-		onDataRequested,
-		requestPermission,
-		setMessage,
-	]);
+	}, [logger, microphonePermissionGranted, onDataRequested, requestPermission]);
 
 	return {
 		isRecording,

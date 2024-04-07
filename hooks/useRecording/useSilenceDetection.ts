@@ -1,6 +1,18 @@
 import { useRef, useState } from "react";
+import { useLogger } from "../useLogger";
+
+const useSilenceDetectionLogger = () => {
+	const logger = useLogger({
+		label: "useSilenceDetection",
+		color: "#75bfff",
+		toggle: false,
+	});
+	return logger;
+};
 
 export const useSilenceDetection = () => {
+	const logger = useSilenceDetectionLogger();
+
 	const silenceTimerRef = useRef<any>(null);
 	const [amplitude, setAmplitude] = useState<number | null>(null);
 
@@ -18,7 +30,7 @@ export const useSilenceDetection = () => {
 	};
 
 	const stopSilenceDetection = () => {
-		console.log("stopping silence detection");
+		logger.log("stopping silence detection");
 		clearSilenceTimer();
 		setStopListeningFromExternalSource(true);
 	};
@@ -28,7 +40,7 @@ export const useSilenceDetection = () => {
 		ms: number,
 		onSilenceDetected: () => void
 	) => {
-		console.log("detecting silence");
+		logger.log("detecting silence");
 		setStopListeningFromExternalSource(false);
 
 		const audioContext = new AudioContext();

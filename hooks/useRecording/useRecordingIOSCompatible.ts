@@ -1,14 +1,16 @@
 import { useState, useRef, useCallback } from "react";
 import { useSilenceDetection } from "./useSilenceDetection";
-import { useSound } from "./useSound";
+import { useSound } from "../useSound";
 import { getFirstSupportedMimeType } from "@/lib/utils";
+import { useRecordingLogger } from "./logger";
 
 // this version of useRecording IS compatible with iOS
 // however it asks for microphone permission every time the user starts recording
 const useRecordingIOSCompatible = (
-	onRecordingComplete: (blob: Blob) => void,
-	setMessage: (message: string) => void
+	onRecordingComplete: (blob: Blob) => void
 ) => {
+	const logger = useRecordingLogger();
+
 	const [isRecording, setIsRecording] = useState(false);
 	const isRecordingRef = useRef<boolean>();
 	isRecordingRef.current = isRecording;
@@ -25,7 +27,6 @@ const useRecordingIOSCompatible = (
 	const dataAvailableHandler = useCallback(
 		(event: BlobEvent) => {
 			try {
-				// Handle recorded data here
 				const chunks = event.data;
 				const blob = new Blob([chunks], {
 					type: getFirstSupportedMimeType(),
@@ -34,20 +35,20 @@ const useRecordingIOSCompatible = (
 				onRecordingComplete?.(blob);
 				stopSilenceDetection();
 			} catch (error) {
-				setMessage(
+				logger.log(
 					`Failed to handle recorded data: ${JSON.stringify(
 						(error as any).message
 					)}`
 				);
 			}
 		},
-		[onRecordingComplete, setMessage, stopSilenceDetection]
+		[logger, onRecordingComplete, stopSilenceDetection]
 	);
 
 	// Function to stop recording
 	const stopRecording = useCallback(() => {
-		if (!isRecording) {
-			console.warn("Recording is not in progress");
+		if (!isRecordingRef.current) {
+			logger.warn("Recording is not in progress");
 			return;
 		}
 
@@ -55,11 +56,11 @@ const useRecordingIOSCompatible = (
 		stopSound?.play();
 		mediaRecorderRef.current?.stop();
 		setIsRecording(false);
-	}, [isRecording, stopSound]);
+	}, [logger, stopSound]);
 
 	const startRecording = useCallback(async () => {
 		if (isRecording) {
-			console.warn("Recording is already in progress");
+			logger.warn("Recording is already in progress");
 			return;
 		}
 
@@ -97,7 +98,7 @@ const useRecordingIOSCompatible = (
 				mediaRecorderRef.current = null;
 			};
 		} catch (error) {
-			setMessage(
+			logger.log(
 				`Failed to start recording: ${JSON.stringify((error as any).message)}`
 			);
 		}
@@ -105,7 +106,7 @@ const useRecordingIOSCompatible = (
 		dataAvailableHandler,
 		detectSilence,
 		isRecording,
-		setMessage,
+		logger,
 		startSound,
 		stopRecording,
 	]);
