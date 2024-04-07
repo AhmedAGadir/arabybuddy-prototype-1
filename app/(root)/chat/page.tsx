@@ -8,7 +8,22 @@ import Link from "next/link";
 import { useRecording as useRecordingContinuousStream } from "@/hooks/useRecording";
 import { useRecordingIOSCompatible } from "@/hooks/useRecordingIOSCompatible";
 import { useSound } from "@/hooks/useSound";
-import { getFirstSupportedMimeType, iOS } from "@/lib/utils";
+import { getFirstSupportedMimeType } from "@/lib/utils";
+
+export const iOS = () => {
+	return (
+		[
+			"iPad Simulator",
+			"iPhone Simulator",
+			"iPod Simulator",
+			"iPad",
+			"iPhone",
+			"iPod",
+		].includes(navigator.platform) ||
+		// iPad on iOS 13 detection
+		(navigator.userAgent.includes("Mac") && "ontouchend" in document)
+	);
+};
 
 const ChatPage = () => {
 	const { nativeLanguage, arabicDialect } = useContext(LanguageContext);
