@@ -30,6 +30,21 @@ import { useSound } from "./useSound";
 // audio/wav - yes
 // audio/wave - no
 
+function iOS() {
+	return (
+		[
+			"iPad Simulator",
+			"iPhone Simulator",
+			"iPod Simulator",
+			"iPad",
+			"iPhone",
+			"iPod",
+		].includes(navigator.platform) ||
+		// iPad on iOS 13 detection
+		(navigator.userAgent.includes("Mac") && "ontouchend" in document)
+	);
+}
+
 const MIME_TYPES = [
 	"audio/webm",
 	"audio/webm;codecs=opus",
@@ -112,6 +127,11 @@ const useRecording = (
 				stopSound?.play();
 				const chunks = event.data;
 				const blob = new Blob([chunks], { type: getFirstSupportedMimeType() });
+
+				const blobURL = URL.createObjectURL(blob);
+				const userAudio = new Audio(blobURL);
+				userAudio.play();
+
 				onRecordingComplete?.(blob);
 				stopSilenceDetection();
 				comingFromStopRecordingFn.current = false;
@@ -152,10 +172,9 @@ const useRecording = (
 
 	const startRecording = useCallback(async () => {
 		try {
-			if (getFirstSupportedMimeType() !== "audio/mp4") {
+			if (iOS()) {
 				// we have to request permission every time on iOS
 				await requestPermission();
-				setMicrophonePermissionRequested(true);
 			} else if (!microphonePermissionRequested) {
 				// request permission only on the first call to startRecording (on everything except iOS)
 				// we keep the mic on the whole time, and use flags to determine when to start and stop recording

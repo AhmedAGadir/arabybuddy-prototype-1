@@ -3,3 +3,9 @@
     - (already implemented but doesn't really work so its commented out - see useMediaRecorderPolyfill) https://www.npmjs.com/package/opus-media-recorder
     - https://www.npmjs.com/package/audio-recorder-polyfill
 - [ ] - add fallbacks for supported audio types across different browsers/OS's
+- [ ] - find out how to not have to ask for microphone permission every time on iOS
+    - see https://restream.io/tools/mic-test
+    - contact restream CEO on linkedin/other channels
+    - help reddit: https://www.reddit.com/r/AskProgramming/comments/1bxn68l/mediarecorder_api_call_requestdata_multiple_times/
+    - help stackoverflow: https://stackoverflow.com/questions/78285997/mediarecorder-api-call-requestdata-multiple-times-to-create-multiple-audio-bl
+    - help freecodecamp: https://forum.freecodecamp.org/t/how-to-record-audio-without-repeatedly-asking-for-permission-to-use-microphone/684057

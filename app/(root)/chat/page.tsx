@@ -19,6 +19,7 @@ const ChatPage = () => {
 
 	const sendToBackend = useCallback(
 		async (blob: Blob): Promise<void> => {
+			return;
 			console.log("sending to backend - recordingBlob", blob);
 
 			setIsLoading(true);
