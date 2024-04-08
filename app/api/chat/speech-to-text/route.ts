@@ -43,7 +43,7 @@ const openAISpeechToText = async (base64Audio: string, type: string) => {
 	const audioData = Buffer.from(base64Audio, "base64");
 
 	// Correctly resolve the path to the temporary directory
-	const dirPath = path.join(process.cwd(), "public", "tmp");
+	const dirPath = path.join(process.cwd(), "tmp");
 	const filePath = path.join(dirPath, `input.${type}`);
 
 	// Ensure the directory exists
