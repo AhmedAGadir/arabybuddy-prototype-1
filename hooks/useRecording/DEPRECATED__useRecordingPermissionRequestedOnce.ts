@@ -8,7 +8,7 @@ import { useRecordingLogger } from "./logger";
 // this version of useRecording IS NOT compatible with iOS
 // but for everywhere else it offers a continuos stream of audio recording
 // so users only have to allow microphone permission once
-const useRecordingPermissionRequestedOnce = (
+const useRecordingPermissionRequestedOnce__DEPRECATED = (
 	onRecordingComplete: (blob: Blob) => void
 ) => {
 	const logger = useRecordingLogger();
@@ -24,7 +24,7 @@ const useRecordingPermissionRequestedOnce = (
 	const streamRef = useRef<MediaStream>();
 
 	const {
-		detectSilencePermissionRequestedOnceAdapter: detectSilence,
+		DEPRECATED__detectSilencePermissionRequestedOnceAdapter: detectSilence,
 		amplitude,
 		stopSilenceDetection,
 	} = useSilenceDetection();
@@ -160,4 +160,4 @@ const useRecordingPermissionRequestedOnce = (
 	};
 };
 
-export { useRecordingPermissionRequestedOnce };
+export { useRecordingPermissionRequestedOnce__DEPRECATED };

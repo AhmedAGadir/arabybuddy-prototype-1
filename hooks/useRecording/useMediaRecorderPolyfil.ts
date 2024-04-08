@@ -1,4 +1,4 @@
-// TODO: fix this, it doesn't work at all
+// DEPRECATED - THIS DOESNT WORK
 import { useEffect } from "react";
 
 declare var OpusMediaRecorder: MediaRecorder;
@@ -17,7 +17,7 @@ const useExternalScript = (src: string) => {
 	}, [src]);
 };
 
-const useMediaRecorderPolyfill = () => {
+const useMediaRecorderPolyfill__DEPRECATED = () => {
 	useExternalScript(
 		"https://cdn.jsdelivr.net/npm/opus-media-recorder@latest/OpusMediaRecorder.umd.js"
 	);
@@ -64,4 +64,4 @@ const useMediaRecorderPolyfill = () => {
 	return { getMediaRecorder };
 };
 
-export { useMediaRecorderPolyfill as usePolyfill };
+export { useMediaRecorderPolyfill__DEPRECATED as usePolyfill__DEPRECATED };

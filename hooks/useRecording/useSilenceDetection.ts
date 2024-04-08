@@ -35,17 +35,6 @@ export const useSilenceDetection = () => {
 		setStopListeningFromExternalSource(true);
 	};
 
-	const detectSilencePermissionRequestedOnceAdapter = (
-		stream: MediaStream,
-		ms: number,
-		onSilenceDetected: () => void
-	) => {
-		const audioContext = new AudioContext();
-		const microphone = audioContext.createMediaStreamSource(stream);
-
-		detectSilence(audioContext, microphone, ms, onSilenceDetected);
-	};
-
 	const detectSilence = (
 		audioContext: AudioContext,
 		microphone: MediaStreamAudioSourceNode,
@@ -113,10 +102,21 @@ export const useSilenceDetection = () => {
 		javascriptNode.addEventListener("audioprocess", audioProcessHandler);
 	};
 
+	const DEPRECATED__detectSilencePermissionRequestedOnceAdapter = (
+		stream: MediaStream,
+		ms: number,
+		onSilenceDetected: () => void
+	) => {
+		const audioContext = new AudioContext();
+		const microphone = audioContext.createMediaStreamSource(stream);
+
+		detectSilence(audioContext, microphone, ms, onSilenceDetected);
+	};
+
 	return {
 		detectSilence,
-		detectSilencePermissionRequestedOnceAdapter,
 		amplitude,
 		stopSilenceDetection,
+		DEPRECATED__detectSilencePermissionRequestedOnceAdapter,
 	};
 };
