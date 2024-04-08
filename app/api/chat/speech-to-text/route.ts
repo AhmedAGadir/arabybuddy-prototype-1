@@ -36,7 +36,7 @@ const openAISpeechToText = async (base64Audio: string, type: string) => {
 	});
 
 	fs.unlinkSync(filePath);
-	fs.rmdirSync(dirPath);
+	fs.rmSync(dirPath, { recursive: true, force: true });
 
 	return { transcription: transcription.text };
 };
