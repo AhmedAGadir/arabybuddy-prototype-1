@@ -1,7 +1,6 @@
 import { useState, useRef, useCallback } from "react";
 import { useSilenceDetection } from "@/hooks/useRecording/useSilenceDetection";
 import { useSound } from "@/hooks/useSound";
-import { getFirstSupportedMimeType } from "@/lib/utils";
 import { useRecordingLogger } from "@/hooks/useRecording/logger";
 import { Recorder } from "@/lib/recorder";
 
@@ -17,7 +16,7 @@ const useRecordingIOSCompatible = (
 	isRecordingRef.current = isRecording;
 
 	const audioContextRef = useRef<AudioContext | null>(null);
-	const inputRef = useRef<MediaStreamAudioSourceNode | null>(null);
+	const microphoneRef = useRef<MediaStreamAudioSourceNode | null>(null);
 	const recorderRef = useRef<any>(null);
 
 	const { detectSilence, amplitude, stopSilenceDetection } =
@@ -47,10 +46,10 @@ const useRecordingIOSCompatible = (
 			audioContextRef.current?.close();
 			audioContextRef.current = null;
 
-			inputRef.current?.mediaStream.getAudioTracks().forEach((track) => {
+			microphoneRef.current?.mediaStream.getAudioTracks().forEach((track) => {
 				track.stop();
 			});
-			inputRef.current = null;
+			microphoneRef.current = null;
 
 			recorderRef.current = null;
 		});
@@ -70,23 +69,28 @@ const useRecordingIOSCompatible = (
 			const audioContext = new (window.AudioContext ||
 				//@ts-ignore
 				window.webkitAudioContext)();
-			const input = audioContext.createMediaStreamSource(stream);
-			var recorder = new Recorder(input);
+			const microphone = audioContext.createMediaStreamSource(stream);
+			var recorder = new Recorder(microphone);
 
 			audioContextRef.current = audioContext;
-			inputRef.current = input;
+			microphoneRef.current = microphone;
 			recorderRef.current = recorder;
 
 			startSound?.play();
 			recorder.record();
 			setIsRecording(true);
-			// detectSilence(audioContextRef.current, 3000, stopRecording);
+			detectSilence(
+				audioContextRef.current,
+				microphoneRef.current,
+				3000,
+				stopRecording
+			);
 		} catch (error) {
 			logger.log(
 				`Failed to start recording: ${JSON.stringify((error as any).message)}`
 			);
 		}
-	}, [isRecording, logger, startSound]);
+	}, [detectSilence, isRecording, logger, startSound, stopRecording]);
 
 	return { isRecording, startRecording, stopRecording, amplitude };
 };

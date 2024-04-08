@@ -5,7 +5,7 @@ const useSilenceDetectionLogger = () => {
 	const logger = useLogger({
 		label: "useSilenceDetection",
 		color: "#75bfff",
-		toggle: false,
+		toggle: true,
 	});
 	return logger;
 };
@@ -35,19 +35,27 @@ export const useSilenceDetection = () => {
 		setStopListeningFromExternalSource(true);
 	};
 
+	const detectSilencePermissionRequestedOnceAdapter = (
+		stream: MediaStream,
+		ms: number,
+		onSilenceDetected: () => void
+	) => {
+		const audioContext = new AudioContext();
+		const microphone = audioContext.createMediaStreamSource(stream);
+
+		detectSilence(audioContext, microphone, ms, onSilenceDetected);
+	};
+
 	const detectSilence = (
-		mediaRecorder: MediaRecorder,
+		audioContext: AudioContext,
+		microphone: MediaStreamAudioSourceNode,
 		ms: number,
 		onSilenceDetected: () => void
 	) => {
 		logger.log("detecting silence");
 		setStopListeningFromExternalSource(false);
 
-		const audioContext = new AudioContext();
 		const analyser = audioContext.createAnalyser();
-		const microphone = audioContext.createMediaStreamSource(
-			mediaRecorder.stream
-		);
 		const javascriptNode = audioContext.createScriptProcessor(2048, 1, 1);
 
 		analyser.smoothingTimeConstant = 0.8;
@@ -107,6 +115,7 @@ export const useSilenceDetection = () => {
 
 	return {
 		detectSilence,
+		detectSilencePermissionRequestedOnceAdapter,
 		amplitude,
 		stopSilenceDetection,
 	};

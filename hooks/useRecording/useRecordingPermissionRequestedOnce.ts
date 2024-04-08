@@ -23,8 +23,11 @@ const useRecordingPermissionRequestedOnce = (
 	const mediaRecorderRef = useRef<MediaRecorder | null>(null);
 	const streamRef = useRef<MediaStream>();
 
-	const { detectSilence, amplitude, stopSilenceDetection } =
-		useSilenceDetection();
+	const {
+		detectSilencePermissionRequestedOnceAdapter: detectSilence,
+		amplitude,
+		stopSilenceDetection,
+	} = useSilenceDetection();
 
 	const startSound = useSound("/assets/sounds/start.mp3");
 	const stopSound = useSound("/assets/sounds/stop.mp3");
@@ -48,8 +51,8 @@ const useRecordingPermissionRequestedOnce = (
 			try {
 				if (comingFromStartRecordingFn.current) {
 					startSound?.play();
-					if (mediaRecorderRef.current) {
-						detectSilence(mediaRecorderRef.current, 3000, stopRecording);
+					if (streamRef.current) {
+						detectSilence(streamRef.current, 3000, stopRecording);
 					}
 
 					comingFromStartRecordingFn.current = false;

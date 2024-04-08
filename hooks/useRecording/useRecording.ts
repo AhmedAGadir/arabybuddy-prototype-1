@@ -12,7 +12,8 @@ const useRecording = (onRecordingComplete: (blob: Blob) => void) => {
 	const logger = useRecordingLogger();
 
 	useEffect(() => {
-		logger.log(`supported mime type: ${getFirstSupportedMimeType()}`);
+		// logger.log(`supported mime type: ${getFirstSupportedMimeType()}`);
+		logger.log(iOS() ? "iOS device detected" : "non-iOS device detected");
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 
