@@ -34,8 +34,6 @@ const ChatPage = () => {
 
 	const sendToBackend = useCallback(
 		async (audioBlob: Blob): Promise<void> => {
-			console.log("sending to backend - audioBlob", audioBlob);
-
 			setIsLoading(true);
 
 			try {
