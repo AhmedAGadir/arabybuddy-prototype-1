@@ -63,7 +63,15 @@ const BlobInner = ({
 	</div>
 );
 
-const BlobSvg = ({ size, fill }: { size: number; fill: string }) => {
+const BlobSvg = ({
+	size,
+	fill,
+	fillOpacity,
+}: {
+	size: number;
+	fill: string;
+	fillOpacity?: number;
+}) => {
 	const duration = 10;
 
 	return (
@@ -80,6 +88,7 @@ const BlobSvg = ({ size, fill }: { size: number; fill: string }) => {
 				values={blobDValues.join(";")}
 				pathProps={{
 					fill,
+					fillOpacity: fillOpacity ?? 1,
 				}}
 			/>
 
@@ -89,7 +98,7 @@ const BlobSvg = ({ size, fill }: { size: number; fill: string }) => {
 				values={blobDValues.reverse().join(";")}
 				pathProps={{
 					fill,
-					fillOpacity: 0.5,
+					fillOpacity: fillOpacity ?? 0.5,
 				}}
 			/>
 
@@ -99,7 +108,7 @@ const BlobSvg = ({ size, fill }: { size: number; fill: string }) => {
 				values={blobDValues.reverse().join(";")}
 				pathProps={{
 					fill,
-					fillOpacity: 0.5,
+					fillOpacity: fillOpacity ?? 0.5,
 					filter: "blur(10px)",
 				}}
 			/>

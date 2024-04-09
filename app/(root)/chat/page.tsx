@@ -1,157 +1,78 @@
 "use client";
 
-import React, { useContext, useState, useCallback } from "react";
+import React, { useContext, useState, useCallback, useMemo } from "react";
 import LanguageContext from "@/context/languageContext";
 import { BlobSvg } from "@/components/shared";
-import Image from "next/image";
-import Link from "next/link";
-import { useSound } from "@/hooks/useSound";
 import { useRecording } from "@/hooks/useRecording/useRecording";
 import { BackgroundGradient } from "@/components/ui/background-gradient";
-
-const blobToBase64 = async (blob: Blob): Promise<string> => {
-	return new Promise((resolve, reject) => {
-		const reader = new FileReader();
-		reader.onload = function () {
-			const base64data = (reader?.result as string).split(",")[1];
-			resolve(base64data);
-		};
-		reader.onerror = reject; // Handle errors
-		reader.readAsDataURL(blob);
-	});
-};
-
-const base64ToBlob = (base64: string, type: string): Blob => {
-	const byteCharacters = atob(base64);
-	const byteNumbers = new Array(byteCharacters.length);
-	for (let i = 0; i < byteCharacters.length; i++) {
-		byteNumbers[i] = byteCharacters.charCodeAt(i);
-	}
-	const byteArray = new Uint8Array(byteNumbers);
-	return new Blob([byteArray], { type });
-};
+import { base64ToBlob, blobToBase64, cn } from "@/lib/utils";
 
 const ChatPage = () => {
 	const { nativeLanguage, arabicDialect } = useContext(LanguageContext);
 	const [isPlaying, setIsPlaying] = useState(false);
-	const [playingMessage, setPlayingMessage] = useState("");
-
 	const [isLoading, setIsLoading] = useState(false);
+	const [message, setMessage] = useState<string>("");
 
-	const bell = useSound("/assets/sounds/response.mp3");
+	const sendToBackend = useCallback(async (audioBlob: Blob): Promise<void> => {
+		setIsLoading(true);
 
-	const [result, setResult] = useState<string | null>(null);
+		try {
+			const base64Audio = await blobToBase64(audioBlob);
 
-	const sendToBackend = useCallback(
-		async (audioBlob: Blob): Promise<void> => {
-			setIsLoading(true);
+			console.log({
+				type: audioBlob.type.split("/")[1],
+				base64Audio,
+			});
 
-			try {
-				const base64Audio = await blobToBase64(audioBlob);
-
-				console.log({
-					type: audioBlob.type.split("/")[1],
+			const response = await fetch("/api/chat", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({
 					base64Audio,
-				});
+					type: audioBlob.type.split("/")[1],
+				}),
+			});
 
-				const response = await fetch("/api/chat", {
-					method: "POST",
-					headers: {
-						"Content-Type": "application/json",
-					},
-					body: JSON.stringify({
-						base64Audio,
-						type: audioBlob.type.split("/")[1],
-					}),
-				});
+			const data = await response.json();
 
-				const data = await response.json();
-
-				if (response.status !== 200) {
-					throw (
-						data.error ||
-						new Error(`Request failed with status ${response.status}`)
-					);
-				}
-
-				const { text, audioBase64 } = data;
-				console.log("data", data);
-
-				const responseAudioBlob = base64ToBlob(audioBase64, "audio/mp3");
-				const audioSrc = URL.createObjectURL(responseAudioBlob);
-				const audio = new Audio(audioSrc);
-				setIsPlaying(true);
-				audio.play();
-				setResult(text);
-				audio.addEventListener("ended", () => {
-					setIsPlaying(false);
-					setPlayingMessage("finished playing response");
-
-					// cleanup
-					URL.revokeObjectURL(audioSrc);
-					audio.remove();
-				});
-			} catch (error) {
-				console.error(error);
-				console.log((error as Error).message);
+			if (response.status !== 200) {
+				throw (
+					data.error ||
+					new Error(`Request failed with status ${response.status}`)
+				);
 			}
 
-			// setPlayingMessage("starting to play response");
-			// bell?.play();
+			const { text, audioBase64 } = data;
+			console.log("data", data);
 
-			// const blobURL = URL.createObjectURL(blob);
-			// const userAudio = new Audio(blobURL);
-			// userAudio.play();
+			const responseAudioBlob = base64ToBlob(audioBase64, "audio/mp3");
 
-			// userAudio.onended = () => {
-			// 	console.log("audio finished playing");
-			// 	setPlayingMessage("finished playing response");
-			// 	stopPlayingResponse();
-			// };
+			setMessage(text);
 
-			// try {
-			// 	stopRecording();
+			const audioSrc = URL.createObjectURL(responseAudioBlob);
+			const audio = new Audio(audioSrc);
+			setIsLoading(false);
+			setIsPlaying(true);
+			audio.play();
+			audio.addEventListener("ended", () => {
+				setIsPlaying(false);
 
-			// 	const response = await fetch("/api/chat", {
-			// 		method: "POST",
-			// 		headers: { "Content-Type": "application/json" },
-			// 		body: JSON.stringify({ recordingBlog, nativeLanguage, arabicDialect }),
-			// 	});
-
-			// 	if (!response.ok)
-			// 		throw new Error(`HTTP error! status: ${response.status}`);
-
-			// 	const data = await response.json();
-			// 	if (data.data && data.contentType === "audio/mp3") {
-			// 		const audioSrc = `data:audio/mp3;base64,${data.data}`;
-			// 		const audio = new Audio(audioSrc);
-			// 		setIsPlaying(true);
-			// 		audio.play();
-			// 		audio.onended = () => {
-			// 			setIsPlaying(false);
-			// 			startRecording();
-			// 		};
-			// 	}
-			// } catch (error) {
-			// 	console.error("Error sending data to backend or playing audio:", error);
-			// }
-			// setIsLoading(false);
-		},
-		[bell]
-	);
+				// cleanup
+				URL.revokeObjectURL(audioSrc);
+				audio.remove();
+			});
+		} catch (error) {
+			console.error(error);
+			console.log((error as Error).message);
+		}
+	}, []);
 
 	const { isRecording, startRecording, stopRecording, amplitude } =
 		useRecording(sendToBackend);
 
-	const stopPlayingResponse = () => {
-		setIsPlaying(false);
-		setIsLoading(false);
-	};
-
 	const toggleRecording = () => {
-		setPlayingMessage("");
-		stopPlayingResponse();
-
 		if (isRecording) {
 			stopRecording();
 			return;
@@ -163,13 +84,38 @@ const ChatPage = () => {
 		}
 	};
 
-	return (
-		<div className="bg-slate-200 w-full h-screen">
-			<p>
-				Chat {nativeLanguage} - {arabicDialect}
-			</p>
+	const microphoneFillColor = useMemo(() => {
+		if (isPlaying)
+			return {
+				fill: "#5E17EB",
+			};
+		if (isLoading)
+			return {
+				fill: "#38B6FF",
+				fillOpacity: 0.2,
+			};
+		if (isRecording)
+			return {
+				fill: "#FF0066",
+			};
+		return {
+			fill: "#38B6FF",
+		};
+	}, [isLoading, isPlaying, isRecording]);
 
-			<Link href="/">
+	const displayedMessage = useMemo(() => {
+		if (isRecording) return "👂";
+		if (isLoading) return "🤔";
+		if (isPlaying || message) return message;
+		return "Press ⬇️ the blue blob to start recording";
+	}, [isLoading, isPlaying, isRecording, message]);
+
+	return (
+		<div className="w-full h-screen flex flex-col items-center justify-between">
+			{/* <p> */}
+			{/* Chat {nativeLanguage} - {arabicDialect}
+			</p> */}
+			{/* <Link href="/">
 				<div className="rounded-md p-2 bg-white w-fit ">
 					<Image
 						src="/assets/arabybuddy.svg"
@@ -178,9 +124,8 @@ const ChatPage = () => {
 						height={50}
 					/>
 				</div>
-			</Link>
-
-			{
+			</Link> */}
+			{/* {
 				<div className="w-2/3 md:w-1/2 m-auto">
 					<BackgroundGradient
 						className="rounded-[22px] p-4 bg-white"
@@ -195,30 +140,17 @@ const ChatPage = () => {
 										? "Recording"
 										: "Recorded"}
 								</p>
-								<p className="text-sm">
-									{isPlaying
-										? "playing response"
-										: isRecording
-										? `listening - amplitude: ${amplitude}`
-										: "Press the blue blob to start recording"}
-								</p>
+								<p className="text-sm">{displayedMessage}</p>
 							</div>
 
 							{isRecording && (
 								<div className="rounded-full w-4 h-4 bg-red-400 animate-pulse" />
 							)}
-							{/*
-					{transcript && (
-						<div className="border rounded-md p-2 h-full mt-4 ">
-							<p className="mb-0">{transcript}</p>
-						</div>
-					)} */}
 						</div>
 					</BackgroundGradient>
 				</div>
-			}
-
-			{result && (
+			} */}
+			{/* {result && (
 				<div className="w-2/3 md:w-1/2 m-auto my-4">
 					<BackgroundGradient
 						className="rounded-[22px] p-4 bg-white"
@@ -227,17 +159,28 @@ const ChatPage = () => {
 						{result}
 					</BackgroundGradient>
 				</div>
-			)}
-
+			)} */}
+			<div className="max-w-4xl m-auto">
+				<p
+					className={cn(
+						"leading-loose font-extrabold tracking-tight text-4xl md:text-5xl lg:text-6xl text-center px-5",
+						isPlaying && "text-araby-blue",
+						!isPlaying && "text-slate-900",
+						(isRecording || isLoading) && "text-5xl"
+					)}
+				>
+					{displayedMessage}
+				</p>
+			</div>
 			<div className="flex items-center w-full">
 				<button
-					className="mt-10 m-auto cursor-pointer"
+					className={cn("mt-10 m-auto", !isLoading && "cursor-pointer")}
 					onClick={toggleRecording}
 					disabled={isLoading || isPlaying}
 				>
 					<BlobSvg
 						size={amplitude ? 200 + amplitude * 2 : 200}
-						fill={isPlaying ? "#5E17EB" : isRecording ? "#FF0066" : "#38B6FF"}
+						{...microphoneFillColor}
 					/>
 				</button>
 			</div>

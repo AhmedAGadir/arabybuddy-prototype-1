@@ -1,6 +1,6 @@
 "use client";
 
-import { useContext, useEffect } from "react";
+import { useContext } from "react";
 import Image from "next/image";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -50,19 +50,6 @@ export default function Home() {
 
 	return (
 		<>
-			<div className="bg-wrap">
-				<Image
-					alt="background"
-					src={"/assets/background.png"}
-					// placeholder="blur"
-					quality={100}
-					fill
-					sizes="100vw"
-					style={{
-						objectFit: "cover",
-					}}
-				/>
-			</div>
 			<div className="md:container md:mx-auto text-center h-screen relative flex flex-col justify-between">
 				<main className="flex-1 flex flex-col justify-center items-center px-4">
 					<div className="max-w-5xl pt-6">

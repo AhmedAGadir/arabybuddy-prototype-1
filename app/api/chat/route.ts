@@ -3,7 +3,7 @@ import path from "path";
 import OpenAI from "openai";
 import { tmpdir } from "os";
 import { ElevenLabsClient } from "elevenlabs";
-import internal from "stream";
+import { streamToBase64 } from "@/lib/utils";
 
 // remember API calls wont work if the account balance is 0
 const openai = new OpenAI({
@@ -15,37 +15,87 @@ const elevenlabs = new ElevenLabsClient({
 	apiKey: process.env.ELEVENLABS_API_KEY,
 });
 
-async function streamToBase64(readableStream: internal.Stream) {
-	return new Promise((resolve, reject) => {
-		const chunks: any[] = [];
-		readableStream.on("data", (chunk) => chunks.push(chunk));
-		readableStream.on("error", reject);
-		readableStream.on("end", () => {
-			const buffer = Buffer.concat(chunks);
-			const base64 = buffer.toString("base64");
-			resolve(base64);
+// writing object oriented code because why not its my project i can do what I want
+class Assistant {
+	name: string;
+	instructions: string;
+	assistant: OpenAI.Beta.Assistants.Assistant | undefined;
+	thread: OpenAI.Beta.Threads.Thread | undefined;
+
+	constructor({ name, instructions }: { name: string; instructions: string }) {
+		this.name = name;
+		this.instructions = instructions;
+
+		this.init = this.init.bind(this);
+		this.addMessageToThread = this.addMessageToThread.bind(this);
+	}
+
+	async init() {
+		this.assistant = await openai.beta.assistants.create({
+			name: this.name,
+			instructions: this.instructions,
+			model: "gpt-4-turbo-preview",
 		});
-	});
+		this.thread = await openai.beta.threads.create();
+	}
+
+	async addMessageToThread(message: string): Promise<{ message: string }> {
+		if (!this.assistant || !this.thread) {
+			throw new Error("Assistance not initialized correctly");
+		}
+		// add message to thread
+		await openai.beta.threads.messages.create(this.thread.id, {
+			role: "user",
+			content: message,
+		});
+
+		// run the thread with the assistant
+		const run = await openai.beta.threads.runs.createAndPoll(this.thread.id, {
+			assistant_id: this.assistant.id,
+			//   instructions: "Please address the user as Jane Doe. The user has a premium account."
+			instructions: "Respond to the user.",
+		});
+
+		if (run.status === "completed") {
+			const messages = await openai.beta.threads.messages.list(run.thread_id);
+			const latestMessage = messages.data[0].content[0];
+
+			return {
+				message: latestMessage.type === "text" ? latestMessage.text.value : "",
+			};
+		} else {
+			throw new Error("Thread run either failed or is not completed");
+		}
+	}
 }
+
+let arabyBuddyAssistant: Assistant;
 
 export async function POST(req: Request, res: Response) {
 	try {
+		if (!arabyBuddyAssistant) {
+			const arabyBuddyConfig = {
+				name: "ArabyBuddy",
+				instructions:
+					"You are a friendly Arabic language tutor, conversate with me.",
+			};
+			console.log("Initializing ArabyBuddy assistant...");
+			arabyBuddyAssistant = new Assistant(arabyBuddyConfig);
+			await arabyBuddyAssistant.init();
+		}
 		// first transcript the incoming audio
 		const { base64Audio, type } = await req.json();
 		const { transcription } = await openAISpeechToText(base64Audio, type);
 
-		// generate new audio from the text transcription (TODO: change)
+		const { message: assistantResponseMessage } =
+			await arabyBuddyAssistant.addMessageToThread(transcription);
 
-		const { audio } = await elevenLabsTextToSpeech(transcription);
+		const { audio } = await elevenLabsTextToSpeech(assistantResponseMessage);
 
 		const base64AudioResponse = await streamToBase64(audio);
 
-		// convert mp3 to base64 blob
-		// const audioBlob = await audio.arrayBuffer();
-		// const base64AudioResponse = Buffer.from(audioBlob).toString("base64");
-
 		return Response.json(
-			{ text: transcription, audioBase64: base64AudioResponse },
+			{ text: assistantResponseMessage, audioBase64: base64AudioResponse },
 			{ status: 200 }
 		);
 	} catch (error) {
@@ -77,6 +127,9 @@ const openAISpeechToText = async (base64Audio: string, type: string) => {
 };
 
 const elevenLabsTextToSpeech = async (text: string) => {
+	// list of available voices
+	// elevenlabs.voices();
+
 	// * mp3_22050_32 - output format, mp3 with 22.05kHz sample rate at 32kbps.
 	// * mp3_44100_32 - output format, mp3 with 44.1kHz sample rate at 32kbps.
 	// * mp3_44100_64 - output format, mp3 with 44.1kHz sample rate at 64kbps.
@@ -115,8 +168,6 @@ const elevenLabsTextToSpeech = async (text: string) => {
 			// maxRetries?: number;
 		}
 	);
-
-	console.log("audio", audio);
 
 	return { audio };
 };

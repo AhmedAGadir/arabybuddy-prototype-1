@@ -1,17 +1,25 @@
+## immediate
+
+- [ ] google fonts
+- [ ] topics of conversation
+
 # Features
 
 - pages
+
   - chat (voice)
   - chat (text)
-- settings
+  - settings
 
-  - voices
+  - buddys - joey, rachel
   - rephrase mode
   - monolingual vs bilingual mode
+  - savings words to a list
+  - look up words in almaany
 
   - translate a PDF
   - translate a PDF and read it to me
-  - picture mode (what is this)
+  - camera - picture mode (what is that ? ma hatha)
 
 # Tech
 
