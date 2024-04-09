@@ -21,6 +21,16 @@ const blobToBase64 = async (blob: Blob): Promise<string> => {
 	});
 };
 
+const base64ToBlob = (base64: string, type: string): Blob => {
+	const byteCharacters = atob(base64);
+	const byteNumbers = new Array(byteCharacters.length);
+	for (let i = 0; i < byteCharacters.length; i++) {
+		byteNumbers[i] = byteCharacters.charCodeAt(i);
+	}
+	const byteArray = new Uint8Array(byteNumbers);
+	return new Blob([byteArray], { type });
+};
+
 const ChatPage = () => {
 	const { nativeLanguage, arabicDialect } = useContext(LanguageContext);
 	const [isPlaying, setIsPlaying] = useState(false);
@@ -44,7 +54,7 @@ const ChatPage = () => {
 					base64Audio,
 				});
 
-				const response = await fetch("/api/chat/speech-to-text", {
+				const response = await fetch("/api/chat", {
 					method: "POST",
 					headers: {
 						"Content-Type": "application/json",
@@ -64,13 +74,28 @@ const ChatPage = () => {
 					);
 				}
 
-				setResult(data.result);
+				const { text, audioBase64 } = data;
+				console.log("data", data);
+
+				const responseAudioBlob = base64ToBlob(audioBase64, "audio/mp3");
+				const audioSrc = URL.createObjectURL(responseAudioBlob);
+				const audio = new Audio(audioSrc);
+				setIsPlaying(true);
+				audio.play();
+				setResult(text);
+				audio.addEventListener("ended", () => {
+					setIsPlaying(false);
+					setPlayingMessage("finished playing response");
+
+					// cleanup
+					URL.revokeObjectURL(audioSrc);
+					audio.remove();
+				});
 			} catch (error) {
 				console.error(error);
 				console.log((error as Error).message);
 			}
 
-			// setIsPlaying(true);
 			// setPlayingMessage("starting to play response");
 			// bell?.play();
 
@@ -208,6 +233,7 @@ const ChatPage = () => {
 				<button
 					className="mt-10 m-auto cursor-pointer"
 					onClick={toggleRecording}
+					disabled={isLoading || isPlaying}
 				>
 					<BlobSvg
 						size={amplitude ? 200 + amplitude * 2 : 200}

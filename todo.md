@@ -1,11 +1,48 @@
-- [ ] - set up analytics (google analytics is good but events-based product is better (mix panel?). Pick 5-10 metrics).
-- [ ] - add polyfills for supporting diff browsers MediaRecorder
-    - (already implemented but doesn't really work so its commented out - see useMediaRecorderPolyfill) https://www.npmjs.com/package/opus-media-recorder
-    - https://www.npmjs.com/package/audio-recorder-polyfill
-- [ ] - add fallbacks for supported audio types across different browsers/OS's
-- [ ] - find out how to not have to ask for microphone permission every time on iOS
-    - see https://restream.io/tools/mic-test
-    - contact restream CEO on linkedin/other channels
-    - help reddit: https://www.reddit.com/r/AskProgramming/comments/1bxn68l/mediarecorder_api_call_requestdata_multiple_times/
-    - help stackoverflow: https://stackoverflow.com/questions/78285997/mediarecorder-api-call-requestdata-multiple-times-to-create-multiple-audio-bl
-    - help freecodecamp: https://forum.freecodecamp.org/t/how-to-record-audio-without-repeatedly-asking-for-permission-to-use-microphone/684057
+# Features
+
+- pages
+  - chat (voice)
+  - chat (text)
+- settings
+
+  - voices
+  - rephrase mode
+  - monolingual vs bilingual mode
+
+  - translate a PDF
+  - translate a PDF and read it to me
+  - picture mode (what is this)
+
+# Tech
+
+## Tech Stack
+
+- README-AI to generate readme
+- fetching data (react query)
+- AI - elevenlabs and openai (GPT4 and Whisper)
+- database (mongo)
+- auth (clerk)
+- payments (stripe)
+- React query vs server components?
+  https://tkdodo.eu/blog/you-might-not-need-react-query
+- websockets for streaming data?
+
+# ToDo
+
+- [ ] set up analytics (google analytics is good but events-based product is better (mix panel?). Pick 5-10 metrics).
+- [ ] reduce latency
+- [ ] build in authentication and payments
+- [ ] add all boilerplate-ish pages and components (privacy policy, refunds,header, footer, sidebar etc etc)
+
+### Todo (Microphone)
+
+- [ ] add polyfills for supporting diff browsers MediaRecorder
+      (already implemented but doesn't really work so its commented out - see useMediaRecorderPolyfill) https://www.npmjs.com/package/opus-media-recorder
+      https://www.npmjs.com/package/audio-recorder-polyfill
+- [ ] add fallbacks for supported audio types across different browsers/OS's
+- [x] find out how to not have to ask for microphone permission every time on iOS
+      see https://restream.io/tools/mic-test
+      contact restream CEO on linkedin/other channels
+      help reddit: https://www.reddit.com/r/AskProgramming/comments/1bxn68l/mediarecorder_api_call_requestdata_multiple_times/
+      help stackoverflow: https://stackoverflow.com/questions/78285997/mediarecorder-api-call-requestdata-multiple-times-to-create-multiple-audio-bl
+      help freecodecamp: https://forum.freecodecamp.org/t/how-to-record-audio-without-repeatedly-asking-for-permission-to-use-microphone/684057

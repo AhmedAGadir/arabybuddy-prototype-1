@@ -1,143 +1,122 @@
-export async function POST(req: Request, res: Response) {
-	const formData = await req.formData();
-	const userAudio = formData.get("userAudio");
+import fs from "fs";
+import path from "path";
+import OpenAI from "openai";
+import { tmpdir } from "os";
+import { ElevenLabsClient } from "elevenlabs";
+import internal from "stream";
 
-	console.log("userAudio", userAudio);
+// remember API calls wont work if the account balance is 0
+const openai = new OpenAI({
+	organization: process.env.OPENAI_ORG_ID,
+	apiKey: process.env.OPENAI_API_KEY,
+});
 
-	return Response.json({ userAudio });
+const elevenlabs = new ElevenLabsClient({
+	apiKey: process.env.ELEVENLABS_API_KEY,
+});
+
+async function streamToBase64(readableStream: internal.Stream) {
+	return new Promise((resolve, reject) => {
+		const chunks: any[] = [];
+		readableStream.on("data", (chunk) => chunks.push(chunk));
+		readableStream.on("error", reject);
+		readableStream.on("end", () => {
+			const buffer = Buffer.concat(chunks);
+			const base64 = buffer.toString("base64");
+			resolve(base64);
+		});
+	});
 }
 
-// // 0. Import Dependencies
-// import OpenAI from "openai";
-// import dotenv from "dotenv";
-// import { OpenAI as LangchainOpenAI } from "@langchain/openai";
-// import { Ollama } from "@langchain/community/llms/ollama";
-// import api from 'api';
+export async function POST(req: Request, res: Response) {
+	try {
+		// first transcript the incoming audio
+		const { base64Audio, type } = await req.json();
+		const { transcription } = await openAISpeechToText(base64Audio, type);
 
-// // 1. Initialize the Perplexity SDK
-// const sdk = api('@pplx/v0#rht322clnm9gt25');
+		// generate new audio from the text transcription (TODO: change)
 
-// // 2. Configure environment variables
-// dotenv.config();
-// sdk.auth(process.env.PERPLEXITY_API_KEY);
+		const { audio } = await elevenLabsTextToSpeech(transcription);
 
-// // 3. Define the response data structure
-// interface ResponseData {
-//     data: string;
-//     contentType: string;
-//     model: string;
-// }
+		const base64AudioResponse = await streamToBase64(audio);
 
-// // 4. Initialize the OpenAI instance
-// const openai = new OpenAI();
+		// convert mp3 to base64 blob
+		// const audioBlob = await audio.arrayBuffer();
+		// const base64AudioResponse = Buffer.from(audioBlob).toString("base64");
 
-// // 5. Function to create audio from text
-// async function createAudio( fullMessage: string, voice: "alloy" | "echo" | "fable" | "onyx" | "nova" | "shimmer") {
-//     const mp3 = await openai.audio.speech.create({
-//         model: "tts-1",
-//         voice: voice,
-//         input: fullMessage,
-//     });
-//     const buffer = Buffer.from(await mp3.arrayBuffer());
-//     return buffer.toString('base64');
-// }
+		return Response.json(
+			{ text: transcription, audioBase64: base64AudioResponse },
+			{ status: 200 }
+		);
+	} catch (error) {
+		console.error("Error processing audio:", error);
+		return Response.error();
+	}
+}
 
-// // 6. HTTP POST handler function
-// export async function POST(req: Request, res: Response): Promise<ResponseData> {
-//     const body = await req.json();
-//     let message = body.message.toLowerCase();
-//     let modelName = body.model || "gpt";
+const openAISpeechToText = async (base64Audio: string, type: string) => {
+	const audioData = Buffer.from(base64Audio, "base64");
 
-//     // 7. Function to remove the first word of a string
-//     const removeFirstWord = (text: string) => text.includes(" ") ? text.substring(text.indexOf(" ") + 1) : "";
-//     message = removeFirstWord(message);
+	// https://github.com/orgs/vercel/discussions/241
+	const dirPath = path.join(tmpdir(), "openai-audio-transcription");
+	const filePath = path.join(dirPath, `input.${type}`);
 
-//     // 8. Initialize variables for messages and audio
-//     let introMessage = "", base64Audio, voice: "alloy" | "echo" | "fable" | "onyx" | "nova" | "shimmer" = "echo", gptMessage, fullMessage;
+	await fs.promises.mkdir(dirPath, { recursive: true });
+	fs.writeFileSync(filePath, audioData);
 
-//     // 9. Common prompt for all models
-//     const commonPrompt = "Be precise and concise, never respond in more than 1-2 sentences! " + message;
+	const transcription = await openai.audio.transcriptions.create({
+		file: fs.createReadStream(filePath),
+		model: "whisper-1",
+		language: "ar",
+	});
 
-//     // 10. Handle different model cases
-//     if (modelName === "gpt") {
-//         const llm = new LangchainOpenAI({
-//             openAIApiKey: process.env.OPENAI_API_KEY,
-//         });
-//         gptMessage = await llm.invoke(commonPrompt);
-//         introMessage = "GPT3 point 5 here, ";
-//         voice = "echo";
-//     } else if (modelName === "gpt4") {
-//         // 11. Handling GPT-4 model
-//         const llm = new LangchainOpenAI({
-//             openAIApiKey: process.env.OPENAI_API_KEY,
-//             modelName: 'gpt-4'
-//         });
-//         gptMessage = await llm.invoke(commonPrompt);
-//         introMessage = "GPT-4 here, ";
-//         voice = "echo";
-//     } else if (modelName === "local mistral") {
-//         // 12. Handling local Mistral model
-//         const llm = new Ollama({
-//             baseUrl: "http://localhost:11434",
-//             model: "mistral",
-//         });
-//         gptMessage = await llm.invoke(commonPrompt);
-//         introMessage = "Ollama Mitral-7B here, ";
-//         voice = "fable";
-//     } else if (modelName === "local llama") {
-//         // 13. Handling local Llama model
-//         const llm = new Ollama({
-//             baseUrl: "http://localhost:11434",
-//             model: "llama2",
-//         });
-//         gptMessage = await llm.invoke(commonPrompt);
-//         introMessage = "Ollama Llama 2 here, ";
-//         voice = "fable";
-//     } else if (modelName === "mixture") {
-//         // 14. Handling Mixture model
-//         const response = await sdk.post_chat_completions({
-//             model: 'mixtral-8x7b-instruct',
-//             messages: [{ role: 'user', content: commonPrompt }]
-//         });
-//         gptMessage = response.data.choices[0].message.content;
-//         introMessage = "Mixtral here, ";
-//         voice = "alloy";
-//     } else if (modelName === "mistral") {
-//         // 15. Handling Mistral model
-//         const response = await sdk.post_chat_completions({
-//             model: 'mistral-7b-instruct',
-//             messages: [{ role: 'user', content: commonPrompt }]
-//         });
-//         gptMessage = response.data.choices[0].message.content;
-//         introMessage = "Mistral here, ";
-//         voice = "nova";
-//     } else if (modelName === "perplexity") {
-//         // 16. Handling Perplexity model
-//         const response = await sdk.post_chat_completions({
-//             model: 'pplx-70b-online',
-//             messages: [
-//                 { role: 'system', content: commonPrompt },
-//                 { role: 'user', content: commonPrompt }
-//             ]
-//         });
-//         gptMessage = response.data.choices[0].message.content;
-//         introMessage = "Perplexity here, ";
-//         voice = "onyx";
-//     } else if (modelName === "llama") {
-//         // 17. Handling Llama model
-//         const response = await sdk.post_chat_completions({
-//             model: 'llama-2-70b-chat',
-//             messages: [{ role: 'user', content: commonPrompt }]
-//         });
-//         gptMessage = response.data.choices[0]. message.content;
-//         introMessage = "Llama 2 70B here, ";
-//         voice = "nova";
-//     }
+	fs.unlinkSync(filePath);
+	fs.rmSync(dirPath, { recursive: true, force: true });
 
-//     // 18. Compile the full message and create the audio
-//     fullMessage = introMessage + gptMessage;
-//     base64Audio = await createAudio( fullMessage, voice);
+	return { transcription: transcription.text };
+};
 
-//     // 19. Return the response
-//     return Response.json({ data: base64Audio, contentType: 'audio/mp3', model: modelName });
-// }
+const elevenLabsTextToSpeech = async (text: string) => {
+	// * mp3_22050_32 - output format, mp3 with 22.05kHz sample rate at 32kbps.
+	// * mp3_44100_32 - output format, mp3 with 44.1kHz sample rate at 32kbps.
+	// * mp3_44100_64 - output format, mp3 with 44.1kHz sample rate at 64kbps.
+	// * mp3_44100_96 - output format, mp3 with 44.1kHz sample rate at 96kbps.
+	// * mp3_44100_128 - default output format, mp3 with 44.1kHz sample rate at 128kbps.
+	// * mp3_44100_192 - output format, mp3 with 44.1kHz sample rate at 192kbps. Requires you to be subscribed to Creator tier or above.
+	// output_format:
+	const voices = {
+		rachel: { name: "Rachel", voiceId: "JOoOS0ygQqJknGa2C14N" },
+		joey: {
+			name: "Joey - Youthful and Energetic",
+			voiceId: "bjL4GZJa40TcWjwdphFX",
+		},
+	};
+
+	const audio = await elevenlabs.generate(
+		{
+			voice: voices.rachel.voiceId,
+			text,
+			model_id: "eleven_multilingual_v2",
+			// output_format: "mp3_22050_32",
+			// stream,
+			// optimize_streaming_latency,
+			// output_format,
+			// pronunciation_dictionary_locators
+			voice_settings: {
+				stability: 0.5,
+				similarity_boost: 0.75,
+				style: 0,
+				use_speaker_boost: true,
+			},
+		},
+
+		{
+			// timeoutInSeconds?: number;
+			// maxRetries?: number;
+		}
+	);
+
+	console.log("audio", audio);
+
+	return { audio };
+};
