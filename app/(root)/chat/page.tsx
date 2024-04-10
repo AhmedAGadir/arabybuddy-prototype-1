@@ -289,8 +289,8 @@ const ChatPage = () => {
 			<div className="max-w-4xl m-auto relative">
 				<p
 					className={cn(
-						" leading-loose font-extrabold tracking-tight text-4xl md:text-5xl lg:text-6xl text-center px-5",
-						!_.isEmpty(messages) && amiri.className, // when displaying arabic text
+						"leading-loose font-extrabold tracking-tight text-4xl md:text-5xl lg:text-6xl text-center px-5",
+						!_.isEmpty(messages) && `${amiri.className} font-light`, // when displaying arabic text
 						isPlaying && "text-araby-blue", // while playing
 						!isPlaying && "text-slate-600",
 						(isRecording || isLoading) && "text-5xl" // for emojis
