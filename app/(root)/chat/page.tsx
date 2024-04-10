@@ -187,7 +187,7 @@ const ChatPage = () => {
 	}, [isLoading, isPlaying, isRecording, messages]);
 
 	return (
-		<div className="w-full h-screen flex flex-col items-center justify-between">
+		<div className="w-full h-100vh h-100lvh h-100svh h-100dvh flex flex-col items-center justify-between">
 			{/* <p> */}
 			{/* Chat {nativeLanguage} - {arabicDialect}
 			</p> */}
