@@ -1,12 +1,21 @@
 "use client";
 
-import React, { useContext, useState, useCallback, useMemo } from "react";
+import React, {
+	useContext,
+	useState,
+	useCallback,
+	useMemo,
+	useEffect,
+} from "react";
 import LanguageContext from "@/context/languageContext";
 import { BlobSvg } from "@/components/shared";
 import { useRecording } from "@/hooks/useRecording/useRecording";
 import { BackgroundGradient } from "@/components/ui/background-gradient";
 import { base64ToBlob, blobToBase64, cn } from "@/lib/utils";
 import { useLogger } from "@/hooks/useLogger";
+import CursorSVG from "@/components/shared/CursorSVG";
+import _ from "lodash";
+import { amiri } from "@/lib/fonts";
 
 const makeServerlessRequest = async (url: string, body: any) => {
 	const response = await fetch(url, {
@@ -102,8 +111,7 @@ const ChatPage = () => {
 					);
 				logger.log("updatedMessages", JSON.stringify(updatedMessages));
 
-				const assistantResponseMessage =
-					updatedMessages[updatedMessages.length - 1];
+				const assistantResponseMessage = _.last(updatedMessages) as Message;
 
 				setTransformationState("text -> audio");
 				logger.log("making request to: /api/chat/text-to-speech...");
@@ -113,26 +121,15 @@ const ChatPage = () => {
 				);
 				logger.log("base64Audio", base64Audio);
 
-				const responseAudioBlob = base64ToBlob(base64Audio, "audio/mp3");
-				const audioSrc = URL.createObjectURL(responseAudioBlob);
-				const audio = new Audio(audioSrc);
-
 				// 4. play the audio and updated the messages in state
 				setIsLoading(false);
-				setMessages(updatedMessages);
 
-				setIsPlaying(true);
-				audio.play();
+				updateMessagesAndTypeLatestMessage(updatedMessages);
 
-				const onAudioEnded = () => {
-					setIsPlaying(false);
-					setTransformationState("");
+				await playAudio(base64Audio);
 
-					URL.revokeObjectURL(audioSrc);
-					audio.remove();
-				};
-
-				audio.addEventListener("ended", onAudioEnded);
+				setIsPlaying(false);
+				setTransformationState("");
 			} catch (error) {
 				logger.error(error);
 				logger.log((error as Error).message);
@@ -157,6 +154,30 @@ const ChatPage = () => {
 		}
 	};
 
+	const playAudio = async (base64Audio: string) => {
+		const promise = new Promise((resolve, reject) => {
+			const audioBlob = base64ToBlob(base64Audio, "audio/mp3");
+			const audioSrc = URL.createObjectURL(audioBlob);
+			const audio = new Audio(audioSrc);
+
+			setIsPlaying(true);
+
+			audio.play();
+
+			const onAudioEnded = () => {
+				URL.revokeObjectURL(audioSrc);
+				audio.removeEventListener("ended", onAudioEnded);
+				audio.removeEventListener("error", reject);
+				resolve(null);
+			};
+
+			audio.addEventListener("ended", onAudioEnded);
+			audio.addEventListener("error", reject);
+		});
+
+		return promise;
+	};
+
 	const microphoneFillColor = useMemo(() => {
 		if (isPlaying)
 			return {
@@ -176,12 +197,41 @@ const ChatPage = () => {
 		};
 	}, [isLoading, isPlaying, isRecording]);
 
+	const [completedTyping, setCompletedTyping] = useState(false);
+
+	const updateMessagesAndTypeLatestMessage = (messages: Message[]) => {
+		const mostRecentMessage = _.last(messages) as Message;
+		const previousMessages = messages.slice(0, messages.length - 1);
+
+		setCompletedTyping(false);
+
+		let i = 0;
+
+		const intervalId = setInterval(() => {
+			setMessages([
+				...previousMessages,
+				{
+					...mostRecentMessage,
+					content: mostRecentMessage.content.slice(0, i),
+				},
+			]);
+
+			i++;
+
+			if (i > mostRecentMessage.content.length) {
+				clearInterval(intervalId);
+				setCompletedTyping(true);
+			}
+		}, 25);
+
+		return () => clearInterval(intervalId);
+	};
+
 	const displayedMessage = useMemo(() => {
 		if (isRecording) return "👂";
 		if (isLoading) return "🤔";
-		if (isPlaying || messages.length > 0) {
-			debugger;
-			return messages[messages.length - 1].content;
+		if (isPlaying || !_.isEmpty(messages)) {
+			return _.last(messages)?.content ?? "";
 		}
 		return "Press ⬇️ the blue blob to start recording";
 	}, [isLoading, isPlaying, isRecording, messages]);
@@ -236,18 +286,21 @@ const ChatPage = () => {
 					</BackgroundGradient>
 				</div>
 			)} */}
-			<div className="max-w-4xl m-auto">
+			<div className="max-w-4xl m-auto relative">
 				<p
 					className={cn(
-						"leading-loose font-extrabold tracking-tight text-4xl md:text-5xl lg:text-6xl text-center px-5",
-						isPlaying && "text-araby-blue",
-						!isPlaying && "text-slate-900",
-						(isRecording || isLoading) && "text-5xl"
+						" leading-loose font-extrabold tracking-tight text-4xl md:text-5xl lg:text-6xl text-center px-5",
+						!_.isEmpty(messages) && amiri.className, // when displaying arabic text
+						isPlaying && "text-araby-blue", // while playing
+						!isPlaying && "text-slate-600",
+						(isRecording || isLoading) && "text-5xl" // for emojis
 					)}
+					// for the cursor to be on the left side of the text
+					{...(isPlaying ? { style: { direction: "rtl" } } : {})}
 				>
-					{displayedMessage}
+					{displayedMessage} {isPlaying && !completedTyping && <CursorSVG />}
 				</p>
-				<p className="mt-2 text-lg font-normal text-gray-500 lg:text-xl sm:px-16 xl:px-48 text-center dark:text-gray-400">
+				<p className="absolute bottom-[-30px] left-1/2 -translate-x-1/2 w-max h-[20px] text-lg font-normal text-gray-500 lg:text-xl sm:px-16 xl:px-48 text-center dark:text-gray-400">
 					{transformationState}
 				</p>
 			</div>

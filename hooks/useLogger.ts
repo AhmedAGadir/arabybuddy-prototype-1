@@ -7,7 +7,7 @@ const useLogger = ({
 	color?: string;
 	toggle?: boolean;
 }) => {
-	const log = (message: string, message2?: string) => {
+	const log = (message: any, message2?: any) => {
 		const messageToPrint = message2 ? `${message} ${message2}` : message;
 		if (toggle) {
 			if (color) {
@@ -18,7 +18,7 @@ const useLogger = ({
 		}
 	};
 
-	const warn = (message: string, message2?: string) => {
+	const warn = (message: any, message2?: any) => {
 		const messageToPrint = message2 ? `${message} ${message2}` : message;
 		if (toggle) {
 			console.warn(`[${label}]: ${messageToPrint}`);

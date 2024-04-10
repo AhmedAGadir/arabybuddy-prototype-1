@@ -18,6 +18,7 @@
 		"elevenlabs": "^0.2.2",
 		"framer-motion": "^11.0.25",
 		"inline-worker": "^1.1.0",
+		"lodash": "^4.17.21",
 		"lucide-react": "^0.363.0",
 		"next": "14.1.4",
 		"openai": "^4.33.0",
@@ -31,6 +32,7 @@
 		"zod": "^3.22.4"
 	},
 	"devDependencies": {
+		"@types/lodash": "^4.17.0",
 		"@types/node": "^20",
 		"@types/react": "^18",
 		"@types/react-dom": "^18",

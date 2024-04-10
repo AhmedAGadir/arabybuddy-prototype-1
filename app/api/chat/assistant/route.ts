@@ -34,7 +34,7 @@ const openAiAppendUserMessageAndAwaitAssistantResponse = async (
 	const assistant = await openai.beta.assistants.create({
 		name: "ArabyBuddy",
 		instructions:
-			"You are a friendly Arabic language tutor, conversate with me.",
+			"You are a friendly Arabic language tutor who the user is here to conversate with. Your name is 'ArabyBuddy' and you offer nice topics of conversation",
 		model: "gpt-4-turbo-preview",
 	});
 
@@ -53,7 +53,7 @@ const openAiAppendUserMessageAndAwaitAssistantResponse = async (
 	const run = await openai.beta.threads.runs.createAndPoll(thread.id, {
 		assistant_id: assistant.id,
 		//   instructions: "Please address the user as Jane Doe. The user has a premium account."
-		instructions: "Respond to the user.",
+		// instructions: "Respond to the user.",
 	});
 
 	let updatedMessages = [];

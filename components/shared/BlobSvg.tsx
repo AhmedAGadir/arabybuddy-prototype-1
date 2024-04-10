@@ -63,7 +63,7 @@ const BlobInner = ({
 	</div>
 );
 
-const BlobSvg = ({
+const BlobSVG = ({
 	size,
 	fill,
 	fillOpacity,
@@ -116,4 +116,4 @@ const BlobSvg = ({
 	);
 };
 
-export { BlobSvg };
+export { BlobSVG as BlobSvg };
