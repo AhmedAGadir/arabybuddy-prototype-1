@@ -23,60 +23,25 @@ export async function POST(req: Request, res: Response) {
 			audio: { base64Audio, type },
 			messages,
 		} = await req.json();
-
 		const { transcription } = await openAISpeechToText(base64Audio, type);
 
-		// create the assistance
-		const assistant = await openai.beta.assistants.create({
-			name: "ArabyBuddy",
-			instructions:
-				"You are a friendly Arabic language tutor, conversate with me.",
-			model: "gpt-4-turbo-preview",
-		});
-
-		// create the thread and pass all previous messages
-		const thread = await openai.beta.threads.create({
+		// then pass it to the ArabyBuddy assistant to get a text response
+		const { updatedMessages } = await openAIArabyBuddyAssistantConversation(
 			messages,
-		});
-
-		// add transcription to thread
-		await openai.beta.threads.messages.create(thread.id, {
-			role: "user",
-			content: transcription,
-		});
-
-		// run the thread with the assistant
-		const run = await openai.beta.threads.runs.createAndPoll(thread.id, {
-			assistant_id: assistant.id,
-			//   instructions: "Please address the user as Jane Doe. The user has a premium account."
-			instructions: "Respond to the user.",
-		});
-
-		let updatedMessages = [];
-
-		if (run.status === "completed") {
-			const messagesPage: OpenAI.Beta.Threads.Messages.MessagesPage =
-				await openai.beta.threads.messages.list(run.thread_id);
-
-			updatedMessages = messagesPage.data.reverse().map((message) => ({
-				role: message.role,
-				content: (message.content[0] as TextContentBlock).text.value,
-			}));
-		} else {
-			throw new Error("Thread run either failed or is not completed");
-		}
-
-		// finally convert the response to audio
-		const { audio } = await elevenLabsTextToSpeech(
-			updatedMessages[updatedMessages.length - 1].content
+			transcription
 		);
 
-		const base64AudioResponse = await streamToBase64(audio);
+		// // finally convert the response to audio
+		// const { audio } = await elevenLabsTextToSpeech(
+		// 	updatedMessages[updatedMessages.length - 1].content
+		// );
+
+		// const base64AudioResponse = await streamToBase64(audio);
 
 		return Response.json(
 			{
 				messages: updatedMessages,
-				audioBase64: base64AudioResponse,
+				// audioBase64: base64AudioResponse,
 			},
 			{ status: 200 }
 		);
@@ -85,6 +50,53 @@ export async function POST(req: Request, res: Response) {
 		return Response.error();
 	}
 }
+
+const openAIArabyBuddyAssistantConversation = async (
+	messages: { role: "user" | "assistant"; content: string }[],
+	transcription: string
+) => {
+	// create the assistant
+	const assistant = await openai.beta.assistants.create({
+		name: "ArabyBuddy",
+		instructions:
+			"You are a friendly Arabic language tutor, conversate with me.",
+		model: "gpt-4-turbo-preview",
+	});
+
+	// create the thread and pass all previous messages
+	const thread = await openai.beta.threads.create({
+		messages,
+	});
+
+	// add transcription to thread
+	await openai.beta.threads.messages.create(thread.id, {
+		role: "user",
+		content: transcription,
+	});
+
+	// run the thread with the assistant
+	const run = await openai.beta.threads.runs.createAndPoll(thread.id, {
+		assistant_id: assistant.id,
+		//   instructions: "Please address the user as Jane Doe. The user has a premium account."
+		instructions: "Respond to the user.",
+	});
+
+	let updatedMessages = [];
+
+	if (run.status === "completed") {
+		const messagesPage: OpenAI.Beta.Threads.Messages.MessagesPage =
+			await openai.beta.threads.messages.list(run.thread_id);
+
+		updatedMessages = messagesPage.data.reverse().map((message) => ({
+			role: message.role,
+			content: (message.content[0] as TextContentBlock).text.value,
+		}));
+	} else {
+		throw new Error("Thread run either failed or is not completed");
+	}
+
+	return { updatedMessages };
+};
 
 const openAISpeechToText = async (base64Audio: string, type: string) => {
 	const audioData = Buffer.from(base64Audio, "base64");
