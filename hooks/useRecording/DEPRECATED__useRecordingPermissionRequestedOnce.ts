@@ -2,7 +2,7 @@ import { useCallback, useRef, useState } from "react";
 import { useSilenceDetection } from "./useSilenceDetection";
 import { useSound } from "../useSound";
 import { getFirstSupportedMimeType } from "@/lib/utils";
-import { useRecordingLogger } from "./logger";
+// import { useRecordingLogger } from "./logger";
 // import { usePolyfill } from "./useMediaRecorderPolyfil";
 
 // this version of useRecording IS NOT compatible with iOS

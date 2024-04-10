@@ -292,7 +292,7 @@ const ChatPage = () => {
 						"leading-loose font-extrabold tracking-tight text-4xl md:text-5xl lg:text-6xl text-center px-5",
 						!_.isEmpty(messages) && `${amiri.className} font-light`, // when displaying arabic text
 						isPlaying && "text-araby-blue", // while playing
-						!isPlaying && "text-slate-600",
+						!isPlaying && "text-slate-900",
 						(isRecording || isLoading) && "text-5xl" // for emojis
 					)}
 					// for the cursor to be on the left side of the text
