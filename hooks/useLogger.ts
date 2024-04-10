@@ -1,29 +1,35 @@
 const useLogger = ({
 	label,
-	toggle = true,
 	color,
+	toggle = true,
 }: {
 	label: string;
-	toggle?: boolean;
 	color?: string;
+	toggle?: boolean;
 }) => {
-	const log = (message: string) => {
+	const log = (message: string, message2?: string) => {
+		const messageToPrint = message2 ? `${message} ${message2}` : message;
 		if (toggle) {
 			if (color) {
-				console.log(`%c[${label}]: ${message}`, `color: ${color}`);
+				console.log(`%c[${label}]: ${messageToPrint}`, `color: ${color}`);
 				return;
 			}
 			console.log(`[${label}]: ${message}`);
 		}
 	};
 
-	const warn = (message: string) => {
+	const warn = (message: string, message2?: string) => {
+		const messageToPrint = message2 ? `${message} ${message2}` : message;
 		if (toggle) {
-			console.warn(`[${label}]: ${message}`);
+			console.warn(`[${label}]: ${messageToPrint}`);
 		}
 	};
 
-	return { log, warn };
+	const error = (...params: any) => {
+		console.log(...params);
+	};
+
+	return { log, warn, error };
 };
 
 export { useLogger };

@@ -6,84 +6,139 @@ import { BlobSvg } from "@/components/shared";
 import { useRecording } from "@/hooks/useRecording/useRecording";
 import { BackgroundGradient } from "@/components/ui/background-gradient";
 import { base64ToBlob, blobToBase64, cn } from "@/lib/utils";
+import { useLogger } from "@/hooks/useLogger";
+
+const makeServerlessRequest = async (url: string, body: any) => {
+	const response = await fetch(url, {
+		method: "POST",
+		headers: {
+			"Content-Type": "application/json",
+		},
+		body: JSON.stringify(body),
+	});
+
+	const data = await response.json();
+
+	if (response.status !== 200) {
+		throw (
+			data.error || new Error(`Request failed with status ${response.status}`)
+		);
+	}
+
+	return data;
+};
+
+const speechToText = async (audioBlob: Blob) => {
+	const base64Audio = await blobToBase64(audioBlob);
+
+	const { transcription } = await makeServerlessRequest(
+		"/api/chat/speech-to-text",
+		{
+			audio: {
+				base64Audio,
+				type: audioBlob.type.split("/")[1],
+			},
+		}
+	);
+
+	return { transcription };
+};
+
+const appendUserMessageAndAwaitAssistantResponse = async (
+	messages: Message[],
+	latestMessage: string
+) => {
+	const { messages: updatedMessages } = await makeServerlessRequest(
+		"/api/chat/assistant",
+		{
+			messages,
+			content: latestMessage,
+		}
+	);
+
+	return { messages: updatedMessages };
+};
+
+const textToSpeech = async (content: string) => {
+	const { base64Audio } = await makeServerlessRequest(
+		"/api/chat/text-to-speech",
+		{
+			content,
+		}
+	);
+
+	return { base64Audio };
+};
+
+type Message = { role: "user" | "assistant"; content: string };
 
 const ChatPage = () => {
 	const { nativeLanguage, arabicDialect } = useContext(LanguageContext);
 	const [isPlaying, setIsPlaying] = useState(false);
 	const [isLoading, setIsLoading] = useState(false);
-	const [messages, setMessages] = useState<
-		{ role: "user" | "assistant"; content: string }[]
-	>([]);
+	const [messages, setMessages] = useState<Message[]>([]);
+	const [transformationState, setTransformationState] = useState("");
+
+	const logger = useLogger({ label: "ChatPage", color: "#fe7de9" });
 
 	const sendToBackend = useCallback(
 		async (audioBlob: Blob): Promise<void> => {
 			setIsLoading(true);
 
 			try {
-				const base64Audio = await blobToBase64(audioBlob);
+				setTransformationState("audio -> transcription");
+				logger.log("making request to: /api/chat/speech-to-text...");
+				// 1. transcribe the user's audio
+				const { transcription } = await speechToText(audioBlob);
+				logger.log("transcription", transcription);
 
-				console.log({
-					type: audioBlob.type.split("/")[1],
-					base64Audio,
-				});
-
-				console.log("sending this data", {
-					audio: {
-						base64Audio,
-						type: audioBlob.type.split("/")[1],
-					},
-					messages,
-				});
-
-				const response = await fetch("/api/chat", {
-					method: "POST",
-					headers: {
-						"Content-Type": "application/json",
-					},
-					body: JSON.stringify({
-						audio: {
-							base64Audio,
-							type: audioBlob.type.split("/")[1],
-						},
+				setTransformationState("text -> text");
+				logger.log("making request to: /api/chat/assistant...");
+				// 2. send the transcription to the assistant and await a text response
+				const { messages: updatedMessages } =
+					await appendUserMessageAndAwaitAssistantResponse(
 						messages,
-					}),
-				});
-
-				const data = await response.json();
-
-				if (response.status !== 200) {
-					throw (
-						data.error ||
-						new Error(`Request failed with status ${response.status}`)
+						transcription
 					);
-				}
+				logger.log("updatedMessages", JSON.stringify(updatedMessages));
 
-				console.log("data", data);
+				const assistantResponseMessage =
+					updatedMessages[updatedMessages.length - 1];
 
-				const { messages: updatedMessages, audioBase64 } = data;
+				setTransformationState("text -> audio");
+				logger.log("making request to: /api/chat/text-to-speech...");
+				// 3. convert the text response to audio
+				const { base64Audio } = await textToSpeech(
+					assistantResponseMessage.content
+				);
+				logger.log("base64Audio", base64Audio);
 
-				const responseAudioBlob = base64ToBlob(audioBase64, "audio/mp3");
-
-				setMessages(updatedMessages);
-
+				const responseAudioBlob = base64ToBlob(base64Audio, "audio/mp3");
 				const audioSrc = URL.createObjectURL(responseAudioBlob);
 				const audio = new Audio(audioSrc);
+
+				// 4. play the audio and updated the messages in state
 				setIsLoading(false);
+				setMessages(updatedMessages);
+
 				setIsPlaying(true);
 				audio.play();
-				audio.addEventListener("ended", () => {
-					setIsPlaying(false);
 
-					// cleanup
+				const onAudioEnded = () => {
+					setIsPlaying(false);
+					setTransformationState("");
+
 					URL.revokeObjectURL(audioSrc);
 					audio.remove();
-				});
+				};
+
+				audio.addEventListener("ended", onAudioEnded);
 			} catch (error) {
-				console.error(error);
-				console.log((error as Error).message);
+				logger.error(error);
+				logger.log((error as Error).message);
 			}
 		},
-		[messages]
+		[messages, logger]
 	);
 
 	const { isRecording, startRecording, stopRecording, amplitude } =
@@ -96,6 +151,7 @@ const ChatPage = () => {
 		}
 
 		if (!isRecording) {
+			setTransformationState("");
 			startRecording();
 			return;
 		}
@@ -190,6 +246,9 @@ const ChatPage = () => {
 					)}
 				>
 					{displayedMessage}
+				</p>
+				<p className="mt-2 text-lg font-normal text-gray-500 lg:text-xl sm:px-16 xl:px-48 text-center dark:text-gray-400">
+					{transformationState}
 				</p>
 			</div>
 			<div className="flex items-center w-full">

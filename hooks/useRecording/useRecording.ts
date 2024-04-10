@@ -80,7 +80,7 @@ const useRecording = (onRecordingComplete: (blob: Blob) => void) => {
 			detectSilence(
 				audioContextRef.current,
 				microphoneRef.current,
-				3000,
+				4000,
 				stopRecording
 			);
 		} catch (error) {
