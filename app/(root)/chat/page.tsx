@@ -69,6 +69,8 @@ const ChatPage = () => {
 
 				setMessages(updatedMessages);
 
+				setIsPlaying(false); //TODO: remove this when reintroducing audio
+
 				// const audioSrc = URL.createObjectURL(responseAudioBlob);
 				// const audio = new Audio(audioSrc);
 				// setIsLoading(false);
