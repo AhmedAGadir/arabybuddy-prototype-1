@@ -22,6 +22,16 @@ export const getFirstSupportedMimeType = () => {
 	return "";
 };
 
+export const getAllSupportedMimeTypes = () => {
+	const supportedMimeTypes: string[] = [];
+	for (const mimeType of MIME_TYPES) {
+		if (MediaRecorder.isTypeSupported(mimeType)) {
+			supportedMimeTypes.push(mimeType);
+		}
+	}
+	return supportedMimeTypes;
+};
+
 // next js complains about window and navigator being undefined
 declare global {
 	interface Window {}

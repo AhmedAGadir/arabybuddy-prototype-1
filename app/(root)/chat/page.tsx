@@ -11,7 +11,12 @@ import LanguageContext from "@/context/languageContext";
 import { BlobSvg } from "@/components/shared";
 import { useRecording } from "@/hooks/useRecording/useRecording";
 import { BackgroundGradient } from "@/components/ui/background-gradient";
-import { base64ToBlob, blobToBase64, cn } from "@/lib/utils";
+import {
+	base64ToBlob,
+	blobToBase64,
+	cn,
+	getAllSupportedMimeTypes,
+} from "@/lib/utils";
 import { useLogger } from "@/hooks/useLogger";
 import CursorSVG from "@/components/shared/CursorSVG";
 import _ from "lodash";
@@ -129,7 +134,7 @@ const ChatPage = () => {
 				await playAudio(base64Audio);
 
 				setIsPlaying(false);
-				setTransformationState("");
+				// setTransformationState("");
 			} catch (error) {
 				logger.error(error);
 				logger.log((error as Error).message);
@@ -159,6 +164,11 @@ const ChatPage = () => {
 			const audioBlob = base64ToBlob(base64Audio, "audio/mp3");
 			const audioSrc = URL.createObjectURL(audioBlob);
 			const audio = new Audio(audioSrc);
+
+			const supportedMIMEtypes = getAllSupportedMimeTypes();
+			setTransformationState(
+				`Supported MIME types: ${supportedMIMEtypes.join(", ")}`
+			);
 
 			setIsPlaying(true);
 
