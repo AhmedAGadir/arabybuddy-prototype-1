@@ -50,6 +50,8 @@ const ChatPage = () => {
 					);
 				}
 
+				console.log("data", data);
+
 				const { messages: updatedMessages, audioBase64 } = data;
 
 				const responseAudioBlob = base64ToBlob(audioBase64, "audio/mp3");
