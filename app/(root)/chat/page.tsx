@@ -11,63 +11,70 @@ const ChatPage = () => {
 	const { nativeLanguage, arabicDialect } = useContext(LanguageContext);
 	const [isPlaying, setIsPlaying] = useState(false);
 	const [isLoading, setIsLoading] = useState(false);
-	const [message, setMessage] = useState<string>("");
+	const [messages, setMessages] = useState<
+		{ role: "user" | "assistant"; content: string }[]
+	>([]);
 
-	const sendToBackend = useCallback(async (audioBlob: Blob): Promise<void> => {
-		setIsLoading(true);
+	const sendToBackend = useCallback(
+		async (audioBlob: Blob): Promise<void> => {
+			setIsLoading(true);
 
-		try {
-			const base64Audio = await blobToBase64(audioBlob);
+			try {
+				const base64Audio = await blobToBase64(audioBlob);
 
-			console.log({
-				type: audioBlob.type.split("/")[1],
-				base64Audio,
-			});
-
-			const response = await fetch("/api/chat", {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-				},
-				body: JSON.stringify({
-					base64Audio,
+				console.log({
 					type: audioBlob.type.split("/")[1],
-				}),
-			});
+					base64Audio,
+				});
 
-			const data = await response.json();
+				const response = await fetch("/api/chat", {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+					},
+					body: JSON.stringify({
+						audio: {
+							base64Audio,
+							type: audioBlob.type.split("/")[1],
+						},
+						messages,
+					}),
+				});
 
-			if (response.status !== 200) {
-				throw (
-					data.error ||
-					new Error(`Request failed with status ${response.status}`)
-				);
+				const data = await response.json();
+
+				if (response.status !== 200) {
+					throw (
+						data.error ||
+						new Error(`Request failed with status ${response.status}`)
+					);
+				}
+
+				const { messages: updatedMessages, audioBase64 } = data;
+
+				const responseAudioBlob = base64ToBlob(audioBase64, "audio/mp3");
+
+				setMessages(updatedMessages);
+
+				const audioSrc = URL.createObjectURL(responseAudioBlob);
+				const audio = new Audio(audioSrc);
+				setIsLoading(false);
+				setIsPlaying(true);
+				audio.play();
+				audio.addEventListener("ended", () => {
+					setIsPlaying(false);
+
+					// cleanup
+					URL.revokeObjectURL(audioSrc);
+					audio.remove();
+				});
+			} catch (error) {
+				console.error(error);
+				console.log((error as Error).message);
 			}
-
-			const { text, audioBase64 } = data;
-			console.log("data", data);
-
-			const responseAudioBlob = base64ToBlob(audioBase64, "audio/mp3");
-
-			setMessage(text);
-
-			const audioSrc = URL.createObjectURL(responseAudioBlob);
-			const audio = new Audio(audioSrc);
-			setIsLoading(false);
-			setIsPlaying(true);
-			audio.play();
-			audio.addEventListener("ended", () => {
-				setIsPlaying(false);
-
-				// cleanup
-				URL.revokeObjectURL(audioSrc);
-				audio.remove();
-			});
-		} catch (error) {
-			console.error(error);
-			console.log((error as Error).message);
-		}
-	}, []);
+		},
+		[messages]
+	);
 
 	const { isRecording, startRecording, stopRecording, amplitude } =
 		useRecording(sendToBackend);
@@ -91,8 +98,8 @@ const ChatPage = () => {
 			};
 		if (isLoading)
 			return {
-				fill: "#38B6FF",
-				fillOpacity: 0.2,
+				fill: "#64748b",
+				fillOpacity: 0.1,
 			};
 		if (isRecording)
 			return {
@@ -106,9 +113,12 @@ const ChatPage = () => {
 	const displayedMessage = useMemo(() => {
 		if (isRecording) return "👂";
 		if (isLoading) return "🤔";
-		if (isPlaying || message) return message;
+		if (isPlaying || messages.length > 0) {
+			debugger;
+			return messages[messages.length - 1].content;
+		}
 		return "Press ⬇️ the blue blob to start recording";
-	}, [isLoading, isPlaying, isRecording, message]);
+	}, [isLoading, isPlaying, isRecording, messages]);
 
 	return (
 		<div className="w-full h-screen flex flex-col items-center justify-between">
