@@ -77,10 +77,12 @@ export async function POST(req: Request, res: Response) {
 		return Response.json(
 			{
 				// messages: updatedMessages,
-				messages: {
-					role: "test",
-					content: transcription,
-				},
+				messages: [
+					{
+						role: "test",
+						content: transcription,
+					},
+				],
 				audioBase64: base64AudioResponse,
 			},
 			{ status: 200 }
