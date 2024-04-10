@@ -68,7 +68,7 @@ const ChatPage = () => {
 				// const responseAudioBlob = base64ToBlob(audioBase64, "audio/mp3");
 
 				setMessages(updatedMessages);
-
+				setIsLoading(false); //TODO: remove this when reintroducing audio
 				setIsPlaying(false); //TODO: remove this when reintroducing audio
 
 				// const audioSrc = URL.createObjectURL(responseAudioBlob);
