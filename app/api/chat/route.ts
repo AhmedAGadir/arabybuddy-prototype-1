@@ -31,17 +31,17 @@ export async function POST(req: Request, res: Response) {
 			transcription
 		);
 
-		// // finally convert the response to audio
-		// const { audio } = await elevenLabsTextToSpeech(
-		// 	updatedMessages[updatedMessages.length - 1].content
-		// );
+		// finally convert the response to audio
+		const { audio } = await elevenLabsTextToSpeech(
+			updatedMessages[updatedMessages.length - 1].content
+		);
 
-		// const base64AudioResponse = await streamToBase64(audio);
+		const base64AudioResponse = await streamToBase64(audio);
 
 		return Response.json(
 			{
 				messages: updatedMessages,
-				// audioBase64: base64AudioResponse,
+				audioBase64: base64AudioResponse,
 			},
 			{ status: 200 }
 		);

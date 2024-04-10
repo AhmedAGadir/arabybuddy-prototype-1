@@ -60,29 +60,24 @@ const ChatPage = () => {
 
 				console.log("data", data);
 
-				const {
-					messages: updatedMessages,
-					// audioBase64
-				} = data;
+				const { messages: updatedMessages, audioBase64 } = data;
 
-				// const responseAudioBlob = base64ToBlob(audioBase64, "audio/mp3");
+				const responseAudioBlob = base64ToBlob(audioBase64, "audio/mp3");
 
 				setMessages(updatedMessages);
-				setIsLoading(false); //TODO: remove this when reintroducing audio
-				setIsPlaying(false); //TODO: remove this when reintroducing audio
 
-				// const audioSrc = URL.createObjectURL(responseAudioBlob);
-				// const audio = new Audio(audioSrc);
-				// setIsLoading(false);
-				// setIsPlaying(true);
-				// audio.play();
-				// audio.addEventListener("ended", () => {
-				// 	setIsPlaying(false);
+				const audioSrc = URL.createObjectURL(responseAudioBlob);
+				const audio = new Audio(audioSrc);
+				setIsLoading(false);
+				setIsPlaying(true);
+				audio.play();
+				audio.addEventListener("ended", () => {
+					setIsPlaying(false);
 
-				// 	// cleanup
-				// 	URL.revokeObjectURL(audioSrc);
-				// 	audio.remove();
-				// });
+					// cleanup
+					URL.revokeObjectURL(audioSrc);
+					audio.remove();
+				});
 			} catch (error) {
 				console.error(error);
 				console.log((error as Error).message);
