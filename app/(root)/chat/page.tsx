@@ -19,7 +19,7 @@ import {
 } from "@/lib/utils";
 import { useLogger } from "@/hooks/useLogger";
 import CursorSVG from "@/components/shared/CursorSVG";
-import _ from "lodash";
+import _, { isUndefined } from "lodash";
 import { amiri } from "@/lib/fonts";
 
 const makeServerlessRequest = async (url: string, body: any) => {
@@ -97,17 +97,17 @@ const ChatPage = () => {
 
 	const sendToBackend = useCallback(
 		async (audioBlob: Blob): Promise<void> => {
-			setIsLoading(true);
-
 			try {
-				setTransformationState("audio -> transcription");
+				setIsLoading(true);
+
 				logger.log("making request to: /api/chat/speech-to-text...");
+				setTransformationState("audio -> transcription");
 				// 1. transcribe the user's audio
 				const { transcription } = await speechToText(audioBlob);
 				logger.log("transcription", transcription);
 
-				setTransformationState("text -> text");
 				logger.log("making request to: /api/chat/assistant...");
+				setTransformationState("text -> text");
 				// 2. send the transcription to the assistant and await a text response
 				const { messages: updatedMessages } =
 					await appendUserMessageAndAwaitAssistantResponse(
@@ -116,25 +116,26 @@ const ChatPage = () => {
 					);
 				logger.log("updatedMessages", JSON.stringify(updatedMessages));
 
-				const assistantResponseMessage = _.last(updatedMessages) as Message;
-
-				setTransformationState("text -> audio");
 				logger.log("making request to: /api/chat/text-to-speech...");
+				setTransformationState("text -> audio");
 				// 3. convert the text response to audio
 				const { base64Audio } = await textToSpeech(
-					assistantResponseMessage.content
+					(_.last(updatedMessages) as Message).content
 				);
-				logger.log("base64Audio", base64Audio);
+				logger.log("base64Audio", `${base64Audio.slice(0, 10)}...`);
 
-				// 4. play the audio and updated the messages in state
+				// 4. updated messages in state and play audio
 				setIsLoading(false);
+				setTransformationState("");
 
 				updateMessagesAndTypeLatestMessage(updatedMessages);
 
+				setIsPlaying(true);
 				await playAudio(base64Audio);
-
 				setIsPlaying(false);
-				// setTransformationState("");
+
+				// 5. start recording again
+				startRecording();
 			} catch (error) {
 				logger.error(error);
 				logger.log((error as Error).message);
@@ -144,7 +145,9 @@ const ChatPage = () => {
 	);
 
 	const { isRecording, startRecording, stopRecording, amplitude } =
-		useRecording(sendToBackend);
+		useRecording({
+			onRecordingComplete: sendToBackend,
+		});
 
 	const toggleRecording = () => {
 		if (isRecording) {
@@ -153,7 +156,6 @@ const ChatPage = () => {
 		}
 
 		if (!isRecording) {
-			setTransformationState("");
 			startRecording();
 			return;
 		}
@@ -164,13 +166,6 @@ const ChatPage = () => {
 			const audioBlob = base64ToBlob(base64Audio, "audio/mp3");
 			const audioSrc = URL.createObjectURL(audioBlob);
 			const audio = new Audio(audioSrc);
-
-			const supportedMIMEtypes = getAllSupportedMimeTypes();
-			setTransformationState(
-				`Supported MIME types: ${supportedMIMEtypes.join(", ")}`
-			);
-
-			setIsPlaying(true);
 
 			audio.play();
 
@@ -299,8 +294,9 @@ const ChatPage = () => {
 			<div className="max-w-4xl m-auto relative">
 				<p
 					className={cn(
-						"leading-loose font-extrabold tracking-tight text-4xl md:text-5xl lg:text-6xl text-center px-5",
-						!_.isEmpty(messages) && `${amiri.className} font-light`, // when displaying arabic text
+						"font-extrabold tracking-tight text-4xl md:text-5xl lg:text-6xl text-center px-5",
+						!_.isEmpty(messages) &&
+							`${amiri.className} font-light leading-relaxed md:leading-relaxed lg:leading-relaxed`, // when displaying arabic text
 						isPlaying && "text-araby-blue", // while playing
 						!isPlaying && "text-slate-900",
 						(isRecording || isLoading) && "text-5xl" // for emojis

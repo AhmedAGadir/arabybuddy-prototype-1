@@ -1,7 +1,27 @@
 ## immediate
 
-- [ ] google fonts
-- [ ] topics of conversation
+- [ ] stream text to speech
+- [ ] webhooks?
+- [ ] topics of conversation and voices settings
+- [ ] automatically starting recording after response plays
+- [ ] moving instructions to fade in ontop of the record button
+- [ ] look up words in almaany
+- [ ] react query - loading / error state
+- [ ] pause/cancel requests
+- [ ] monitor input for being NSFW
+- [ ] advanced features - rate limiting, server side cache, etc - just learn
+
+# Features for MVP
+
+- [ ] only chat
+- [ ] dialects (Start)
+- [ ] 2 voices
+- [ ] rephrase mode
+- [ ] looking up words in almaany
+- [ ] databases, authentication and payments
+- [ ] some viral element - leaderboard, sharing with friends etc
+- [ ] analytics
+- [ ] adds, kickstarter, tiktok sponsors (talk to mohab 16)
 
 # Features
 
@@ -11,15 +31,12 @@
   - chat (text)
   - settings
 
-  - buddys - joey, rachel
-  - rephrase mode
   - monolingual vs bilingual mode
-  - savings words to a list
-  - look up words in almaany
 
   - translate a PDF
   - translate a PDF and read it to me
   - camera - picture mode (what is that ? ma hatha)
+  - repeat after me mode (checks)
 
 # Tech
 

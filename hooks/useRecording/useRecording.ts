@@ -6,7 +6,11 @@ import { useLogger } from "../useLogger";
 
 // this version of useRecording IS compatible with iOS
 // however it asks for microphone permission every time the user starts recording
-const useRecording = (onRecordingComplete: (blob: Blob) => void) => {
+const useRecording = ({
+	onRecordingComplete,
+}: {
+	onRecordingComplete: (blob: Blob) => void;
+}) => {
 	const logger = useLogger({
 		label: "useRecording",
 		color: "#75bfff",
@@ -37,11 +41,9 @@ const useRecording = (onRecordingComplete: (blob: Blob) => void) => {
 		recorderRef.current?.exportWAV((blob: Blob) => {
 			logger.log(`Recording stopped - blob ${blob}`);
 
-			onRecordingComplete(blob);
 			stopSilenceDetection();
-
-			recorderRef.current?.clear();
 			setIsRecording(false);
+			onRecordingComplete(blob);
 
 			// clean up
 			audioContextRef.current?.close();
@@ -52,12 +54,13 @@ const useRecording = (onRecordingComplete: (blob: Blob) => void) => {
 			});
 			microphoneRef.current = null;
 
+			recorderRef.current?.clear();
 			recorderRef.current = null;
 		});
 	}, [logger, onRecordingComplete, stopSilenceDetection, stopSound]);
 
 	const startRecording = useCallback(async () => {
-		if (isRecording) {
+		if (isRecordingRef.current) {
 			logger.warn("Recording is already in progress");
 			return;
 		}
@@ -83,7 +86,7 @@ const useRecording = (onRecordingComplete: (blob: Blob) => void) => {
 			detectSilence(
 				audioContextRef.current,
 				microphoneRef.current,
-				4000,
+				3000,
 				stopRecording
 			);
 		} catch (error) {

@@ -46,7 +46,7 @@ const elevenLabsTextToSpeech = async (text: string) => {
 
 	const audio = await elevenlabs.generate(
 		{
-			voice: voices.rachel.voiceId,
+			voice: voices.joey.voiceId,
 			text,
 			model_id: "eleven_multilingual_v2",
 			// output_format: "mp3_22050_32",
@@ -70,3 +70,23 @@ const elevenLabsTextToSpeech = async (text: string) => {
 
 	return { audio };
 };
+
+// const ffmpeg = require("fluent-ffmpeg");
+
+// function convertMp3ToMp4(inputPath, outputPath) {
+// 	return new Promise((resolve, reject) => {
+// 		ffmpeg(inputPath)
+// 			.output(outputPath)
+// 			.on("end", () => resolve())
+// 			.on("error", (err) => reject(err))
+// 			.run();
+// 	});
+// }
+
+// // Example usage
+// const inputPath = "path/to/input.mp3";
+// const outputPath = "path/to/output.mp4";
+
+// convertMp3ToMp4(inputPath, outputPath)
+// 	.then(() => console.log("Conversion successful"))
+// 	.catch((err) => console.error("Conversion failed:", err));
