@@ -7,6 +7,11 @@ import LanguageContext, {
 } from "@/context/languageContext";
 import eruda from "eruda";
 
+// for eruda debugging on mobile
+declare global {
+	interface self {}
+}
+
 const Layout = ({ children }: { children: React.ReactNode }) => {
 	const [languages, setLanguages] = useState<LanguageSettings>({
 		nativeLanguage: null,
@@ -18,6 +23,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
 	};
 
 	React.useEffect(() => {
+		// for debugging on mobile
 		eruda.init();
 	}, []);
 
