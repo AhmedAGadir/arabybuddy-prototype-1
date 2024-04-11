@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
-import OpenAI from "openai";
 import { tmpdir } from "os";
+import OpenAI from "openai";
 
 // remember API calls wont work if the account balance is 0
 const openai = new OpenAI({
