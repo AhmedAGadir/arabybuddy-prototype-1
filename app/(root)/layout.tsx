@@ -5,6 +5,7 @@ import Image from "next/image";
 import LanguageContext, {
 	type LanguageSettings,
 } from "@/context/languageContext";
+import eruda from "eruda";
 
 const Layout = ({ children }: { children: React.ReactNode }) => {
 	const [languages, setLanguages] = useState<LanguageSettings>({
@@ -15,6 +16,10 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
 	const updateLanguages = (newLanguages: LanguageSettings) => {
 		setLanguages(newLanguages);
 	};
+
+	React.useEffect(() => {
+		eruda.init();
+	}, []);
 
 	return (
 		<LanguageContext.Provider
