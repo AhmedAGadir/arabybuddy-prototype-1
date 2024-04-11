@@ -5,7 +5,6 @@ import Image from "next/image";
 import LanguageContext, {
 	type LanguageSettings,
 } from "@/context/languageContext";
-import VConsole from "vconsole";
 
 const Layout = ({ children }: { children: React.ReactNode }) => {
 	const [languages, setLanguages] = useState<LanguageSettings>({
@@ -16,11 +15,6 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
 	const updateLanguages = (newLanguages: LanguageSettings) => {
 		setLanguages(newLanguages);
 	};
-
-	React.useEffect(() => {
-		// for debugging on mobile
-		const vConsole = new VConsole({ theme: "dark" });
-	}, []);
 
 	return (
 		<LanguageContext.Provider
