@@ -1,7 +1,6 @@
 import { ChatMessage } from "@/app/(root)/chat/page";
 import OpenAI from "openai";
 import { TextContentBlock } from "openai/resources/beta/threads/messages/messages.mjs";
-import { late } from "zod";
 
 // remember API calls wont work if the account balance is 0
 const openai = new OpenAI({
@@ -35,6 +34,7 @@ const openAIAddChatMessageAndAwaitResponse = async (
 	latestChatMessage: ChatMessage
 ) => {
 	// create the assistant
+	console.log("Creating assistant");
 	const assistant = await openai.beta.assistants.create({
 		name: "ArabyBuddy",
 		instructions:
@@ -42,14 +42,17 @@ const openAIAddChatMessageAndAwaitResponse = async (
 		model: "gpt-4-turbo-preview",
 	});
 
+	console.log("Adding chat history to thread", chatHistory);
 	// create the thread and pass all previous messages
 	const thread = await openai.beta.threads.create({
 		messages: chatHistory,
 	});
 
+	console.log("adding latest chat message to thread", latestChatMessage);
 	// add transcription to thread
 	await openai.beta.threads.messages.create(thread.id, latestChatMessage);
 
+	console.log("polling....");
 	// run the thread with the assistant
 	const run = await openai.beta.threads.runs.createAndPoll(thread.id, {
 		assistant_id: assistant.id,
@@ -57,6 +60,7 @@ const openAIAddChatMessageAndAwaitResponse = async (
 		// instructions: "Respond to the user.",
 	});
 
+	console.log("run.status", run.status);
 	let updatedChatHistory = [];
 
 	if (run.status === "completed") {
@@ -67,6 +71,7 @@ const openAIAddChatMessageAndAwaitResponse = async (
 			role: message.role,
 			content: (message.content[0] as TextContentBlock).text.value,
 		}));
+		console.log("updatedChatHistory", updatedChatHistory);
 	} else {
 		throw new Error("Thread run either failed or is not completed");
 	}

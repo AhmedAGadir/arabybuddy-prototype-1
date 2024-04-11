@@ -1,16 +1,22 @@
-import { blobToBase64, makeServerlessRequest } from "@/lib/utils";
+import { blobToBase64 } from "@/lib/utils";
 import { useCallback } from "react";
 import { useLogger } from "./useLogger";
+import { useServerlessRequest } from "./useServerlessRequest";
 
 const useAudioService = () => {
 	const logger = useLogger({ label: "AudioService", color: "#87de74" });
+
+	const {
+		makeServerlessRequest: makeServerlessRequestSpeechToText,
+		abortRequest: cancelSpeechToTextRequest,
+	} = useServerlessRequest();
 
 	const speechToText = useCallback(
 		async (audioBlob: Blob) => {
 			const base64Audio = await blobToBase64(audioBlob);
 
 			logger.log("making request to: /api/chat/speech-to-text...");
-			const { transcription } = await makeServerlessRequest(
+			const { transcription } = await makeServerlessRequestSpeechToText(
 				"/api/chat/speech-to-text",
 				{
 					audio: {
@@ -27,11 +33,16 @@ const useAudioService = () => {
 		[logger]
 	);
 
+	const {
+		makeServerlessRequest: makeServerlessRequestTextToSpeech,
+		abortRequest: cancelTextToSpeechRequest,
+	} = useServerlessRequest();
+
 	const textToSpeech = useCallback(
 		async (content: string) => {
 			logger.log("making request to: /api/chat/text-to-speech...");
 
-			const { base64Audio } = await makeServerlessRequest(
+			const { base64Audio } = await makeServerlessRequestTextToSpeech(
 				"/api/chat/text-to-speech",
 				{
 					content,
@@ -45,7 +56,12 @@ const useAudioService = () => {
 		[logger]
 	);
 
-	return { speechToText, textToSpeech };
+	return {
+		speechToText,
+		textToSpeech,
+		cancelSpeechToTextRequest,
+		cancelTextToSpeechRequest,
+	};
 };
 
 export { useAudioService };

@@ -1,22 +1,11 @@
 "use client";
 
-import React, {
-	useContext,
-	useState,
-	useCallback,
-	useMemo,
-	useEffect,
-} from "react";
+import React, { useContext, useState, useMemo } from "react";
 import LanguageContext from "@/context/languageContext";
 import { BlobSvg } from "@/components/shared";
 import { useRecording } from "@/hooks/useRecording/useRecording";
 import { BackgroundGradient } from "@/components/ui/background-gradient";
-import {
-	base64ToBlob,
-	blobToBase64,
-	cn,
-	getAllSupportedMimeTypes,
-} from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { useLogger } from "@/hooks/useLogger";
 import CursorSVG from "@/components/shared/CursorSVG";
 import _ from "lodash";
@@ -24,7 +13,6 @@ import { amiri } from "@/lib/fonts";
 import { useAudioService } from "@/hooks/useAudioService";
 import { useChatService } from "@/hooks/useChatService";
 import { useAudioPlayer } from "@/hooks/useAudioPlayer";
-import { Stop } from "@/components/shared/icons";
 import { StopButton } from "@/components/shared/icons/Stop";
 
 export type ChatMessage = { role: "user" | "assistant"; content: string };
@@ -41,8 +29,14 @@ const ChatPage = () => {
 		"speech-to-text" | "assistant" | "text-to-speech" | null
 	>(null);
 
-	const { addChatMessage } = useChatService(chatHistory);
-	const { speechToText, textToSpeech } = useAudioService();
+	const { addChatMessage, cancelAddChatMessageRequest } =
+		useChatService(chatHistory);
+	const {
+		speechToText,
+		textToSpeech,
+		cancelSpeechToTextRequest,
+		cancelTextToSpeechRequest,
+	} = useAudioService();
 
 	const { playAudio, isPlaying, initAudioElement, stopPlaying } =
 		useAudioPlayer();
@@ -90,11 +84,20 @@ const ChatPage = () => {
 	};
 
 	const stopEverything = () => {
-		if (isRecording) {
-			stopRecording({ force: true });
-		}
 		if (isPlaying) {
 			stopPlaying();
+		}
+		if (activeTask === "speech-to-text") {
+			cancelSpeechToTextRequest();
+		}
+		if (activeTask === "text-to-speech") {
+			cancelTextToSpeechRequest();
+		}
+		if (activeTask === "assistant") {
+			cancelAddChatMessageRequest();
+		}
+		if (isRecording) {
+			stopRecording({ force: true });
 		}
 	};
 
@@ -228,9 +231,7 @@ const ChatPage = () => {
 					{displayedMessage} {isPlaying && !completedTyping && <CursorSVG />}
 				</p>
 				<div className="absolute bottom-[-30px] left-1/2 -translate-x-1/2 w-max h-[20px] text-lg font-normal text-gray-500 lg:text-xl sm:px-16 xl:px-48 text-center dark:text-gray-400">
-					{(isRecording || isPlaying) && (
-						<StopButton onClick={stopEverything} />
-					)}
+					{<StopButton onClick={stopEverything} />}
 				</div>
 			</div>
 			<div className="flex items-center w-full">
