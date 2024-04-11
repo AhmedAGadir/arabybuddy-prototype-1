@@ -179,7 +179,18 @@ const ChatPage = () => {
 
 			setAudioType(audioBlob.type);
 
-			audio.play();
+			//   const originalVolume = audio.volume;
+
+			audio.muted = true;
+
+			audio
+				.play()
+				.then(() => {
+					audio.volume = 0.5;
+
+					audio.muted = false;
+				})
+				.catch(reject);
 
 			const onAudioEnded = () => {
 				URL.revokeObjectURL(audioSrc);
