@@ -23,6 +23,7 @@ import _ from "lodash";
 import { amiri } from "@/lib/fonts";
 import { useAudioService } from "@/hooks/useAudioService";
 import { useChatService } from "@/hooks/useChatService";
+import { useAudioPlayer } from "@/hooks/useAudioPlayer";
 
 export type ChatMessage = { role: "user" | "assistant"; content: string };
 
@@ -38,9 +39,9 @@ const ChatPage = () => {
 	>(null);
 
 	const { addChatMessage } = useChatService(chatHistory);
+	const { speechToText, textToSpeech } = useAudioService();
 
-	const { speechToText, textToSpeech, playAudio, isPlaying, initAudioElement } =
-		useAudioService();
+	const { playAudio, isPlaying, initAudioElement } = useAudioPlayer();
 
 	const onRecordingComplete = async (audioBlob: Blob) => {
 		// 1. transcribe the user audio
@@ -63,7 +64,9 @@ const ChatPage = () => {
 		// 4. play assistants response and update chat history
 		setActiveTask(null);
 		setChatHistoryWithTypewriterOnLatestMessage(updatedChatHistory);
-		playAudio(base64Audio);
+
+		await playAudio(base64Audio);
+		return;
 	};
 
 	const { isRecording, startRecording, stopRecording, amplitude } =

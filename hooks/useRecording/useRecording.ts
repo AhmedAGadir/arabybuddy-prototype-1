@@ -7,7 +7,7 @@ import { useLogger } from "../useLogger";
 // this version of useRecording IS compatible with iOS
 // however it asks for microphone permission every time the user starts recording
 const useRecording = (
-	onRecordingComplete: (blob: Blob) => void,
+	onRecordingComplete: (blob: Blob) => Promise<void>,
 	options: { autoRestartRecording: boolean }
 ) => {
 	const logger = useLogger({
@@ -56,8 +56,8 @@ const useRecording = (
 			recorderRef.current?.clear();
 			recorderRef.current = null;
 
-			// auto restart recording
 			if (options.autoRestartRecording) {
+				logger.log("Auto-restarting recording");
 				startRecording();
 			}
 		});
@@ -85,6 +85,7 @@ const useRecording = (
 			recorderRef.current = recorder;
 
 			startSound?.play();
+			logger.log("Recording started");
 			recorder.record();
 			setIsRecording(true);
 			detectSilence(
