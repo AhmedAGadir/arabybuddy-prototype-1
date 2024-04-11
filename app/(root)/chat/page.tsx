@@ -168,9 +168,12 @@ const ChatPage = () => {
 		}
 	};
 
+	const [audioBase64, setAudioBase64] = useState<string | null>(null);
+
 	const playAudio = async (base64Audio: string) => {
 		const promise = new Promise((resolve, reject) => {
 			const audioBlob = base64ToBlob(base64Audio, "audio/mp3");
+			setAudioBase64(base64Audio);
 			const audioSrc = URL.createObjectURL(audioBlob);
 			const audio = new Audio(audioSrc);
 
@@ -320,6 +323,14 @@ const ChatPage = () => {
 				</p>
 				<p className="absolute bottom-[-30px] left-1/2 -translate-x-1/2 w-max h-[20px] text-lg font-normal text-gray-500 lg:text-xl sm:px-16 xl:px-48 text-center dark:text-gray-400">
 					supportedMIMEtypes: {foo} - audioType: {audioType}
+					<button
+						className="bg-blue-500 m-3 block"
+						onClick={() =>
+							audioBase64 ? playAudio(audioBase64 as string) : alert("no audio")
+						}
+					>
+						play audio
+					</button>
 				</p>
 			</div>
 			<div className="flex items-center w-full">
