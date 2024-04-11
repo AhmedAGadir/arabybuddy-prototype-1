@@ -74,7 +74,7 @@ const ChatPage = () => {
 	};
 
 	const { isRecording, startRecording, stopRecording, amplitude } =
-		useRecording(onRecordingComplete, { autoRestartRecording: true });
+		useRecording(onRecordingComplete, { autoRestartRecording: false });
 
 	const toggleRecording = () => {
 		if (isRecording) {
