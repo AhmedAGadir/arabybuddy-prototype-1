@@ -11,11 +11,17 @@ import LanguageContext from "@/context/languageContext";
 import { BlobSvg } from "@/components/shared";
 import { useRecording } from "@/hooks/useRecording/useRecording";
 import { BackgroundGradient } from "@/components/ui/background-gradient";
-import { base64ToBlob, blobToBase64, cn } from "@/lib/utils";
+import {
+	base64ToBlob,
+	blobToBase64,
+	cn,
+	getAllSupportedMimeTypes,
+} from "@/lib/utils";
 import { useLogger } from "@/hooks/useLogger";
 import CursorSVG from "@/components/shared/CursorSVG";
 import _ from "lodash";
 import { amiri } from "@/lib/fonts";
+import { MIME_TYPES } from "@/lib/constants";
 
 const makeServerlessRequest = async (url: string, body: any) => {
 	const response = await fetch(url, {
@@ -91,6 +97,14 @@ const ChatPage = () => {
 
 	const logger = useLogger({ label: "ChatPage", color: "#fe7de9" });
 
+	const [foo, setFoo] = useState("");
+	const [audioType, setAudioType] = useState("");
+
+	useEffect(() => {
+		const supportedMIMEtypes = getAllSupportedMimeTypes().join(", ");
+		setFoo(supportedMIMEtypes);
+	}, []);
+
 	const sendToBackend = useCallback(
 		async (audioBlob: Blob): Promise<void> => {
 			try {
@@ -125,9 +139,6 @@ const ChatPage = () => {
 				setIsPlaying(true);
 				await playAudio(base64Audio);
 				setIsPlaying(false);
-
-				// 5. start recording again
-				startRecording();
 			} catch (error) {
 				logger.error(error);
 				logger.log((error as Error).message);
@@ -138,7 +149,11 @@ const ChatPage = () => {
 
 	const { isRecording, startRecording, stopRecording, amplitude } =
 		useRecording({
-			onRecordingComplete: sendToBackend,
+			onRecordingComplete: async (audioBlob: Blob) => {
+				await sendToBackend(audioBlob);
+				// 5. start recording again
+				startRecording();
+			},
 		});
 
 	const toggleRecording = () => {
@@ -158,6 +173,8 @@ const ChatPage = () => {
 			const audioBlob = base64ToBlob(base64Audio, "audio/mp3");
 			const audioSrc = URL.createObjectURL(audioBlob);
 			const audio = new Audio(audioSrc);
+
+			setAudioType(audioBlob.type);
 
 			audio.play();
 
@@ -302,7 +319,7 @@ const ChatPage = () => {
 					{displayedMessage} {isPlaying && !completedTyping && <CursorSVG />}
 				</p>
 				<p className="absolute bottom-[-30px] left-1/2 -translate-x-1/2 w-max h-[20px] text-lg font-normal text-gray-500 lg:text-xl sm:px-16 xl:px-48 text-center dark:text-gray-400">
-					{/* {transformationState} */}
+					supportedMIMEtypes: {foo} - audioType: {audioType}
 				</p>
 			</div>
 			<div className="flex items-center w-full">
