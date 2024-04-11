@@ -155,7 +155,7 @@ const ChatPage = () => {
 
 	const playAudio = async (base64Audio: string) => {
 		const promise = new Promise((resolve, reject) => {
-			const audioBlob = base64ToBlob(base64Audio, "audio/mp4");
+			const audioBlob = base64ToBlob(base64Audio, "audio/mp3");
 			const audioSrc = URL.createObjectURL(audioBlob);
 			const audio = new Audio(audioSrc);
 
