@@ -10,6 +10,9 @@
 - [ ] pause/cancel requests
 - [ ] monitor input for being NSFW
 - [ ] advanced features - rate limiting, server side cache, etc - just learn
+- [ ] continue conversation when first loading, or start new
+- [ ] dark mode
+- [ ] check for no content in the recording, and if not, then just turn off the mic
 
 # Features for MVP
 
