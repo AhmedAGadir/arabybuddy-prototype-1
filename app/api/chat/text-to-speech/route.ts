@@ -1,5 +1,10 @@
+import fs from "fs";
+import path from "path";
+import { tmpdir } from "os";
 import { ElevenLabsClient } from "elevenlabs";
 import { streamToBase64 } from "@/lib/utils";
+import internal from "stream";
+const ffmpeg = require("fluent-ffmpeg");
 
 const elevenlabs = new ElevenLabsClient({
 	apiKey: process.env.ELEVENLABS_API_KEY,
@@ -68,25 +73,34 @@ const elevenLabsTextToSpeech = async (text: string) => {
 		}
 	);
 
-	return { audio };
+	const mp3Audio = await convertMp3ToMp4(audio);
+
+	return { audio: mp3Audio };
 };
 
-// const ffmpeg = require("fluent-ffmpeg");
+function convertMp3ToMp4(readableStream: internal.Readable) {
+	const dirPath = path.join(tmpdir(), "mp3-to-mp4");
+	const filePath = path.join(dirPath, "input.mp3");
+	const outputPath = path.join(dirPath, "output.mp4");
 
-// function convertMp3ToMp4(inputPath, outputPath) {
-// 	return new Promise((resolve, reject) => {
-// 		ffmpeg(inputPath)
-// 			.output(outputPath)
-// 			.on("end", () => resolve())
-// 			.on("error", (err) => reject(err))
-// 			.run();
-// 	});
-// }
+	// Ensure the directory exists
+	if (!fs.existsSync(dirPath)) {
+		fs.mkdirSync(dirPath, { recursive: true });
+	}
 
-// // Example usage
-// const inputPath = "path/to/input.mp3";
-// const outputPath = "path/to/output.mp4";
+	// Pipe the input stream to a file
+	const writeStream = fs.createWriteStream(filePath);
+	readableStream.pipe(writeStream);
 
-// convertMp3ToMp4(inputPath, outputPath)
-// 	.then(() => console.log("Conversion successful"))
-// 	.catch((err) => console.error("Conversion failed:", err));
+	return new Promise((resolve, reject) => {
+		writeStream.on("finish", () => {
+			ffmpeg(filePath)
+				.output(outputPath)
+				.on("end", () => resolve(outputPath))
+				.on("error", (err: any) => reject(err))
+				.run();
+		});
+
+		writeStream.on("error", (err: any) => reject(err));
+	});
+}
