@@ -1,5 +1,6 @@
 ## immediate
 
+- [ ] auto start recording toggle
 - [ ] stream text to speech
 - [ ] webhooks?
 - [ ] topics of conversation and voices settings
