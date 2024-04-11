@@ -29,39 +29,52 @@ const useRecording = (
 	const startSound = useSound("/assets/sounds/start.mp3");
 	const stopSound = useSound("/assets/sounds/stop.mp3");
 
-	const stopRecording = useCallback(() => {
-		if (!isRecordingRef.current) {
-			logger.warn("Recording is not in progress");
-			return;
-		}
+	const stopRecordingCleanup = useCallback(() => {
+		audioContextRef.current?.close();
+		audioContextRef.current = null;
 
-		stopSound?.play();
-		recorderRef.current?.stop();
-		recorderRef.current?.exportWAV(async (blob: Blob) => {
-			logger.log(`Recording stopped - blob ${blob}`);
-
-			stopSilenceDetection();
-			setIsRecording(false);
-			await onRecordingComplete(blob);
-
-			// clean up
-			audioContextRef.current?.close();
-			audioContextRef.current = null;
-
-			microphoneRef.current?.mediaStream.getAudioTracks().forEach((track) => {
-				track.stop();
-			});
-			microphoneRef.current = null;
-
-			recorderRef.current?.clear();
-			recorderRef.current = null;
-
-			if (options.autoRestartRecording) {
-				logger.log("Auto-restarting recording");
-				startRecording();
-			}
+		microphoneRef.current?.mediaStream.getAudioTracks().forEach((track) => {
+			track.stop();
 		});
-	}, [logger, onRecordingComplete, stopSilenceDetection, stopSound]);
+		microphoneRef.current = null;
+
+		recorderRef.current?.clear();
+		recorderRef.current = null;
+	}, []);
+
+	const stopRecording = useCallback(
+		({ force = false }: { force?: boolean } = {}) => {
+			if (!isRecordingRef.current) {
+				logger.warn("Recording is not in progress");
+				return;
+			}
+
+			stopSound?.play();
+			recorderRef.current?.stop();
+			recorderRef.current?.exportWAV(async (blob: Blob) => {
+				logger.log(`Recording stopped - blob ${blob}`);
+
+				stopSilenceDetection();
+				setIsRecording(false);
+
+				if (force) {
+					logger.log("Stopping audio recording");
+					stopRecordingCleanup();
+					return;
+				}
+				await onRecordingComplete(blob);
+
+				// clean up
+				stopRecordingCleanup();
+
+				if (options.autoRestartRecording) {
+					logger.log("Auto-restarting recording");
+					startRecording();
+				}
+			});
+		},
+		[logger, onRecordingComplete, stopSilenceDetection, stopSound]
+	);
 
 	const startRecording = useCallback(async () => {
 		if (isRecordingRef.current) {

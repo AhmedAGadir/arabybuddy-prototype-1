@@ -72,7 +72,30 @@ const useAudioPlayer = () => {
 		audioRef.current = audio;
 	};
 
-	return { playAudio, isPlaying, initAudioElement };
+	const stopPlaying = () => {
+		if (!audioRef.current) {
+			logger.log("Audio element not initialized");
+			return;
+		}
+
+		logger.log("Stopping audio playback");
+		audioRef.current.pause();
+		audioRef.current.currentTime = 0;
+		setIsPlaying(false);
+	};
+
+	const pausePlaying = () => {
+		if (!audioRef.current) {
+			logger.log("Audio element not initialized");
+			return;
+		}
+
+		logger.log("Pausing audio playback");
+		audioRef.current.pause();
+		setIsPlaying(false);
+	};
+
+	return { playAudio, isPlaying, initAudioElement, stopPlaying, pausePlaying };
 };
 
 export { useAudioPlayer };

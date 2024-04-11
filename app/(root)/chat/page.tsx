@@ -24,6 +24,8 @@ import { amiri } from "@/lib/fonts";
 import { useAudioService } from "@/hooks/useAudioService";
 import { useChatService } from "@/hooks/useChatService";
 import { useAudioPlayer } from "@/hooks/useAudioPlayer";
+import { Stop } from "@/components/shared/icons";
+import { StopButton } from "@/components/shared/icons/Stop";
 
 export type ChatMessage = { role: "user" | "assistant"; content: string };
 
@@ -42,7 +44,8 @@ const ChatPage = () => {
 	const { addChatMessage } = useChatService(chatHistory);
 	const { speechToText, textToSpeech } = useAudioService();
 
-	const { playAudio, isPlaying, initAudioElement } = useAudioPlayer();
+	const { playAudio, isPlaying, initAudioElement, stopPlaying } =
+		useAudioPlayer();
 
 	const onRecordingComplete = async (audioBlob: Blob) => {
 		// 1. transcribe the user audio
@@ -83,6 +86,15 @@ const ChatPage = () => {
 			initAudioElement();
 			startRecording();
 			return;
+		}
+	};
+
+	const stopEverything = () => {
+		if (isRecording) {
+			stopRecording({ force: true });
+		}
+		if (isPlaying) {
+			stopPlaying();
 		}
 	};
 
@@ -215,7 +227,11 @@ const ChatPage = () => {
 				>
 					{displayedMessage} {isPlaying && !completedTyping && <CursorSVG />}
 				</p>
-				<p className="absolute bottom-[-30px] left-1/2 -translate-x-1/2 w-max h-[20px] text-lg font-normal text-gray-500 lg:text-xl sm:px-16 xl:px-48 text-center dark:text-gray-400"></p>
+				<div className="absolute bottom-[-30px] left-1/2 -translate-x-1/2 w-max h-[20px] text-lg font-normal text-gray-500 lg:text-xl sm:px-16 xl:px-48 text-center dark:text-gray-400">
+					{(isRecording || isPlaying) && (
+						<StopButton onClick={stopEverything} />
+					)}
+				</div>
 			</div>
 			<div className="flex items-center w-full">
 				<button
