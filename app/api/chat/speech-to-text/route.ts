@@ -36,12 +36,15 @@ const openAISpeechToText = async (base64Audio: string, type: string) => {
 	// https://github.com/orgs/vercel/discussions/241
 	const dirPath = path.join(tmpdir(), "openai-audio-transcription");
 	const filePath = path.join(dirPath, `input.${type}`);
+	console.log("tmp dir created at ", dirPath, "file path in tmp dir", filePath);
 
 	// write the audio data to a file
+	console.log("writing audio data to file");
 	await fs.promises.mkdir(dirPath, { recursive: true });
 	fs.writeFileSync(filePath, audioData);
 
 	// transcribe the audio file
+	console.log("openAI transcribing audio file");
 	const transcription = await openai.audio.transcriptions.create({
 		file: fs.createReadStream(filePath),
 		model: "whisper-1",
@@ -49,6 +52,7 @@ const openAISpeechToText = async (base64Audio: string, type: string) => {
 	});
 
 	// remove tmp files
+	console.log("removing tmp files");
 	fs.unlinkSync(filePath);
 	fs.rmSync(dirPath, { recursive: true, force: true });
 

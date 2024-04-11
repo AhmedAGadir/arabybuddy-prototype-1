@@ -44,6 +44,7 @@ const elevenLabsTextToSpeech = async (text: string) => {
 		},
 	};
 
+	console.log("sending text to elevenlabs...");
 	const audio = await elevenlabs.generate(
 		{
 			voice: voices.joey.voiceId,
@@ -67,6 +68,8 @@ const elevenLabsTextToSpeech = async (text: string) => {
 			// maxRetries?: number;
 		}
 	);
+
+	console.log("audio received from elevenlabs");
 
 	return { audio };
 };

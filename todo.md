@@ -1,5 +1,7 @@
 ## immediate
 
+- [ ] https://stackoverflow.com/questions/78030722/how-to-resolve-task-timed-out-after-10-01-seconds-in-a-next-js-application-dep
+- [ ] https://vercel.com/changelog/serverless-functions-can-now-run-up-to-5-minutes
 - [ ] auto start recording toggle
 - [ ] stream text to speech
 - [ ] webhooks?
@@ -14,6 +16,7 @@
 - [ ] continue conversation when first loading, or start new
 - [ ] dark mode
 - [ ] check for no content in the recording, and if not, then just turn off the mic
+- [ ] change eslint config file back when done with mobile debugging
 
 # Features for MVP
 
