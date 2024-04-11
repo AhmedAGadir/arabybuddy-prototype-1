@@ -5,12 +5,7 @@ import Image from "next/image";
 import LanguageContext, {
 	type LanguageSettings,
 } from "@/context/languageContext";
-import eruda from "eruda";
-
-// for eruda debugging on mobile
-declare global {
-	interface self {}
-}
+import VConsole from "vconsole";
 
 const Layout = ({ children }: { children: React.ReactNode }) => {
 	const [languages, setLanguages] = useState<LanguageSettings>({
@@ -24,7 +19,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
 
 	React.useEffect(() => {
 		// for debugging on mobile
-		eruda.init();
+		const vConsole = new VConsole({ theme: "dark" });
 	}, []);
 
 	return (
