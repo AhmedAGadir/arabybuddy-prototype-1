@@ -1,5 +1,7 @@
+import { ChatMessage } from "@/app/(root)/chat/page";
 import OpenAI from "openai";
 import { TextContentBlock } from "openai/resources/beta/threads/messages/messages.mjs";
+import { late } from "zod";
 
 // remember API calls wont work if the account balance is 0
 const openai = new OpenAI({
@@ -9,14 +11,16 @@ const openai = new OpenAI({
 
 export async function POST(req: Request, res: Response) {
 	try {
-		const { messages, content } = await req.json();
+		const { chatHistory, latestChatMessage } = await req.json();
 
-		const { updatedMessages } =
-			await openAiAppendUserMessageAndAwaitAssistantResponse(messages, content);
+		const { updatedChatHistory } = await openAIAddChatMessageAndAwaitResponse(
+			chatHistory,
+			latestChatMessage
+		);
 
 		return Response.json(
 			{
-				messages: updatedMessages,
+				chatHistory: updatedChatHistory,
 			},
 			{ status: 200 }
 		);
@@ -26,9 +30,9 @@ export async function POST(req: Request, res: Response) {
 	}
 }
 
-const openAiAppendUserMessageAndAwaitAssistantResponse = async (
-	messages: { role: "user" | "assistant"; content: string }[],
-	content: string
+const openAIAddChatMessageAndAwaitResponse = async (
+	chatHistory: ChatMessage[],
+	latestChatMessage: ChatMessage
 ) => {
 	// create the assistant
 	const assistant = await openai.beta.assistants.create({
@@ -40,14 +44,11 @@ const openAiAppendUserMessageAndAwaitAssistantResponse = async (
 
 	// create the thread and pass all previous messages
 	const thread = await openai.beta.threads.create({
-		messages,
+		messages: chatHistory,
 	});
 
 	// add transcription to thread
-	await openai.beta.threads.messages.create(thread.id, {
-		role: "user",
-		content,
-	});
+	await openai.beta.threads.messages.create(thread.id, latestChatMessage);
 
 	// run the thread with the assistant
 	const run = await openai.beta.threads.runs.createAndPoll(thread.id, {
@@ -56,13 +57,13 @@ const openAiAppendUserMessageAndAwaitAssistantResponse = async (
 		// instructions: "Respond to the user.",
 	});
 
-	let updatedMessages = [];
+	let updatedChatHistory = [];
 
 	if (run.status === "completed") {
 		const messagesPage: OpenAI.Beta.Threads.Messages.MessagesPage =
 			await openai.beta.threads.messages.list(run.thread_id);
 
-		updatedMessages = messagesPage.data.reverse().map((message) => ({
+		updatedChatHistory = messagesPage.data.reverse().map((message) => ({
 			role: message.role,
 			content: (message.content[0] as TextContentBlock).text.value,
 		}));
@@ -70,5 +71,5 @@ const openAiAppendUserMessageAndAwaitAssistantResponse = async (
 		throw new Error("Thread run either failed or is not completed");
 	}
 
-	return { updatedMessages };
+	return { updatedChatHistory };
 };

@@ -21,140 +21,53 @@ import { useLogger } from "@/hooks/useLogger";
 import CursorSVG from "@/components/shared/CursorSVG";
 import _ from "lodash";
 import { amiri } from "@/lib/fonts";
-import { MIME_TYPES } from "@/lib/constants";
+import { useAudioService } from "@/hooks/useAudioService";
+import { useChatService } from "@/hooks/useChatService";
 
-const makeServerlessRequest = async (url: string, body: any) => {
-	const response = await fetch(url, {
-		method: "POST",
-		headers: {
-			"Content-Type": "application/json",
-		},
-		body: JSON.stringify(body),
-	});
-
-	const data = await response.json();
-
-	if (response.status !== 200) {
-		throw (
-			data.error || new Error(`Request failed with status ${response.status}`)
-		);
-	}
-
-	return data;
-};
-
-const speechToText = async (audioBlob: Blob) => {
-	const base64Audio = await blobToBase64(audioBlob);
-
-	const { transcription } = await makeServerlessRequest(
-		"/api/chat/speech-to-text",
-		{
-			audio: {
-				base64Audio,
-				type: audioBlob.type.split("/")[1],
-			},
-		}
-	);
-
-	return { transcription };
-};
-
-const appendUserMessageAndAwaitAssistantResponse = async (
-	messages: Message[],
-	latestMessage: string
-) => {
-	const { messages: updatedMessages } = await makeServerlessRequest(
-		"/api/chat/assistant",
-		{
-			messages,
-			content: latestMessage,
-		}
-	);
-
-	return { messages: updatedMessages };
-};
-
-const textToSpeech = async (content: string) => {
-	const { base64Audio } = await makeServerlessRequest(
-		"/api/chat/text-to-speech",
-		{
-			content,
-		}
-	);
-
-	return { base64Audio };
-};
-
-type Message = { role: "user" | "assistant"; content: string };
+export type ChatMessage = { role: "user" | "assistant"; content: string };
 
 const ChatPage = () => {
+	const logger = useLogger({ label: "ChatPage", color: "#fe7de9" });
+
 	const { nativeLanguage, arabicDialect } = useContext(LanguageContext);
-	const [isPlaying, setIsPlaying] = useState(false);
+
+	const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
+
 	const [activeTask, setActiveTask] = useState<
 		"speech-to-text" | "assistant" | "text-to-speech" | null
 	>(null);
-	const [messages, setMessages] = useState<Message[]>([]);
 
-	const logger = useLogger({ label: "ChatPage", color: "#fe7de9" });
+	const { addChatMessage } = useChatService(chatHistory);
 
-	const [foo, setFoo] = useState("");
-	const [audioType, setAudioType] = useState("");
+	const { speechToText, textToSpeech, playAudio, isPlaying, initAudioElement } =
+		useAudioService();
 
-	useEffect(() => {
-		const supportedMIMEtypes = getAllSupportedMimeTypes().join(", ");
-		setFoo(supportedMIMEtypes);
-	}, []);
+	const onRecordingComplete = async (audioBlob: Blob) => {
+		// 1. transcribe the user audio
+		setActiveTask("speech-to-text");
+		const { transcription } = await speechToText(audioBlob);
 
-	const sendToBackend = useCallback(
-		async (audioBlob: Blob): Promise<void> => {
-			try {
-				logger.log("making request to: /api/chat/speech-to-text...");
-				// 1. transcribe the user's audio
-				setActiveTask("speech-to-text");
-				const { transcription } = await speechToText(audioBlob);
-				logger.log("transcription", transcription);
+		// 2. add the user message to the chat
+		setActiveTask("assistant");
+		const { chatHistory: updatedChatHistory } = await addChatMessage({
+			role: "user",
+			content: transcription,
+		});
 
-				logger.log("making request to: /api/chat/assistant...");
-				// 2. send the transcription to the assistant and await a text response
-				setActiveTask("assistant");
-				const { messages: updatedMessages } =
-					await appendUserMessageAndAwaitAssistantResponse(
-						messages,
-						transcription
-					);
-				logger.log("updatedMessages", JSON.stringify(updatedMessages));
+		// 3. convert the assistants response to audio
+		setActiveTask("text-to-speech");
+		const { base64Audio } = await textToSpeech(
+			(_.last(updatedChatHistory) as ChatMessage).content
+		);
 
-				logger.log("making request to: /api/chat/text-to-speech...");
-				// 3. convert the text response to audio
-				setActiveTask("text-to-speech");
-				const { base64Audio } = await textToSpeech(
-					(_.last(updatedMessages) as Message).content
-				);
-				logger.log("base64Audio", `${base64Audio.slice(0, 10)}...`);
-
-				// 4. updated messages in state and play audio
-				setActiveTask(null);
-				updateMessagesAndTypeLatestMessage(updatedMessages);
-
-				setIsPlaying(true);
-				await playAudio(base64Audio);
-				setIsPlaying(false);
-			} catch (error) {
-				logger.error(error);
-				logger.log((error as Error).message);
-			}
-		},
-		[messages, logger]
-	);
+		// 4. play assistants response and update chat history
+		setActiveTask(null);
+		setChatHistoryWithTypewriterOnLatestMessage(updatedChatHistory);
+		playAudio(base64Audio);
+	};
 
 	const { isRecording, startRecording, stopRecording, amplitude } =
-		useRecording({
-			onRecordingComplete: async (audioBlob: Blob) => {
-				await sendToBackend(audioBlob);
-				// 5. start recording again
-				startRecording();
-			},
-		});
+		useRecording(onRecordingComplete, { autoRestartRecording: true });
 
 	const toggleRecording = () => {
 		if (isRecording) {
@@ -163,47 +76,10 @@ const ChatPage = () => {
 		}
 
 		if (!isRecording) {
+			initAudioElement();
 			startRecording();
 			return;
 		}
-	};
-
-	const [audioBase64, setAudioBase64] = useState<string | null>(null);
-
-	const playAudio = async (base64Audio: string) => {
-		const promise = new Promise((resolve, reject) => {
-			const audioBlob = base64ToBlob(base64Audio, "audio/mp3");
-			setAudioBase64(base64Audio);
-			const audioSrc = URL.createObjectURL(audioBlob);
-			const audio = new Audio(audioSrc);
-
-			setAudioType(audioBlob.type);
-
-			//   const originalVolume = audio.volume;
-
-			audio.muted = true;
-
-			audio
-				.play()
-				.then(() => {
-					audio.volume = 0.5;
-
-					audio.muted = false;
-				})
-				.catch(reject);
-
-			const onAudioEnded = () => {
-				URL.revokeObjectURL(audioSrc);
-				audio.removeEventListener("ended", onAudioEnded);
-				audio.removeEventListener("error", reject);
-				resolve(null);
-			};
-
-			audio.addEventListener("ended", onAudioEnded);
-			audio.addEventListener("error", reject);
-		});
-
-		return promise;
 	};
 
 	const isLoading = activeTask !== null;
@@ -229,26 +105,29 @@ const ChatPage = () => {
 
 	const [completedTyping, setCompletedTyping] = useState(false);
 
-	const updateMessagesAndTypeLatestMessage = (messages: Message[]) => {
-		const mostRecentMessage = _.last(messages) as Message;
-		const previousMessages = messages.slice(0, messages.length - 1);
+	// just a fancy way to type out the latest message
+	const setChatHistoryWithTypewriterOnLatestMessage = (
+		chatHistory: ChatMessage[]
+	) => {
+		const previousChatHistory = chatHistory.slice(0, chatHistory.length - 1);
+		const latestChatMessage = _.last(chatHistory) as ChatMessage;
 
 		setCompletedTyping(false);
 
 		let i = 0;
 
 		const intervalId = setInterval(() => {
-			setMessages([
-				...previousMessages,
+			setChatHistory([
+				...previousChatHistory,
 				{
-					...mostRecentMessage,
-					content: mostRecentMessage.content.slice(0, i),
+					...latestChatMessage,
+					content: latestChatMessage.content.slice(0, i),
 				},
 			]);
 
 			i++;
 
-			if (i > mostRecentMessage.content.length) {
+			if (i > latestChatMessage.content.length) {
 				clearInterval(intervalId);
 				setCompletedTyping(true);
 			}
@@ -258,15 +137,15 @@ const ChatPage = () => {
 	};
 
 	const displayedMessage = useMemo(() => {
-		if (isRecording && _.isEmpty(messages)) return "👂";
+		if (isRecording && _.isEmpty(chatHistory)) return "👂";
 		if (activeTask === "speech-to-text") return "💬";
 		if (activeTask === "assistant") return "🤔";
 		if (activeTask === "text-to-speech") return "📬";
-		if (isPlaying || !_.isEmpty(messages)) {
-			return _.last(messages)?.content ?? "";
+		if (isPlaying || !_.isEmpty(chatHistory)) {
+			return _.last(chatHistory)?.content ?? "";
 		}
 		return "Press ⬇️ the blue blob to start recording";
-	}, [activeTask, isPlaying, isRecording, messages]);
+	}, [activeTask, isPlaying, isRecording, chatHistory]);
 
 	return (
 		<div className="w-full h-svh h-100dvh flex flex-col items-center justify-between">
@@ -322,7 +201,7 @@ const ChatPage = () => {
 				<p
 					className={cn(
 						"font-extrabold tracking-tight text-4xl md:text-5xl lg:text-6xl text-center px-5 text-slate-900",
-						!_.isEmpty(messages) &&
+						!_.isEmpty(chatHistory) &&
 							`${amiri.className} font-light leading-relaxed md:leading-relaxed lg:leading-relaxed`, // when displaying arabic text
 						isPlaying && "text-araby-purple", // while playing
 						(!_.isNil(activeTask) || isRecording) && "text-5xl" // for emojis
@@ -332,17 +211,7 @@ const ChatPage = () => {
 				>
 					{displayedMessage} {isPlaying && !completedTyping && <CursorSVG />}
 				</p>
-				<p className="absolute bottom-[-30px] left-1/2 -translate-x-1/2 w-max h-[20px] text-lg font-normal text-gray-500 lg:text-xl sm:px-16 xl:px-48 text-center dark:text-gray-400">
-					supportedMIMEtypes: {foo} - audioType: {audioType}
-					<button
-						className="bg-blue-500 m-3 block"
-						onClick={() =>
-							audioBase64 ? playAudio(audioBase64 as string) : alert("no audio")
-						}
-					>
-						play audio
-					</button>
-				</p>
+				<p className="absolute bottom-[-30px] left-1/2 -translate-x-1/2 w-max h-[20px] text-lg font-normal text-gray-500 lg:text-xl sm:px-16 xl:px-48 text-center dark:text-gray-400"></p>
 			</div>
 			<div className="flex items-center w-full">
 				<button
