@@ -27,6 +27,7 @@ import { useAudioPlayer } from "@/hooks/useAudioPlayer";
 
 export type ChatMessage = { role: "user" | "assistant"; content: string };
 
+// try to keep business logic out of this page as its a presentation/view component
 const ChatPage = () => {
 	const logger = useLogger({ label: "ChatPage", color: "#fe7de9" });
 
@@ -140,7 +141,7 @@ const ChatPage = () => {
 	};
 
 	const displayedMessage = useMemo(() => {
-		if (isRecording && _.isEmpty(chatHistory)) return "👂";
+		if (isRecording) return "👂";
 		if (activeTask === "speech-to-text") return "💬";
 		if (activeTask === "assistant") return "🤔";
 		if (activeTask === "text-to-speech") return "📬";
