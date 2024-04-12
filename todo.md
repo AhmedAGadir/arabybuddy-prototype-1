@@ -17,6 +17,7 @@
 - [ ] dark mode
 - [ ] check for no content in the recording, and if not, then just turn off the mic
 - [ ] change eslint config file back when done with mobile debugging
+- [ ] language support, dialect support - if not then diasble options on home page
 
 # Features for MVP
 
@@ -29,6 +30,8 @@
 - [ ] some viral element - leaderboard, sharing with friends etc
 - [ ] analytics
 - [ ] adds, kickstarter, tiktok sponsors (talk to mohab 16)
+- [ ] notification for connected/disconnect to internet (like codecademy)
+- [ ] option for type a response back instead?
 
 # Features
 

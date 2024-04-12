@@ -16,7 +16,14 @@ export default function RootLayout({
 	return (
 		<html lang="en">
 			<head>
-				<script src="https://cdn.jsdelivr.net/gh/c-kick/mobileConsole/hnl.mobileconsole.min.js"></script>
+				{
+					// MOBILE CONSOLE DEVTOOLS
+					// when i eventually remove this, change eslinrc.json back to {"extends": "next/core-web-vitals"}
+					// eslint-disable-next-line @next/next/no-sync-scripts
+				}
+				{
+					// <script src="https://cdn.jsdelivr.net/gh/c-kick/mobileConsole/hnl.mobileconsole.min.js"></script>
+				}
 			</head>
 			<body className={inter.className}>{children}</body>
 		</html>

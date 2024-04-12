@@ -1,4 +1,4 @@
-import { ChatMessage } from "@/app/(root)/chat/page";
+import { ChatMessage } from "@/types/messageTypes";
 import OpenAI from "openai";
 import { TextContentBlock } from "openai/resources/beta/threads/messages/messages.mjs";
 

@@ -39,7 +39,7 @@ const openAISpeechToText = async (base64Audio: string, type: string) => {
 	console.log("tmp dir created at ", dirPath, "file path in tmp dir", filePath);
 
 	// write the audio data to a file
-	console.log("writing audio data to file");
+	console.log("writing user audio data to file");
 	await fs.promises.mkdir(dirPath, { recursive: true });
 	fs.writeFileSync(filePath, audioData);
 

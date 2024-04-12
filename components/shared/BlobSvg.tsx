@@ -103,7 +103,7 @@ const BlobSVG = ({
 			/>
 
 			<BlobInner
-				size={200}
+				size={size}
 				duration={duration}
 				values={blobDValues.reverse().join(";")}
 				pathProps={{

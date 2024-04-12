@@ -1,21 +1,25 @@
 "use client";
 
-import React, { useContext, useState, useMemo } from "react";
+import React, { useContext, useState, useMemo, useEffect, useRef } from "react";
 import LanguageContext from "@/context/languageContext";
-import { BlobSvg } from "@/components/shared";
-import { useRecording } from "@/hooks/useRecording/useRecording";
-import { BackgroundGradient } from "@/components/ui/background-gradient";
-import { cn } from "@/lib/utils";
 import { useLogger } from "@/hooks/useLogger";
-import CursorSVG from "@/components/shared/CursorSVG";
 import _ from "lodash";
-import { amiri } from "@/lib/fonts";
 import { useAudioService } from "@/hooks/useAudioService";
 import { useChatService } from "@/hooks/useChatService";
 import { useAudioPlayer } from "@/hooks/useAudioPlayer";
+import { Transition } from "@headlessui/react";
+
+import { ChatMessage } from "@/types/messageTypes";
+import MicrophoneBlob from "@/components/shared/MicrophoneBlob";
+import { useRecording } from "@/hooks/useRecording/useRecording";
+
 import { StopButton } from "@/components/shared/icons/Stop";
 
-export type ChatMessage = { role: "user" | "assistant"; content: string };
+const instructions = {
+	// idle: "Press ⬇️ the blue blob to start recording",
+	idle: ["Click the blob to start recording"],
+	recording: ["Click again to stop recording", "Say something in Arabic..."],
+};
 
 // try to keep business logic out of this page as its a presentation/view component
 const ChatPage = () => {
@@ -28,6 +32,11 @@ const ChatPage = () => {
 	const [activeTask, setActiveTask] = useState<
 		"speech-to-text" | "assistant" | "text-to-speech" | null
 	>(null);
+
+	const activeTaskRef = useRef<
+		"speech-to-text" | "assistant" | "text-to-speech" | null
+	>(null);
+	activeTaskRef.current = activeTask;
 
 	const { addChatMessage, cancelAddChatMessageRequest } =
 		useChatService(chatHistory);
@@ -61,16 +70,41 @@ const ChatPage = () => {
 
 		// 4. play assistants response and update chat history
 		setActiveTask(null);
-		setChatHistoryWithTypewriterOnLatestMessage(updatedChatHistory);
+		setChatHistory(updatedChatHistory);
 
 		await playAudio(base64Audio);
 		return;
 	};
 
+	const isDoingTask = !_.isNull(activeTaskRef.current);
+
 	const { isRecording, startRecording, stopRecording, amplitude } =
 		useRecording(onRecordingComplete, { autoRestartRecording: false });
 
+	const [showInstruction, setShowInstruction] = useState(false);
+
+	useEffect(() => {
+		setTimeout(() => {
+			setShowInstruction(true);
+		}, 1000);
+	}, [isRecording]);
+
+	const instruction = useMemo(() => {
+		if (isRecording) {
+			const randomIndex = Math.floor(
+				Math.random() * instructions.recording.length
+			);
+			return instructions.recording[randomIndex];
+		}
+		if (!isRecording && !isPlaying && !isDoingTask) {
+			const randomIndex = Math.floor(Math.random() * instructions.idle.length);
+			return instructions.idle[randomIndex];
+		}
+		return "";
+	}, [isDoingTask, isPlaying, isRecording]);
+
 	const toggleRecording = () => {
+		setShowInstruction(false);
 		if (isRecording) {
 			stopRecording();
 			return;
@@ -83,17 +117,24 @@ const ChatPage = () => {
 		}
 	};
 
+	const microphoneMode = useMemo(() => {
+		if (isRecording) return "recording";
+		if (isPlaying) return "playing";
+		if (!_.isNull(activeTaskRef.current)) return "processing";
+		return "idle";
+	}, [isPlaying, isRecording]);
+
 	const stopEverything = () => {
 		if (isPlaying) {
 			stopPlaying();
 		}
-		if (activeTask === "speech-to-text") {
+		if (activeTaskRef.current === "speech-to-text") {
 			cancelSpeechToTextRequest();
 		}
-		if (activeTask === "text-to-speech") {
+		if (activeTaskRef.current === "text-to-speech") {
 			cancelTextToSpeechRequest();
 		}
-		if (activeTask === "assistant") {
+		if (activeTaskRef.current === "assistant") {
 			cancelAddChatMessageRequest();
 		}
 		if (isRecording) {
@@ -101,153 +142,92 @@ const ChatPage = () => {
 		}
 	};
 
-	const isLoading = activeTask !== null;
-
-	const microphoneFillColor = useMemo(() => {
-		if (isPlaying)
-			return {
-				fill: "#5E17EB",
-			};
-		if (isLoading)
-			return {
-				fill: "#64748b",
-				fillOpacity: 0.1,
-			};
-		if (isRecording)
-			return {
-				fill: "#FF0066",
-			};
-		return {
-			fill: "#38B6FF",
-		};
-	}, [isLoading, isPlaying, isRecording]);
-
-	const [completedTyping, setCompletedTyping] = useState(false);
-
-	// just a fancy way to type out the latest message
-	const setChatHistoryWithTypewriterOnLatestMessage = (
-		chatHistory: ChatMessage[]
-	) => {
-		const previousChatHistory = chatHistory.slice(0, chatHistory.length - 1);
-		const latestChatMessage = _.last(chatHistory) as ChatMessage;
-
-		setCompletedTyping(false);
-
-		let i = 0;
-
-		const intervalId = setInterval(() => {
-			setChatHistory([
-				...previousChatHistory,
-				{
-					...latestChatMessage,
-					content: latestChatMessage.content.slice(0, i),
-				},
-			]);
-
-			i++;
-
-			if (i > latestChatMessage.content.length) {
-				clearInterval(intervalId);
-				setCompletedTyping(true);
-			}
-		}, 50);
-
-		return () => clearInterval(intervalId);
-	};
-
-	const displayedMessage = useMemo(() => {
-		if (isRecording) return "👂";
-		if (activeTask === "speech-to-text") return "💬";
-		if (activeTask === "assistant") return "🤔";
-		if (activeTask === "text-to-speech") return "📬";
-		if (isPlaying || !_.isEmpty(chatHistory)) {
-			return _.last(chatHistory)?.content ?? "";
-		}
-		return "Press ⬇️ the blue blob to start recording";
-	}, [activeTask, isPlaying, isRecording, chatHistory]);
+	const taskEmoji = useMemo(() => {
+		if (activeTaskRef.current === "speech-to-text") return "🎤";
+		if (activeTaskRef.current === "assistant") return "🤔";
+		if (activeTaskRef.current === "text-to-speech") return "💬";
+		return "";
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [activeTask, activeTaskRef.current]);
 
 	return (
-		<div className="w-full h-svh h-100dvh flex flex-col items-center justify-between">
-			{/* <p> */}
-			{/* Chat {nativeLanguage} - {arabicDialect}
-			</p> */}
-			{/* <Link href="/">
-				<div className="rounded-md p-2 bg-white w-fit ">
-					<Image
-						src="/assets/arabybuddy.svg"
-						alt="logo"
-						width={50}
-						height={50}
+		<div className="w-full h-svh h-100dvh flex items-center justify-center max-w-4xl mx-auto px-5">
+			<div className="relative w-full text-center">
+				<div className="text-5xl">{isDoingTask && taskEmoji}</div>
+				<div className="absolute -top-[50px] left-1/2 -translate-x-1/2 font-extrabold tracking-tight text-4xl md:text-5xl text-center px-5 text-slate-900  w-full opacity-50">
+					<Transition
+						className=""
+						show={showInstruction}
+						enter="transition-all ease-in-out duration-500 delay-[200ms]"
+						enterFrom="opacity-0 translate-y-6"
+						enterTo="opacity-100 translate-y-0"
+						leave="transition-all ease-in-out duration-300"
+						leaveFrom="opacity-100"
+						leaveTo="opacity-0"
+					>
+						{}
+						{instruction}
+					</Transition>
+				</div>
+				<div className="text-center">
+					<MicrophoneBlob
+						onClick={toggleRecording}
+						mode={microphoneMode}
+						amplitude={amplitude}
 					/>
 				</div>
-			</Link> */}
-			{/* {
-				<div className="w-2/3 md:w-1/2 m-auto">
-					<BackgroundGradient
-						className="rounded-[22px] p-4 bg-white"
-						animate={false}
-					>
-						<div className="flex-1 flex w-full justify-between">
-							<div className="space-y-1">
-								<p className="text-sm font-medium leading-none">
-									{isPlaying
-										? "Playing"
-										: isRecording
-										? "Recording"
-										: "Recorded"}
-								</p>
-								<p className="text-sm">{displayedMessage}</p>
-							</div>
-
-							{isRecording && (
-								<div className="rounded-full w-4 h-4 bg-red-400 animate-pulse" />
-							)}
-						</div>
-					</BackgroundGradient>
-				</div>
-			} */}
-			{/* {result && (
-				<div className="w-2/3 md:w-1/2 m-auto my-4">
-					<BackgroundGradient
-						className="rounded-[22px] p-4 bg-white"
-						animate={false}
-					>
-						{result}
-					</BackgroundGradient>
-				</div>
-			)} */}
-			<div className="max-w-4xl m-auto relative">
-				<p
-					className={cn(
-						"font-extrabold tracking-tight text-4xl md:text-5xl lg:text-6xl text-center px-5 text-slate-900",
-						!_.isEmpty(chatHistory) &&
-							`${amiri.className} font-light leading-relaxed md:leading-relaxed lg:leading-relaxed`, // when displaying arabic text
-						isPlaying && "text-araby-purple", // while playing
-						(!_.isNil(activeTask) || isRecording) && "text-5xl" // for emojis
-					)}
-					// for the cursor to be on the left side of the text
-					{...(isPlaying ? { style: { direction: "rtl" } } : {})}
-				>
-					{displayedMessage} {isPlaying && !completedTyping && <CursorSVG />}
-				</p>
-				<div className="absolute bottom-[-30px] left-1/2 -translate-x-1/2 w-max h-[20px] text-lg font-normal text-gray-500 lg:text-xl sm:px-16 xl:px-48 text-center dark:text-gray-400">
-					{<StopButton onClick={stopEverything} />}
-				</div>
-			</div>
-			<div className="flex items-center w-full">
-				<button
-					className={cn("mt-10 m-auto", !isLoading && "cursor-pointer")}
-					onClick={toggleRecording}
-					disabled={isLoading || isPlaying}
-				>
-					<BlobSvg
-						size={amplitude ? 200 + amplitude * 2 : 200}
-						{...microphoneFillColor}
-					/>
-				</button>
 			</div>
 		</div>
 	);
 };
 
 export default ChatPage;
+
+// {/* <p> */}
+// 		{/* Chat {nativeLanguage} - {arabicDialect}
+// 		</p> */}
+// 		{/* <Link href="/">
+// 			<div className="rounded-md p-2 bg-white w-fit ">
+// 				<Image
+// 					src="/assets/arabybuddy.svg"
+// 					alt="logo"
+// 					width={50}
+// 					height={50}
+// 				/>
+// 			</div>
+// 		</Link> */}
+// 		{/* {
+// 			<div className="w-2/3 md:w-1/2 m-auto">
+// 				<BackgroundGradient
+// 					className="rounded-[22px] p-4 bg-white"
+// 					animate={false}
+// 				>
+// 					<div className="flex-1 flex w-full justify-between">
+// 						<div className="space-y-1">
+// 							<p className="text-sm font-medium leading-none">
+// 								{isPlaying
+// 									? "Playing"
+// 									: isRecording
+// 									? "Recording"
+// 									: "Recorded"}
+// 							</p>
+// 							<p className="text-sm">{displayedMessage}</p>
+// 						</div>
+
+// 						{isRecording && (
+// 							<div className="rounded-full w-4 h-4 bg-red-400 animate-pulse" />
+// 						)}
+// 					</div>
+// 				</BackgroundGradient>
+// 			</div>
+// 		} */}
+// 		{/* {result && (
+// 			<div className="w-2/3 md:w-1/2 m-auto my-4">
+// 				<BackgroundGradient
+// 					className="rounded-[22px] p-4 bg-white"
+// 					animate={false}
+// 				>
+// 					{result}
+// 				</BackgroundGradient>
+// 			</div>
+// 		)} */}

@@ -69,11 +69,18 @@ const useRecording = (
 
 				if (options.autoRestartRecording) {
 					logger.log("Auto-restarting recording");
-					startRecording();
+					// startRecording();
 				}
 			});
 		},
-		[logger, onRecordingComplete, stopSilenceDetection, stopSound]
+		[
+			logger,
+			onRecordingComplete,
+			options.autoRestartRecording,
+			stopRecordingCleanup,
+			stopSilenceDetection,
+			stopSound,
+		]
 	);
 
 	const startRecording = useCallback(async () => {
@@ -112,7 +119,7 @@ const useRecording = (
 				`Failed to start recording: ${JSON.stringify((error as any).message)}`
 			);
 		}
-	}, [detectSilence, isRecording, logger, startSound, stopRecording]);
+	}, [detectSilence, logger, startSound, stopRecording]);
 
 	return { isRecording, startRecording, stopRecording, amplitude };
 };
