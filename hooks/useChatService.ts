@@ -1,7 +1,7 @@
 import { useCallback } from "react";
-import { ChatMessage } from "@/app/(root)/chat/page";
 import { useLogger } from "./useLogger";
 import { useServerlessRequest } from "./useServerlessRequest";
+import { ChatMessage } from "@/types/messageTypes";
 
 const useChatService = (chatHistory: ChatMessage[]) => {
 	const logger = useLogger({ label: "ChatService", color: "#fe7de9" });
@@ -25,7 +25,7 @@ const useChatService = (chatHistory: ChatMessage[]) => {
 
 			return { chatHistory: updatedChatHistory };
 		},
-		[chatHistory, logger]
+		[chatHistory, logger, makeServerlessRequest]
 	);
 
 	return { addChatMessage, cancelAddChatMessageRequest };
