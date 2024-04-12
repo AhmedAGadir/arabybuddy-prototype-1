@@ -8,9 +8,11 @@ import { cn } from "@/lib/utils";
 const ChatThread = ({
 	chatHistory,
 	isPlaying = false,
+	containerRef,
 }: {
 	chatHistory: ChatMessage[];
 	isPlaying: boolean;
+	containerRef: React.RefObject<HTMLDivElement>;
 }) => {
 	const [completedTyping, setCompletedTyping] = useState(false);
 
@@ -46,7 +48,10 @@ const ChatThread = ({
 	// };
 
 	return (
-		<div className="overflow-scroll w-full h-full" ref={chatHistoryContainer}>
+		<div
+			className="overflow-scroll w-full h-full"
+			// ref={containerRef} // used this for scroll to latest message functionality
+		>
 			<div className="flex flex-col justify-center gap-8 h-full mx-auto max-w-xl ">
 				{chatHistory.map((chatMessage, ind) => {
 					const isLastChatMessage = ind === chatHistory.length - 1;
