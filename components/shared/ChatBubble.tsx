@@ -17,6 +17,7 @@ import { Button } from "../ui/button";
 const ChatBubble = ({
 	name,
 	avatarSrc,
+	avatarAlt,
 	content,
 	dropdownItems,
 	time,
@@ -28,6 +29,7 @@ const ChatBubble = ({
 }: {
 	name: string;
 	avatarSrc: string;
+	avatarAlt: string;
 	content: JSX.Element;
 	status?: "delivered" | "read";
 	dropdownItems?: (
@@ -58,7 +60,7 @@ const ChatBubble = ({
 					<svg
 						className={cn(
 							"text-slate-500 dark:text-slate-400",
-							isMobile && "w-5 h-5",
+							isMobile && "w-4 h-4",
 							!isMobile && "w-5 h-5"
 						)}
 						aria-hidden="true"
@@ -95,11 +97,11 @@ const ChatBubble = ({
 		>
 			{!isMobile && (
 				<Image
-					className="w-12 h-12 rounded-full mt-4"
+					className="w-14 h-14 rounded-full mt-4"
 					width={16}
 					height={16}
 					src={avatarSrc}
-					alt="Araby Buddy logo"
+					alt={avatarAlt}
 				/>
 			)}
 			<BackgroundGradient

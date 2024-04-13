@@ -246,6 +246,9 @@ const ChatPage = () => {
 								? "/assets/arabybuddy.svg"
 								: "/assets/user.svg"
 						}
+						avatarAlt={
+							latesChatMessageIsAssistant ? "ArabyBuddy avatar" : "User avatar"
+						}
 						rtl={true}
 						reverse={true}
 						glow={isPlaying}
