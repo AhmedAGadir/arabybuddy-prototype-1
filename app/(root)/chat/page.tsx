@@ -166,10 +166,12 @@ const ChatPage = () => {
 	}, [activeTask, activeTaskRef.current]);
 
 	const isChatEmpty = _.isEmpty(chatHistory);
-	const latestChatMessage = _.last(chatHistory) ?? {
-		role: "assistant",
-		content: "السلام عليكم كيف حالك اليوم؟",
-	};
+	const latestChatMessage = _.last(chatHistory);
+	// ?? {
+	// 	role: "assistant",
+	// 	content: "السلام عليكم كيف حالك اليوم؟",
+	// };
+
 	const latesChatMessageIsAssistant = latestChatMessage?.role === "assistant";
 
 	const [completedTyping, setCompletedTyping] = useState(false);
@@ -231,8 +233,8 @@ const ChatPage = () => {
 			)}
 		>
 			<div className="h-full w-full flex justify-center items-center">
-				{/* {!isChatEmpty && ( */}
-				{true && (
+				{/* {true && ( */}
+				{!isChatEmpty && (
 					<ChatBubble
 						name={latesChatMessageIsAssistant ? "ArabyBuddy" : "User"}
 						avatarSrc={
