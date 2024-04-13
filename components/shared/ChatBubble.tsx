@@ -70,7 +70,7 @@ const ChatBubble = ({
 					</svg>
 				</Button>
 			</DropdownMenuTrigger>
-			<DropdownMenuContent>
+			<DropdownMenuContent className={cn(isMobile && "ml-3")}>
 				{dropdownItems.map((item, ind) => {
 					if (item === "separator")
 						return <DropdownMenuSeparator key={ind + "-separator"} />;
