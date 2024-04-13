@@ -14,6 +14,7 @@ const ChatBubble = ({
 	rtl = false,
 	className = "",
 	reverse = false,
+	glow = false,
 }: {
 	name: string;
 	avatarSrc: string;
@@ -27,6 +28,7 @@ const ChatBubble = ({
 	rtl?: boolean;
 	className?: string;
 	reverse?: boolean;
+	glow?: boolean;
 }) => {
 	const { device } = useMediaQuery();
 	const isMobile = device === "mobile";
@@ -51,6 +53,7 @@ const ChatBubble = ({
 			<BackgroundGradient
 				className={cn(!isMobile && "max-w-2xl", isMobile && "flex-1")}
 				animate={false}
+				glow={glow}
 			>
 				<div
 					className={cn(

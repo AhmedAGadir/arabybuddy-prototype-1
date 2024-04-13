@@ -211,7 +211,8 @@ const ChatPage = () => {
 								: "/assets/user.svg"
 						}
 						rtl={true}
-						reverse={latesChatMessageIsAssistant}
+						reverse={true}
+						glow={isPlaying}
 						content={
 							<span
 								className={cn(
