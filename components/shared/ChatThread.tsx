@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import ChatBubble from "./ChatBubble";
 import { ChatMessage } from "@/types/messageTypes";
 import CursorSVG from "./CursorSVG";
-import { amiri } from "@/lib/fonts";
+import { cairo } from "@/lib/fonts";
 import { cn } from "@/lib/utils";
 
 const ChatThread = ({
@@ -68,7 +68,7 @@ const ChatThread = ({
 								avatarSrc="/assets/user.svg"
 								rtl={true}
 								content={
-									<span className={`${amiri.className} font-light`}>
+									<span className={`${cairo.className} font-light`}>
 										{chatMessage.content ?? ""}
 									</span>
 								}
@@ -87,7 +87,7 @@ const ChatThread = ({
 								<span
 									className={cn(
 										"font-light",
-										amiri.className,
+										cairo.className,
 										isLastChatMessage && isPlaying && "text-araby-purple"
 									)}
 								>

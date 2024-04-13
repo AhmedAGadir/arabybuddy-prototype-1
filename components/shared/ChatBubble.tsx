@@ -42,8 +42,8 @@ const ChatBubble = ({
 			/> */}
 			<div
 				className={cn(
-					"min-w-[200px] flex flex-col leading-1.5 p-4 border-gray-200 bg-slate-400  dark:bg-slate-700 rounded-xl bg-opacity-25"
-					// 'rounded-e-xl rounded-es-xl'
+					"min-w-[200px] flex flex-col leading-1.5 p-4 rounded-xl bg-opacity-25"
+					// 'border-gray-200 bg-slate-400  dark:bg-slate-700 rounded-e-xl rounded-es-xl'
 				)}
 			>
 				<div

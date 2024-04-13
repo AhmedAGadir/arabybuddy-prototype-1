@@ -1,9 +1,9 @@
-import { Inter, Amiri } from "next/font/google";
+import { Inter, Cairo } from "next/font/google";
 
 export const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
-export const amiri = Amiri({
+export const cairo = Cairo({
 	subsets: ["arabic"],
 	weight: ["400", "700"],
-	variable: "--font-amiri",
+	variable: "--font-cairo",
 });

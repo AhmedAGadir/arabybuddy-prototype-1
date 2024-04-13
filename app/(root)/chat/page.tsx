@@ -14,6 +14,10 @@ import MicrophoneBlob from "@/components/shared/MicrophoneBlob";
 import { useRecording } from "@/hooks/useRecording/useRecording";
 
 import { StopButton } from "@/components/shared/icons/Stop";
+import ChatBubble from "@/components/shared/ChatBubble";
+import { cn } from "@/lib/utils";
+import { cairo } from "@/lib/fonts";
+import { BackgroundGradient } from "@/components/ui/background-gradient";
 
 const instructions = {
 	// idle: "Press ⬇️ the blue blob to start recording",
@@ -70,7 +74,7 @@ const ChatPage = () => {
 
 		// 4. play assistants response and update chat history
 		setActiveTask(null);
-		setChatHistory(updatedChatHistory);
+		setChatHistoryWithTypewriterOnLatestMessage(updatedChatHistory);
 
 		await playAudio(base64Audio);
 		return;
@@ -150,13 +154,81 @@ const ChatPage = () => {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [activeTask, activeTaskRef.current]);
 
+	const isChatEmpty = _.isEmpty(chatHistory);
+	const latestChatMessage = _.last(chatHistory)?.content;
+
+	const [completedTyping, setCompletedTyping] = useState(false);
+
+	const setChatHistoryWithTypewriterOnLatestMessage = (
+		chatHistory: ChatMessage[]
+	) => {
+		const previousChatHistory = chatHistory.slice(0, chatHistory.length - 1);
+		const latestChatMessage = _.last(chatHistory) as ChatMessage;
+
+		setCompletedTyping(false);
+
+		let i = 0;
+
+		const intervalId = setInterval(() => {
+			setChatHistory([
+				...previousChatHistory,
+				{
+					...latestChatMessage,
+					content: latestChatMessage.content.slice(0, i),
+				},
+			]);
+
+			i++;
+
+			if (i > latestChatMessage.content.length) {
+				clearInterval(intervalId);
+				setCompletedTyping(true);
+			}
+		}, 50);
+
+		return () => clearInterval(intervalId);
+	};
+
 	return (
-		<div className="w-full h-svh h-100dvh flex items-center justify-center max-w-4xl mx-auto px-5">
-			<div className="relative w-full text-center">
-				<div className="text-5xl">{isDoingTask && taskEmoji}</div>
-				<div className="absolute -top-[50px] left-1/2 -translate-x-1/2 font-extrabold tracking-tight text-4xl md:text-5xl text-center px-5 text-slate-900  w-full opacity-50">
+		<div className="w-full h-svh h-100dvh flex flex-col items-center justify-between max-w-4xl mx-auto px-5">
+			<div className="h-full w-full flex justify-center items-center">
+				{/* {!isChatEmpty && ( */}
+				{true && (
+					<BackgroundGradient
+						className="rounded-[22px] bg-slate-100 bg-opacity-80 max-w-2xl"
+						animate={false}
+					>
+						<div className="flex-1 flex w-full justify-between">
+							<ChatBubble
+								name="ArabyBuddy"
+								avatarSrc="/assets/arabybuddy.svg"
+								rtl={true}
+								reverse={true}
+								content={
+									<span
+										className={cn(
+											cairo.className,
+											// "font-bold",
+											"text-3xl lg:text-4xl text-transparent bg-clip-text bg-gradient-to-r to-araby-purple from-araby-purple leading-loose"
+										)}
+									>
+										{latestChatMessage ??
+											"وعليكم السلام ورحمة الله وبركاته. اسمي ArabyBuddy. كيف يمكنني مساعدتك اليوم؟"}
+									</span>
+								}
+							/>
+						</div>
+					</BackgroundGradient>
+				)}
+			</div>
+			<div className="relative w-fit">
+				<div className="absolute -top-[60px] left-1/2 -translate-x-1/2 w-screen">
+					{isDoingTask && (
+						<div className="text-5xl text-center">{taskEmoji}</div>
+					)}
+
 					<Transition
-						className=""
+						className="text-center px-5 font-extrabold tracking-tight text-4xl md:text-5xl text-slate-900 opacity-50 text-transparent bg-clip-text bg-gradient-to-r to-araby-purple from-araby-blue p-10"
 						show={showInstruction}
 						enter="transition-all ease-in-out duration-500 delay-[200ms]"
 						enterFrom="opacity-0 translate-y-6"
@@ -165,11 +237,10 @@ const ChatPage = () => {
 						leaveFrom="opacity-100"
 						leaveTo="opacity-0"
 					>
-						{}
 						{instruction}
 					</Transition>
 				</div>
-				<div className="text-center">
+				<div className="text-center w-fit m-auto ">
 					<MicrophoneBlob
 						onClick={toggleRecording}
 						mode={microphoneMode}
