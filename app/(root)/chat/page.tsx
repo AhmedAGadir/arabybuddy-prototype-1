@@ -209,7 +209,7 @@ const ChatPage = () => {
 			{ label: "Replay", icon: PlayIcon, onClick: () => {} },
 			{ label: "Translate", icon: TranslateIcon, onClick: () => {} },
 			{ label: "Rephrase", icon: MagicWandIcon, onClick: () => {} },
-			"separator",
+			"separator" as "separator",
 			{
 				label: "Dictionary (Bilingual)",
 				icon: BookOpenIcon,
