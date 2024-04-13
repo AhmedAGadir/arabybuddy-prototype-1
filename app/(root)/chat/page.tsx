@@ -25,6 +25,7 @@ import {
 	PlayIcon,
 	TranslateIcon,
 } from "@/components/shared/icons";
+import { useMediaQuery } from "@react-hooks-hub/use-media-query";
 
 const instructions = {
 	// idle: "Press ⬇️ the blue blob to start recording",
@@ -225,6 +226,9 @@ const ChatPage = () => {
 		];
 	}, []);
 
+	const { device } = useMediaQuery();
+	const isMobile = device === "mobile";
+
 	return (
 		<div
 			className={cn(
@@ -262,7 +266,12 @@ const ChatPage = () => {
 				)}
 			</div>
 			<div className="relative w-fit">
-				<div className="absolute -top-[60px] left-1/2 -translate-x-1/2 w-screen">
+				<div
+					className={cn(
+						"absolute -top-[60px] left-1/2 -translate-x-1/2 w-screen",
+						isMobile && "-top-[70px]"
+					)}
+				>
 					{isDoingTask && (
 						<div className="text-5xl text-center">{taskEmoji}</div>
 					)}
