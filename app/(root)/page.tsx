@@ -64,8 +64,8 @@ export default function Home() {
 							Your AI Arabic Language Tutor
 						</h1>
 						<p className="mb-6 text-lg font-normal text-gray-500 lg:text-xl sm:px-16 xl:px-48 dark:text-gray-400">
-							Try out our AI language buddy to practice outputting your target
-							Arabic language dialect today! 🌎 ☕
+							Try out our AI language buddy and learn a new Arabic dialect
+							today! 🌎 ☕
 						</p>
 						<Form {...form}>
 							<form

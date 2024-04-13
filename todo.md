@@ -18,6 +18,8 @@
 - [ ] check for no content in the recording, and if not, then just turn off the mic
 - [ ] change eslint config file back when done with mobile debugging
 - [ ] language support, dialect support - if not then diasble options on home page
+- [ ] toggle between previous and next messages
+- [ ] rephrase a message
 
 # Features for MVP
 

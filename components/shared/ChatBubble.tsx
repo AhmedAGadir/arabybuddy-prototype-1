@@ -4,6 +4,16 @@ import { cn } from "@/lib/utils";
 import { BackgroundGradient } from "../ui/background-gradient";
 import { useMediaQuery } from "@react-hooks-hub/use-media-query";
 
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuLabel,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "../ui/button";
+
 const ChatBubble = ({
 	name,
 	avatarSrc,
@@ -18,12 +28,16 @@ const ChatBubble = ({
 }: {
 	name: string;
 	avatarSrc: string;
-	content: React.ReactNode;
+	content: JSX.Element;
 	status?: "delivered" | "read";
-	dropdownItems?: {
-		label: string;
-		onClick: () => void;
-	}[];
+	dropdownItems?: (
+		| {
+				label: string;
+				icon: (props: any) => React.JSX.Element;
+				onClick: () => void;
+		  }
+		| "separator"
+	)[];
 	time?: string;
 	rtl?: boolean;
 	className?: string;
@@ -32,6 +46,44 @@ const ChatBubble = ({
 }) => {
 	const { device } = useMediaQuery();
 	const isMobile = device === "mobile";
+
+	const dropDownMenu = dropdownItems && (
+		<DropdownMenu>
+			<DropdownMenuTrigger>
+				<Button
+					size="icon"
+					variant="ghost"
+					className="hover:bg-slate-100 hover:bg-opacity-50"
+				>
+					<svg
+						className={cn(
+							"text-slate-500 dark:text-slate-400",
+							isMobile && "w-5 h-5",
+							!isMobile && "w-5 h-5"
+						)}
+						aria-hidden="true"
+						xmlns="http://www.w3.org/2000/svg"
+						fill="currentColor"
+						viewBox="0 0 4 15"
+					>
+						<path d="M3.5 1.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Zm0 6.041a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Zm0 5.959a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Z" />
+					</svg>
+				</Button>
+			</DropdownMenuTrigger>
+			<DropdownMenuContent>
+				{dropdownItems.map((item, ind) => {
+					if (item === "separator")
+						return <DropdownMenuSeparator key={ind + "-separator"} />;
+					return (
+						<DropdownMenuItem key={item.label} onClick={item.onClick}>
+							<span className="mr-2">{<item.icon className="w-5 h-5" />}</span>{" "}
+							{item.label}
+						</DropdownMenuItem>
+					);
+				})}
+			</DropdownMenuContent>
+		</DropdownMenu>
+	);
 
 	return (
 		<div
@@ -57,7 +109,7 @@ const ChatBubble = ({
 			>
 				<div
 					className={cn(
-						"rounded-[22px] bg-slate-100 bg-opacity-80 lex items-start gap-2.5",
+						"pl-8 relative rounded-[22px] bg-slate-100 bg-opacity-80 lex items-start gap-2.5",
 						reverse && "flex-row-reverse",
 						className
 					)}
@@ -77,7 +129,7 @@ const ChatBubble = ({
 							{/* <span className="text-lg font-semibold text-slate-900 dark:text-white">
 						{name}
 					</span> */}
-							{true && (
+							{time && (
 								<span className="text-sm font-normal text-slate-500 dark:text-slate-400">
 									{time}
 								</span>
@@ -106,77 +158,7 @@ const ChatBubble = ({
 							</span>
 						)}
 					</div>
-					{dropdownItems && (
-						<>
-							<button
-								id="dropdownMenuIconButton"
-								data-dropdown-toggle="dropdownDots"
-								data-dropdown-placement="bottom-start"
-								className="inline-flex self-center items-center p-2 text-sm font-medium text-center text-slate-900 bg-white rounded-lg hover:bg-slate-100 focus:ring-4 focus:outline-none dark:text-white focus:ring-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800 dark:focus:ring-slate-600"
-								type="button"
-							>
-								<svg
-									className="w-4 h-4 text-slate-500 dark:text-slate-400"
-									aria-hidden="true"
-									xmlns="http://www.w3.org/2000/svg"
-									fill="currentColor"
-									viewBox="0 0 4 15"
-								>
-									<path d="M3.5 1.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Zm0 6.041a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Zm0 5.959a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Z" />
-								</svg>
-							</button>
-							<div
-								id="dropdownDots"
-								className="z-10 hidden bg-white divide-y divide-slate-100 rounded-lg shadow w-40 dark:bg-slate-700 dark:divide-slate-600"
-							>
-								<ul
-									className="py-2 text-sm text-slate-700 dark:text-slate-200"
-									aria-labelledby="dropdownMenuIconButton"
-								>
-									<li>
-										<a
-											href="#"
-											className="block px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-600 dark:hover:text-white"
-										>
-											Reply
-										</a>
-									</li>
-									<li>
-										<a
-											href="#"
-											className="block px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-600 dark:hover:text-white"
-										>
-											Forward
-										</a>
-									</li>
-									<li>
-										<a
-											href="#"
-											className="block px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-600 dark:hover:text-white"
-										>
-											Copy
-										</a>
-									</li>
-									<li>
-										<a
-											href="#"
-											className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
-										>
-											Report
-										</a>
-									</li>
-									<li>
-										<a
-											href="#"
-											className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
-										>
-											Delete
-										</a>
-									</li>
-								</ul>
-							</div>
-						</>
-					)}
+					<div className="absolute top-3 left-2">{dropDownMenu}</div>
 				</div>
 			</BackgroundGradient>
 		</div>

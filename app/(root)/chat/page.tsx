@@ -18,6 +18,13 @@ import ChatBubble from "@/components/shared/ChatBubble";
 import { cn } from "@/lib/utils";
 import { cairo } from "@/lib/fonts";
 import { BackgroundGradient } from "@/components/ui/background-gradient";
+import {
+	BookOpenIcon,
+	BookOpenSolidIcon,
+	MagicWandIcon,
+	PlayIcon,
+	TranslateIcon,
+} from "@/components/shared/icons";
 
 const instructions = {
 	// idle: "Press ⬇️ the blue blob to start recording",
@@ -84,10 +91,10 @@ const ChatPage = () => {
 		return;
 	};
 
-	const isDoingTask = !_.isNull(activeTaskRef.current);
-
 	const { isRecording, startRecording, stopRecording, amplitude } =
 		useRecording(onRecordingComplete, { autoRestartRecording: false });
+
+	const isDoingTask = !_.isNull(activeTaskRef.current);
 
 	const [showInstruction, setShowInstruction] = useState(false);
 
@@ -159,7 +166,10 @@ const ChatPage = () => {
 	}, [activeTask, activeTaskRef.current]);
 
 	const isChatEmpty = _.isEmpty(chatHistory);
-	const latestChatMessage = _.last(chatHistory);
+	const latestChatMessage = _.last(chatHistory) ?? {
+		role: "assistant",
+		content: "السلام عليكم كيف حالك اليوم؟",
+	};
 	const latesChatMessageIsAssistant = latestChatMessage?.role === "assistant";
 
 	const [completedTyping, setCompletedTyping] = useState(false);
@@ -194,6 +204,25 @@ const ChatPage = () => {
 		return () => clearInterval(intervalId);
 	};
 
+	const dropdownItems = useMemo(() => {
+		return [
+			{ label: "Replay", icon: PlayIcon, onClick: () => {} },
+			{ label: "Translate", icon: TranslateIcon, onClick: () => {} },
+			{ label: "Rephrase", icon: MagicWandIcon, onClick: () => {} },
+			"separator",
+			{
+				label: "Dictionary (Bilingual)",
+				icon: BookOpenIcon,
+				onClick: () => {},
+			},
+			{
+				label: "Dictionary (Monolingual)",
+				icon: BookOpenSolidIcon,
+				onClick: () => {},
+			},
+		];
+	}, []);
+
 	return (
 		<div
 			className={cn(
@@ -202,7 +231,8 @@ const ChatPage = () => {
 			)}
 		>
 			<div className="h-full w-full flex justify-center items-center">
-				{!isChatEmpty && (
+				{/* {!isChatEmpty && ( */}
+				{true && (
 					<ChatBubble
 						name={latesChatMessageIsAssistant ? "ArabyBuddy" : "User"}
 						avatarSrc={
@@ -213,6 +243,7 @@ const ChatPage = () => {
 						rtl={true}
 						reverse={true}
 						glow={isPlaying}
+						dropdownItems={dropdownItems}
 						content={
 							<span
 								className={cn(
@@ -237,7 +268,7 @@ const ChatPage = () => {
 					<Transition
 						className={cn(
 							"text-center px-5 font-extrabold text-3xl lg:text-4xl tracking-tight",
-							"text-slate-900 opacity-50 text-transparent bg-clip-text bg-gradient-to-r to-araby-purple from-araby-blue p-10"
+							"opacity-50 text-transparent bg-clip-text bg-gradient-to-r to-araby-purple from-araby-blue p-10 text-slate-900 "
 						)}
 						show={showInstruction}
 						enter="transition-all ease-in-out duration-500 delay-[200ms]"
