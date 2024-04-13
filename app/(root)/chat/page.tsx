@@ -195,7 +195,12 @@ const ChatPage = () => {
 	};
 
 	return (
-		<div className="w-full h-svh h-100dvh flex flex-col items-center justify-between max-w-4xl mx-auto px-5">
+		<div
+			className={cn(
+				"w-full h-svh h-100dvh flex flex-col items-center justify-between max-w-4xl mx-auto px-5",
+				cairo.className
+			)}
+		>
 			<div className="h-full w-full flex justify-center items-center">
 				{!isChatEmpty && (
 					<ChatBubble
@@ -210,7 +215,6 @@ const ChatPage = () => {
 						content={
 							<span
 								className={cn(
-									cairo.className,
 									// "font-bold",
 									"text-xl md:text-3xl lg:text-4xl text-transparent bg-clip-text leading-loose text-slate-900",
 									isPlaying &&
