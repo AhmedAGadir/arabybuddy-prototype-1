@@ -209,7 +209,7 @@ const ChatPage = () => {
 										className={cn(
 											cairo.className,
 											// "font-bold",
-											"text-3xl lg:text-4xl text-transparent bg-clip-text bg-gradient-to-r to-araby-purple from-araby-purple leading-loose"
+											"text-xl md:text-3xl lg:text-4xl text-transparent bg-clip-text bg-gradient-to-r to-araby-purple from-araby-purple leading-loose"
 										)}
 									>
 										{latestChatMessage ??
@@ -228,7 +228,10 @@ const ChatPage = () => {
 					)}
 
 					<Transition
-						className="text-center px-5 font-extrabold tracking-tight text-4xl md:text-5xl text-slate-900 opacity-50 text-transparent bg-clip-text bg-gradient-to-r to-araby-purple from-araby-blue p-10"
+						className={cn(
+							"text-center px-5 font-extrabold text-xl md:text-3xl tracking-tight",
+							"text-slate-900 opacity-50 text-transparent bg-clip-text bg-gradient-to-r to-araby-purple from-araby-blue p-10"
+						)}
 						show={showInstruction}
 						enter="transition-all ease-in-out duration-500 delay-[200ms]"
 						enterFrom="opacity-0 translate-y-6"
