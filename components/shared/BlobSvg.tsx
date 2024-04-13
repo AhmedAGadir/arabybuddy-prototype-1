@@ -1,3 +1,5 @@
+import { useMediaQuery } from "@react-hooks-hub/use-media-query";
+
 const blobDValues = [
 	"M64.7,-37.8C78.4,-13.5,80.5,17.1,67.8,39.3C55.1,61.5,27.5,75.2,0.1,75.2C-27.4,75.2,-54.8,61.3,-69.2,38.2C-83.5,15.1,-84.8,-17.3,-71.1,-41.6C-57.4,-65.9,-28.7,-82.1,-1.6,-81.2C25.5,-80.3,50.9,-62.2,64.7,-37.8Z",
 	"M65,-35.3C79.2,-12.8,82.3,18.2,69.6,38.6C57,59,28.5,68.8,1,68.2C-26.4,67.6,-52.8,56.6,-64.7,36.7C-76.5,16.8,-73.9,-12.2,-60.7,-34C-47.5,-55.9,-23.7,-70.6,0.8,-71.1C25.4,-71.6,50.7,-57.8,65,-35.3Z",
@@ -74,12 +76,17 @@ const BlobSVG = ({
 }) => {
 	const duration = 10;
 
+	const { device } = useMediaQuery();
+	const isMobile = device === "mobile";
+
+	const containerSize = isMobile ? 200 : 300;
+
 	return (
 		<div
 			style={{
 				position: "relative",
-				width: 300,
-				height: 300,
+				width: containerSize,
+				height: containerSize,
 			}}
 		>
 			<BlobInner

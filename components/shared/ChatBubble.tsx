@@ -81,7 +81,7 @@ const ChatBubble = ({
 							)}
 							{isMobile && (
 								<Image
-									className="w-8 l-8 lg:w-10 lg:h-10 rounded-full"
+									className="w-10 h-10 rounded-full"
 									width={12}
 									height={12}
 									src={avatarSrc}

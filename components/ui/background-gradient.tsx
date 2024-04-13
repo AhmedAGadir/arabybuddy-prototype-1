@@ -1,6 +1,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { useMediaQuery } from "@react-hooks-hub/use-media-query";
 
 export const BackgroundGradient = ({
 	children,
@@ -19,8 +20,18 @@ export const BackgroundGradient = ({
 			backgroundPosition: ["0, 50%", "100% 50%", "0 50%"],
 		},
 	};
+
+	const { device } = useMediaQuery();
+	const isMobile = device === "mobile";
+
 	return (
-		<div className={cn("relative p-[4px] group", className)}>
+		<div
+			className={cn(
+				"relative group",
+				isMobile ? "p-[2px]" : "p-[4px]",
+				className
+			)}
+		>
 			<motion.div
 				variants={animate ? variants : undefined}
 				initial={animate ? "initial" : undefined}

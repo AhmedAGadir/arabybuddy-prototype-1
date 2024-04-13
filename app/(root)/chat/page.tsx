@@ -216,7 +216,7 @@ const ChatPage = () => {
 							<span
 								className={cn(
 									// "font-bold",
-									"text-xl md:text-3xl lg:text-4xl text-transparent bg-clip-text leading-loose text-slate-900",
+									"text-2xl md:text-3xl lg:text-4xl text-transparent bg-clip-text leading-loose text-slate-900",
 									isPlaying &&
 										"bg-gradient-to-r to-araby-purple from-araby-purple"
 								)}
