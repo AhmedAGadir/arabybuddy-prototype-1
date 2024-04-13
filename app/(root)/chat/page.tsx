@@ -58,6 +58,10 @@ const ChatPage = () => {
 		// 1. transcribe the user audio
 		setActiveTask("speech-to-text");
 		const { transcription } = await speechToText(audioBlob);
+		setChatHistoryWithTypewriterOnLatestMessage([
+			...chatHistory,
+			{ role: "user", content: transcription },
+		]);
 
 		// 2. add the user message to the chat
 		setActiveTask("assistant");
@@ -155,7 +159,8 @@ const ChatPage = () => {
 	}, [activeTask, activeTaskRef.current]);
 
 	const isChatEmpty = _.isEmpty(chatHistory);
-	const latestChatMessage = _.last(chatHistory)?.content;
+	const latestChatMessage = _.last(chatHistory);
+	const latesChatMessageIsAssistant = latestChatMessage?.role === "assistant";
 
 	const [completedTyping, setCompletedTyping] = useState(false);
 
@@ -192,33 +197,30 @@ const ChatPage = () => {
 	return (
 		<div className="w-full h-svh h-100dvh flex flex-col items-center justify-between max-w-4xl mx-auto px-5">
 			<div className="h-full w-full flex justify-center items-center">
-				{/* {!isChatEmpty && ( */}
-				{true && (
-					<BackgroundGradient
-						className="rounded-[22px] bg-slate-100 bg-opacity-80 max-w-2xl"
-						animate={false}
-					>
-						<div className="flex-1 flex w-full justify-between">
-							<ChatBubble
-								name="ArabyBuddy"
-								avatarSrc="/assets/arabybuddy.svg"
-								rtl={true}
-								reverse={true}
-								content={
-									<span
-										className={cn(
-											cairo.className,
-											// "font-bold",
-											"text-xl md:text-3xl lg:text-4xl text-transparent bg-clip-text bg-gradient-to-r to-araby-purple from-araby-purple leading-loose"
-										)}
-									>
-										{latestChatMessage ??
-											"وعليكم السلام ورحمة الله وبركاته. اسمي ArabyBuddy. كيف يمكنني مساعدتك اليوم؟"}
-									</span>
-								}
-							/>
-						</div>
-					</BackgroundGradient>
+				{!isChatEmpty && (
+					<ChatBubble
+						name={latesChatMessageIsAssistant ? "ArabyBuddy" : "User"}
+						avatarSrc={
+							latesChatMessageIsAssistant
+								? "/assets/arabybuddy.svg"
+								: "/assets/user.svg"
+						}
+						rtl={true}
+						reverse={latesChatMessageIsAssistant}
+						content={
+							<span
+								className={cn(
+									cairo.className,
+									// "font-bold",
+									"text-xl md:text-3xl lg:text-4xl text-transparent bg-clip-text leading-loose text-slate-900",
+									isPlaying &&
+										"bg-gradient-to-r to-araby-purple from-araby-purple"
+								)}
+							>
+								{latestChatMessage?.content ?? ""}
+							</span>
+						}
+					/>
 				)}
 			</div>
 			<div className="relative w-fit">
@@ -229,7 +231,7 @@ const ChatPage = () => {
 
 					<Transition
 						className={cn(
-							"text-center px-5 font-extrabold text-xl md:text-3xl tracking-tight",
+							"text-center px-5 font-extrabold text-2xl md:text-3xl lg:text-4xl tracking-tight",
 							"text-slate-900 opacity-50 text-transparent bg-clip-text bg-gradient-to-r to-araby-purple from-araby-blue p-10"
 						)}
 						show={showInstruction}
