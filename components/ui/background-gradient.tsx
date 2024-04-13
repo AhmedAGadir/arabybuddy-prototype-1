@@ -5,12 +5,10 @@ import { cn } from "@/lib/utils";
 export const BackgroundGradient = ({
 	children,
 	className,
-	containerClassName,
 	animate = true,
 }: {
 	children?: React.ReactNode;
 	className?: string;
-	containerClassName?: string;
 	animate?: boolean;
 }) => {
 	const variants = {
@@ -22,7 +20,7 @@ export const BackgroundGradient = ({
 		},
 	};
 	return (
-		<div className={cn("relative p-[4px] group", containerClassName)}>
+		<div className={cn("relative p-[4px] group", className)}>
 			<motion.div
 				variants={animate ? variants : undefined}
 				initial={animate ? "initial" : undefined}
@@ -70,7 +68,7 @@ export const BackgroundGradient = ({
 				)}
 			/>
 
-			<div className={cn("relative z-10", className)}>{children}</div>
+			<div className={cn("relative z-10")}>{children}</div>
 		</div>
 	);
 };

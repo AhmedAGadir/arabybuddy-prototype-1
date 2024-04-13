@@ -2,7 +2,7 @@ import React from "react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { BackgroundGradient } from "../ui/background-gradient";
-import { isMobile } from "react-device-detect";
+import { useMediaQuery } from "@react-hooks-hub/use-media-query";
 
 const ChatBubble = ({
 	name,
@@ -10,6 +10,7 @@ const ChatBubble = ({
 	content,
 	dropdownItems,
 	time,
+	status,
 	rtl = false,
 	className = "",
 	reverse = false,
@@ -27,16 +28,20 @@ const ChatBubble = ({
 	className?: string;
 	reverse?: boolean;
 }) => {
+	const { device } = useMediaQuery();
+	const isMobile = device === "mobile";
+
 	return (
 		<div
 			className={cn(
 				"flex align-center gap-3 md:gap-5",
-				reverse && "flex-row-reverse"
+				reverse && "flex-row-reverse",
+				isMobile && "width-full flex-1"
 			)}
 		>
 			{!isMobile && (
 				<Image
-					className="w-10 h-10 md:w-12 md:h-12 rounded-full mt-4"
+					className="w-12 h-12 rounded-full mt-4"
 					width={16}
 					height={16}
 					src={avatarSrc}
@@ -44,19 +49,19 @@ const ChatBubble = ({
 				/>
 			)}
 			<BackgroundGradient
-				className="rounded-[22px] bg-slate-100 bg-opacity-80 max-w-2xl"
+				className={cn(!isMobile && "max-w-2xl", isMobile && "flex-1")}
 				animate={false}
 			>
 				<div
 					className={cn(
-						"flex items-start gap-2.5",
+						"rounded-[22px] bg-slate-100 bg-opacity-80 lex items-start gap-2.5",
 						reverse && "flex-row-reverse",
 						className
 					)}
 				>
 					<div
 						className={cn(
-							"min-w-[200px] flex flex-col leading-1.5 p-4 rounded-xl bg-opacity-25"
+							"flex flex-col leading-1.5 p-4 rounded-xl bg-opacity-25"
 							// 'border-gray-200 bg-slate-400  dark:bg-slate-700 rounded-e-xl rounded-es-xl'
 						)}
 					>

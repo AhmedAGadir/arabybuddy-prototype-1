@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
 import React, { useMemo } from "react";
 import { BlobSvg } from ".";
+import { useMediaQuery } from "@react-hooks-hub/use-media-query";
 
 const MicrophoneBlob = ({
 	onClick,
@@ -40,6 +41,11 @@ const MicrophoneBlob = ({
 		}
 	}, [mode]);
 
+	const { device } = useMediaQuery();
+	const isMobile = device === "mobile";
+
+	const baseSize = isMobile ? 150 : 200;
+
 	return (
 		<button
 			className={cn("m-auto rounded-full", !disabled && "cursor-pointer")}
@@ -47,7 +53,7 @@ const MicrophoneBlob = ({
 			onClick={onClick}
 		>
 			<BlobSvg
-				size={amplitude ? 200 + amplitude * 2 : 200}
+				size={amplitude ? baseSize + amplitude * 2 : baseSize}
 				{...microphoneFillColor}
 			/>
 		</button>

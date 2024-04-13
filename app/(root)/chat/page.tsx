@@ -221,7 +221,7 @@ const ChatPage = () => {
 										"bg-gradient-to-r to-araby-purple from-araby-purple"
 								)}
 							>
-								{latestChatMessage?.content ?? ""}
+								{latestChatMessage?.content}
 							</span>
 						}
 					/>
@@ -235,7 +235,7 @@ const ChatPage = () => {
 
 					<Transition
 						className={cn(
-							"text-center px-5 font-extrabold text-2xl md:text-3xl lg:text-4xl tracking-tight",
+							"text-center px-5 font-extrabold text-3xl lg:text-4xl tracking-tight",
 							"text-slate-900 opacity-50 text-transparent bg-clip-text bg-gradient-to-r to-araby-purple from-araby-blue p-10"
 						)}
 						show={showInstruction}
