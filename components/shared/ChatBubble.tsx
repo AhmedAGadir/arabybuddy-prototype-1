@@ -115,12 +115,12 @@ const ChatBubble = ({
 					>
 						<div
 							className={cn(
-								"flex items-center space-x-2",
+								"flex items-center space-x-2 gap-2",
 								reverse && "justify-end space-x-reverse"
 							)}
 						>
 							{name && (
-								<span className="text-lg font-semibold text-slate-900 dark:text-white">
+								<span className="text-lg font-medium md:font-semibold text-slate-900 dark:text-white">
 									{name}
 								</span>
 							)}

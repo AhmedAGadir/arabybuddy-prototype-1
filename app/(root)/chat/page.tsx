@@ -325,7 +325,7 @@ const ChatPage = () => {
 					<div className={cn("flex flex-col w-full")}>
 						<div className="w-full md:w-auto max-w-3xl m-auto">
 							<ChatBubble
-								// name={displayedChatMessageIsAssistant ? "ArabyBuddy" : "User"}
+								name={displayedChatMessageIsAssistant ? "ArabyBuddy" : "You"}
 								avatarSrc={
 									displayedChatMessageIsAssistant
 										? "/assets/arabybuddy.svg"
