@@ -82,15 +82,15 @@ const PaginationPrevious = ({
 		className={cn("gap-1 pl-2.5", className)}
 		{...props}
 	>
-		<TooltipProvider>
-			<Tooltip>
-				<TooltipTrigger>
-					<ChevronLeft className="h-4 w-4" />
-					{/* <span>Prev</span> */}
-				</TooltipTrigger>
-				<TooltipContent>Previous</TooltipContent>
-			</Tooltip>
-		</TooltipProvider>
+		{/* <TooltipProvider> */}
+		{/* <Tooltip> */}
+		{/* <TooltipTrigger> */}
+		{/* <ChevronLeft className="h-4 w-4" /> */}
+		<span>Prev</span>
+		{/* </TooltipTrigger> */}
+		{/* <TooltipContent>Previous</TooltipContent> */}
+		{/* </Tooltip> */}
+		{/* </TooltipProvider> */}
 	</PaginationLink>
 );
 PaginationPrevious.displayName = "PaginationPrevious";
@@ -105,15 +105,15 @@ const PaginationNext = ({
 		className={cn("gap-1 pr-2.5", className)}
 		{...props}
 	>
-		<TooltipProvider>
+		{/* <TooltipProvider>
 			<Tooltip>
-				<TooltipTrigger>
-					{/* <span>Next</span> */}
-					<ChevronRight className="h-4 w-4" />
+				<TooltipTrigger> */}
+		<span>Next</span>
+		{/* <ChevronRight className="h-4 w-4" />
 				</TooltipTrigger>
 				<TooltipContent>Next</TooltipContent>
 			</Tooltip>
-		</TooltipProvider>
+		</TooltipProvider> */}
 	</PaginationLink>
 );
 PaginationNext.displayName = "PaginationNext";

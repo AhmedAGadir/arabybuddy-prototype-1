@@ -258,12 +258,12 @@ const ChatPage = () => {
 	const paginationNextDisabled =
 		!completedTyping || displayedChatMessageInd === chatHistory.length - 1;
 
-	const preferences = (
+	const preferencesContent = (
 		// <TooltipProvider>
 		// 	<Tooltip>
 		// 		<TooltipTrigger>
 		<DropdownMenu>
-			<DropdownMenuTrigger className="hover:bg-slate-100 hover:bg-opacity-50">
+			<DropdownMenuTrigger className="hover:bg-slate-100 hover:bg-opacity-50 flex items-center gap-2">
 				<PreferencesIcon
 					className={cn("text-slate-500 dark:text-slate-400 w-8 h-8")}
 				/>
@@ -282,7 +282,7 @@ const ChatPage = () => {
 		// </TooltipProvider>
 	);
 
-	const pagination = (
+	const paginationContent = (
 		<Pagination className="mt-3">
 			<PaginationContent>
 				<PaginationItem>
@@ -311,6 +311,24 @@ const ChatPage = () => {
 		</Pagination>
 	);
 
+	const instructionContent = (
+		<Transition
+			className={cn(
+				"text-center px-5 font-extrabold text-xl md:text-3xl tracking-tight",
+				"opacity-50 text-transparent bg-clip-text bg-gradient-to-r to-araby-purple from-araby-blue p-10 text-slate-700 "
+			)}
+			show={showInstruction}
+			enter="transition-all ease-in-out duration-500 delay-[200ms]"
+			enterFrom="opacity-0 translate-y-6"
+			enterTo="opacity-100 translate-y-0"
+			leave="transition-all ease-in-out duration-300"
+			leaveFrom="opacity-100"
+			leaveTo="opacity-0"
+		>
+			{instruction}
+		</Transition>
+	);
+
 	return (
 		<div
 			className={cn(
@@ -318,7 +336,7 @@ const ChatPage = () => {
 				cairo.className
 			)}
 		>
-			<div className="flex justify-end w-full mt-3">{preferences}</div>
+			{/* <div className="flex justify-end w-full mt-3">{preferencesContent}</div> */}
 			<div className="h-full w-full flex flex-col justify-center items-center">
 				{/* {true && ( */}
 				{!isChatEmpty && (
@@ -355,7 +373,7 @@ const ChatPage = () => {
 								}
 							/>
 						</div>
-						{pagination}
+						{paginationContent}
 					</div>
 				)}
 			</div>
@@ -369,21 +387,7 @@ const ChatPage = () => {
 						<div className="text-5xl text-center">{taskEmoji}</div>
 					)}
 
-					<Transition
-						className={cn(
-							"text-center px-5 font-extrabold text-xl md:text-3xl lg:text-4xl tracking-tight",
-							"opacity-50 text-transparent bg-clip-text bg-gradient-to-r to-araby-purple from-araby-blue p-10 text-slate-900 "
-						)}
-						show={showInstruction}
-						enter="transition-all ease-in-out duration-500 delay-[200ms]"
-						enterFrom="opacity-0 translate-y-6"
-						enterTo="opacity-100 translate-y-0"
-						leave="transition-all ease-in-out duration-300"
-						leaveFrom="opacity-100"
-						leaveTo="opacity-0"
-					>
-						{instruction}
-					</Transition>
+					{instructionContent}
 				</div>
 				<div className="text-center w-fit m-auto ">
 					<MicrophoneBlob
