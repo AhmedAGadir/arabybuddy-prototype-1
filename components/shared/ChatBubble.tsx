@@ -53,14 +53,15 @@ const ChatBubble = ({
 
 	const dropDownMenu = chatMenuItems && (
 		<DropdownMenu>
-			<DropdownMenuTrigger>
+			<DropdownMenuTrigger
+				className={cn(chatMenuDisabled && "pointer-events-none")}
+			>
 				<Button
 					size="icon"
 					variant="ghost"
 					className={cn(
 						"hover:bg-slate-100",
-						chatMenuDisabled &&
-							"pointer-events-none opacity-0 hover:bg-transparent"
+						chatMenuDisabled && "opacity-50 hover:bg-transparent"
 					)}
 				>
 					<svg

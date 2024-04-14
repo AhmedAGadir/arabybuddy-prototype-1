@@ -1,6 +1,13 @@
 "use client";
 
-import React, { useContext, useState, useMemo, useEffect, useRef } from "react";
+import React, {
+	useContext,
+	useState,
+	useMemo,
+	useEffect,
+	useRef,
+	useCallback,
+} from "react";
 import LanguageContext from "@/context/languageContext";
 import { useLogger } from "@/hooks/useLogger";
 import _ from "lodash";
@@ -51,7 +58,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import Image from "next/image";
 import { Progress } from "@/components/ui/progress";
-import BeatLoader from "react-spinners/BeatLoader";
+import PulseLoader from "react-spinners/PulseLoader";
+import ScaleLoader from "react-spinners/ScaleLoader";
 
 const statusEnum = {
 	IDLE: "IDLE",
@@ -108,15 +116,19 @@ const ChatPage = () => {
 	const { playAudio, isPlaying, initAudioElement, stopPlaying } =
 		useAudioPlayer();
 
+	const [showMessageLoadingSpinner, setShowMessageLoadingSpinner] =
+		useState(false);
+
 	const onRecordingComplete = async (audioBlob: Blob) => {
 		// 1. transcribe the user audio
-		setProgressBarValue(0);
+		setProgressBarValue(1);
 		setActiveTask("speech-to-text");
 		const { transcription } = await speechToText(audioBlob);
-		setChatHistoryWithTypewriterOnLatestMessage([
+		await setChatHistoryWithTypewriterOnLatestMessage([
 			...chatHistory,
 			{ role: "user", content: transcription },
 		]);
+		setShowMessageLoadingSpinner(true);
 
 		// 2. add the user message to the chat
 		setProgressBarValue(25);
@@ -136,10 +148,11 @@ const ChatPage = () => {
 		// 4. play assistants response and update chat history
 		setProgressBarValue(99);
 		setActiveTask(null);
+		// setShowMessageLoadingSpinner(false); // this glitches, so do it inside of setchatwithtypewriter
 		setChatHistoryWithTypewriterOnLatestMessage(updatedChatHistory);
-
 		await playAudio(base64Audio);
-		setProgressBarValue(100);
+		setProgressBarValue(0);
+
 		return;
 	};
 
@@ -204,16 +217,16 @@ const ChatPage = () => {
 	const isDoingAssistant = activeTaskRef.current === "assistant";
 	const isDoingTextToSpeech = activeTaskRef.current === "text-to-speech";
 
-	const taskEmoji = useMemo(() => {
-		if (isDoingSpeechToText) return "🎤";
-		if (isDoingAssistant) return "🤔";
-		if (isDoingTextToSpeech) return "💬";
-		return "";
-	}, [isDoingAssistant, isDoingSpeechToText, isDoingTextToSpeech]);
+	// const taskEmoji = useMemo(() => {
+	// 	if (isDoingSpeechToText) return "🎤";
+	// 	if (isDoingAssistant) return "🤔";
+	// 	if (isDoingTextToSpeech) return "💬";
+	// 	return "";
+	// }, [isDoingAssistant, isDoingSpeechToText, isDoingTextToSpeech]);
 
 	const [completedTyping, setCompletedTyping] = useState(false);
 
-	const setChatHistoryWithTypewriterOnLatestMessage = (
+	const setChatHistoryWithTypewriterOnLatestMessage = async (
 		chatHistory: ChatMessage[]
 	) => {
 		const previousChatHistory = chatHistory.slice(0, chatHistory.length - 1);
@@ -223,25 +236,34 @@ const ChatPage = () => {
 
 		let i = 0;
 
-		const intervalId = setInterval(() => {
-			setChatHistory([
-				...previousChatHistory,
-				{
-					...latestChatMessage,
-					content: latestChatMessage.content.slice(0, i),
-				},
-			]);
-			setDisplayedChatMessageInd(chatHistory.length - 1);
+		const promise = new Promise<void>((resolve) => {
+			const intervalId = setInterval(() => {
+				setChatHistory([
+					...previousChatHistory,
+					{
+						...latestChatMessage,
+						content: latestChatMessage.content.slice(0, i),
+					},
+				]);
+				setShowMessageLoadingSpinner(false);
+				setDisplayedChatMessageInd(chatHistory.length - 1);
 
-			i++;
+				i++;
 
-			if (i > latestChatMessage.content.length) {
-				clearInterval(intervalId);
-				setCompletedTyping(true);
-			}
-		}, 50);
+				if (i > latestChatMessage.content.length) {
+					clearInterval(intervalId);
+					setCompletedTyping(true);
 
-		return () => clearInterval(intervalId);
+					setTimeout(() => {
+						// wait a bit before resolving
+						resolve();
+					}, 750);
+				}
+			}, 40);
+		});
+
+		return promise;
+		// return () => clearInterval(intervalId);
 	};
 
 	const chatMenuItems = useMemo(() => {
@@ -268,36 +290,9 @@ const ChatPage = () => {
 	const displayedChatMessageIsAssistant =
 		displayedChatMessage?.role === "assistant";
 
-	const paginationPrevDisabled =
-		isProcessing || !completedTyping || displayedChatMessageInd === 0;
+	const paginationPrevDisabled = isPlaying || displayedChatMessageInd === 0;
 	const paginationNextDisabled =
-		isProcessing ||
-		!completedTyping ||
-		displayedChatMessageInd === chatHistory.length - 1;
-
-	const preferencesContent = (
-		// <TooltipProvider>
-		// 	<Tooltip>
-		// 		<TooltipTrigger>
-		<DropdownMenu>
-			<DropdownMenuTrigger className="hover:bg-slate-100 hover:bg-opacity-50 flex items-center gap-2">
-				<PreferencesIcon
-					className={cn("text-slate-500 dark:text-slate-400 w-8 h-8")}
-				/>
-			</DropdownMenuTrigger>
-			<DropdownMenuContent>
-				<DropdownMenuItem>Native Language</DropdownMenuItem>
-				<DropdownMenuItem>Target Language</DropdownMenuItem>
-				<DropdownMenuItem>Voice</DropdownMenuItem>
-				<DropdownMenuItem>Dark Mode</DropdownMenuItem>
-				<DropdownMenuSeparator />
-			</DropdownMenuContent>
-		</DropdownMenu>
-		// 		</TooltipTrigger>
-		// 		<TooltipContent>Preferences</TooltipContent>
-		// 	</Tooltip>
-		// </TooltipProvider>
-	);
+		isPlaying || displayedChatMessageInd === chatHistory.length - 1;
 
 	const paginationContent = (
 		<Pagination className="mt-3">
@@ -354,11 +349,8 @@ const ChatPage = () => {
 		/>
 	);
 
-	console.group("1");
-	console.log("isDoingSpeechToText", isDoingSpeechToText);
-	console.log("isDoingAssistant", isDoingAssistant);
-	console.log("isDoingTextToSpeech", isDoingTextToSpeech);
-	console.groupEnd();
+	const { device } = useMediaQuery();
+	const isMobile = device === "mobile";
 
 	return (
 		<div
@@ -367,90 +359,113 @@ const ChatPage = () => {
 				cairo.className
 			)}
 		>
-			{isProcessing && (
+			{(isProcessing || isPlaying) && (
 				<div className="w-screen absolute top-0 left-0">
 					{progressBarContent}
 				</div>
 			)}
 			{/* <div className="flex justify-end w-full mt-3">{preferencesContent}</div> */}
 			<div className="h-full w-full flex flex-col justify-center items-center">
-				{/* {true && ( */}
-				{(!isChatEmpty || isProcessing) && (
-					<div className={cn("flex flex-col w-full")}>
-						<div className="w-full md:w-auto max-w-3xl m-auto">
-							{/* {true && ( */}
-							{!isDoingSpeechToText &&
-								(isDoingAssistant || isDoingTextToSpeech) && (
-									<ChatBubble
-										name="ArabyBuddy"
-										avatarSrc="/assets/arabybuddy.svg"
-										avatarAlt="ArabyBuddy avatar"
-										glow={true}
-										chatMenuItems={[]}
-										chatMenuDisabled={true}
-										reverse
-										rtl
-										content={
-											<span
-												className={cn(
-													// "font-bold",
-													"text-xl md:text-3xl  text-transparent bg-clip-text leading-loose text-slate-900",
-													isPlaying &&
-														"bg-gradient-to-r to-araby-purple from-araby-purple"
-												)}
-											>
-												<BeatLoader
-													color="#5E17EB"
-													loading
-													cssOverride={{
-														display: "block",
-														margin: "0",
-														width: 250,
-													}}
-													size={10}
-													aria-label="Loading Spinner"
-													data-testid="loader"
-												/>
-											</span>
-										}
-									/>
-								)}
-							{(!isChatEmpty || isDoingSpeechToText) && (
-								<ChatBubble
-									name={displayedChatMessageIsAssistant ? "ArabyBuddy" : "You"}
-									avatarSrc={
-										displayedChatMessageIsAssistant
-											? "/assets/arabybuddy.svg"
-											: "/assets/user.svg"
-									}
-									avatarAlt={
-										displayedChatMessageIsAssistant
-											? "ArabyBuddy avatar"
-											: "User avatar"
-									}
-									glow={isPlaying}
-									chatMenuItems={chatMenuItems}
-									chatMenuDisabled={STATUS !== statusEnum.IDLE}
-									reverse
-									rtl
-									content={
-										<span
-											className={cn(
-												// "font-bold",
-												"text-xl md:text-3xl  text-transparent bg-clip-text leading-loose text-slate-900",
-												isPlaying &&
-													"bg-gradient-to-r to-araby-purple from-araby-purple"
-											)}
-										>
-											{displayedChatMessage?.content}
-										</span>
-									}
-								/>
-							)}
-						</div>
-						{paginationContent}
+				<div className={cn("flex flex-col w-full")}>
+					<div className="w-full md:w-auto max-w-3xl m-auto">
+						{/* {true && ( */}
+						{showMessageLoadingSpinner && (
+							<ChatBubble
+								// name="ArabyBuddy"
+								avatarSrc="/assets/arabybuddy.svg"
+								avatarAlt="ArabyBuddy avatar"
+								// glow={true}
+								chatMenuItems={[]}
+								chatMenuDisabled={true}
+								reverse
+								rtl
+								content={
+									<span
+										className={cn(
+											// "font-bold",
+											"text-xl md:text-3xl text-transparent bg-clip-text leading-loose text-slate-900"
+											// isPlaying &&
+											// "bg-gradient-to-r to-araby-purple from-araby-purple "
+										)}
+									>
+										{/* {messageLoadingSpinner} */}
+										{/* {isDoingSpeechToText && <span>🎤</span>} */}
+										{/* {isDoingAssistant && <span>🤔</span>} */}
+										{/* {isDoingTextToSpeech && <span>💬</span>} */}
+										{/* {true && ( */}
+										{/* {isDoingAssistant && ( */}
+										{/* <> */}
+										<PulseLoader
+											color="#5E17EB"
+											loading
+											cssOverride={{
+												display: "block",
+												margin: "0",
+												width: 250,
+											}}
+											size={isMobile ? 6 : 8}
+											aria-label="Loading Spinner"
+											data-testid="loader"
+										/>
+										{/* </> */}
+										{/* )} */}
+										{/* {isDoingTextToSpeech && (
+											<div className="min-w-[250px]">💬</div>
+										)} */}
+										{/* {true && ( */}
+										{/* {isDoingTextToSpeech && (
+											<ScaleLoader
+												color="#5E17EB"
+												loading
+												cssOverride={{
+													display: "block",
+													margin: "0",
+													width: 250,
+												}}
+												height={20}
+												aria-label="Loading Spinner"
+												data-testid="loader"
+											/>
+										)} */}
+									</span>
+								}
+							/>
+						)}
+						{!isChatEmpty && !showMessageLoadingSpinner && (
+							<ChatBubble
+								name={displayedChatMessageIsAssistant ? "ArabyBuddy" : "You"}
+								avatarSrc={
+									displayedChatMessageIsAssistant
+										? "/assets/arabybuddy.svg"
+										: "/assets/user.svg"
+								}
+								avatarAlt={
+									displayedChatMessageIsAssistant
+										? "ArabyBuddy avatar"
+										: "User avatar"
+								}
+								glow={isPlaying}
+								chatMenuItems={chatMenuItems}
+								chatMenuDisabled={STATUS !== statusEnum.IDLE}
+								reverse
+								rtl
+								content={
+									<span
+										className={cn(
+											// "font-bold",
+											"text-xl md:text-3xl  text-transparent bg-clip-text leading-loose text-slate-900",
+											isPlaying &&
+												"bg-gradient-to-r to-araby-purple from-araby-purple"
+										)}
+									>
+										{displayedChatMessage?.content}
+									</span>
+								}
+							/>
+						)}
 					</div>
-				)}
+					{!isChatEmpty && !showMessageLoadingSpinner && paginationContent}
+				</div>
 			</div>
 			<div className="relative w-fit">
 				<div
