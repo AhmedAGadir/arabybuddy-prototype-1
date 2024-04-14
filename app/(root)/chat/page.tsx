@@ -354,6 +354,12 @@ const ChatPage = () => {
 		/>
 	);
 
+	console.group("1");
+	console.log("isDoingSpeechToText", isDoingSpeechToText);
+	console.log("isDoingAssistant", isDoingAssistant);
+	console.log("isDoingTextToSpeech", isDoingTextToSpeech);
+	console.groupEnd();
+
 	return (
 		<div
 			className={cn(
@@ -373,42 +379,43 @@ const ChatPage = () => {
 					<div className={cn("flex flex-col w-full")}>
 						<div className="w-full md:w-auto max-w-3xl m-auto">
 							{/* {true && ( */}
-							{isProcessing && (
-								<ChatBubble
-									name="ArabyBuddy"
-									avatarSrc="/assets/arabybuddy.svg"
-									avatarAlt="ArabyBuddy avatar"
-									glow={true}
-									chatMenuItems={[]}
-									chatMenuDisabled={true}
-									reverse
-									rtl
-									content={
-										<span
-											className={cn(
-												// "font-bold",
-												"text-xl md:text-3xl  text-transparent bg-clip-text leading-loose text-slate-900",
-												isPlaying &&
-													"bg-gradient-to-r to-araby-purple from-araby-purple"
-											)}
-										>
-											<BeatLoader
-												color="#5E17EB"
-												loading
-												cssOverride={{
-													display: "block",
-													margin: "0",
-													width: 250,
-												}}
-												size={10}
-												aria-label="Loading Spinner"
-												data-testid="loader"
-											/>
-										</span>
-									}
-								/>
-							)}
-							{!isChatEmpty && !isProcessing && (
+							{!isDoingSpeechToText &&
+								(isDoingAssistant || isDoingTextToSpeech) && (
+									<ChatBubble
+										name="ArabyBuddy"
+										avatarSrc="/assets/arabybuddy.svg"
+										avatarAlt="ArabyBuddy avatar"
+										glow={true}
+										chatMenuItems={[]}
+										chatMenuDisabled={true}
+										reverse
+										rtl
+										content={
+											<span
+												className={cn(
+													// "font-bold",
+													"text-xl md:text-3xl  text-transparent bg-clip-text leading-loose text-slate-900",
+													isPlaying &&
+														"bg-gradient-to-r to-araby-purple from-araby-purple"
+												)}
+											>
+												<BeatLoader
+													color="#5E17EB"
+													loading
+													cssOverride={{
+														display: "block",
+														margin: "0",
+														width: 250,
+													}}
+													size={10}
+													aria-label="Loading Spinner"
+													data-testid="loader"
+												/>
+											</span>
+										}
+									/>
+								)}
+							{(!isChatEmpty || isDoingSpeechToText) && (
 								<ChatBubble
 									name={displayedChatMessageIsAssistant ? "ArabyBuddy" : "You"}
 									avatarSrc={
