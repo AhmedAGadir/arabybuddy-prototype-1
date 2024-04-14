@@ -2,6 +2,7 @@ import { cn } from "@/lib/utils";
 import React, { useMemo } from "react";
 import { BlobSvg } from ".";
 import { useMediaQuery } from "@react-hooks-hub/use-media-query";
+import { Status } from "@/app/(root)/chat/page";
 
 const MicrophoneBlob = ({
 	onClick,
@@ -9,26 +10,26 @@ const MicrophoneBlob = ({
 	amplitude,
 }: {
 	onClick: () => void;
-	mode: "recording" | "idle" | "playing" | "processing";
+	mode: Status;
 	amplitude: number | null;
 }) => {
-	const disabled = mode === "processing";
+	const disabled = mode === "PROCESSING";
 
 	const microphoneFillColor = useMemo(() => {
 		switch (mode) {
-			case "recording":
+			case "RECORDING":
 				return {
 					fill: "#FF0066",
 				};
-			case "playing":
+			case "PLAYING":
 				return {
 					fill: "#5E17EB",
 				};
-			case "idle":
+			case "IDLE":
 				return {
 					fill: "#38B6FF",
 				};
-			case "processing":
+			case "PROCESSING":
 				return {
 					fill: "#64748b",
 					fillOpacity: 0.1,

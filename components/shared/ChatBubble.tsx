@@ -19,20 +19,21 @@ const ChatBubble = ({
 	avatarSrc,
 	avatarAlt,
 	content,
-	dropdownItems,
+	chatMenuItems,
+	chatMenuDisabled = false,
 	time,
 	status,
-	rtl = false,
+	rtl = true,
 	className = "",
 	reverse = false,
 	glow = false,
 }: {
-	name: string;
+	name?: string;
 	avatarSrc: string;
 	avatarAlt: string;
 	content: JSX.Element;
 	status?: "delivered" | "read";
-	dropdownItems?: (
+	chatMenuItems?: (
 		| {
 				label: string;
 				icon: (props: any) => React.JSX.Element;
@@ -40,6 +41,7 @@ const ChatBubble = ({
 		  }
 		| "separator"
 	)[];
+	chatMenuDisabled?: boolean;
 	time?: string;
 	rtl?: boolean;
 	className?: string;
@@ -49,19 +51,21 @@ const ChatBubble = ({
 	const { device } = useMediaQuery();
 	const isMobile = device === "mobile";
 
-	const dropDownMenu = dropdownItems && (
+	const dropDownMenu = chatMenuItems && (
 		<DropdownMenu>
 			<DropdownMenuTrigger>
 				<Button
 					size="icon"
 					variant="ghost"
-					className="hover:bg-slate-100 hover:bg-opacity-50"
+					className={cn(
+						"hover:bg-slate-100",
+						chatMenuDisabled &&
+							"pointer-events-none opacity-15 hover:bg-transparent"
+					)}
 				>
 					<svg
 						className={cn(
-							"text-slate-500 dark:text-slate-400",
-							isMobile && "w-4 h-4",
-							!isMobile && "w-5 h-5"
+							"text-slate-500 dark:text-slate-400 w-4 h-4 md:w-4 md:h-4"
 						)}
 						aria-hidden="true"
 						xmlns="http://www.w3.org/2000/svg"
@@ -73,7 +77,7 @@ const ChatBubble = ({
 				</Button>
 			</DropdownMenuTrigger>
 			<DropdownMenuContent className={cn(isMobile && "ml-3")}>
-				{dropdownItems.map((item, ind) => {
+				{chatMenuItems.map((item, ind) => {
 					if (item === "separator")
 						return <DropdownMenuSeparator key={ind + "-separator"} />;
 					return (
@@ -95,30 +99,17 @@ const ChatBubble = ({
 				isMobile && "width-full flex-1"
 			)}
 		>
-			{!isMobile && (
-				<Image
-					className="w-14 h-14 rounded-full mt-4"
-					width={16}
-					height={16}
-					src={avatarSrc}
-					alt={avatarAlt}
-				/>
-			)}
-			<BackgroundGradient
-				className={cn(!isMobile && "max-w-2xl", isMobile && "flex-1")}
-				animate={false}
-				glow={glow}
-			>
+			<BackgroundGradient className={cn("flex-1")} animate={false} glow={glow}>
 				<div
 					className={cn(
-						"pl-8 relative rounded-[22px] bg-slate-100 bg-opacity-80 lex items-start gap-2.5",
+						"pl-8 relative rounded-[22px] bg-slate-100 bg-opacity-85 flex items-start gap-2.5",
 						reverse && "flex-row-reverse",
 						className
 					)}
 				>
 					<div
 						className={cn(
-							"flex flex-col leading-1.5 p-4 rounded-xl bg-opacity-25"
+							"flex flex-col leading-1.5 p-4 rounded-xl "
 							// 'border-gray-200 bg-slate-400  dark:bg-slate-700 rounded-e-xl rounded-es-xl'
 						)}
 					>
@@ -128,15 +119,18 @@ const ChatBubble = ({
 								reverse && "justify-end space-x-reverse"
 							)}
 						>
-							{/* <span className="text-lg font-semibold text-slate-900 dark:text-white">
-						{name}
-					</span> */}
+							{name && (
+								<span className="text-lg font-semibold text-slate-900 dark:text-white">
+									{name}
+								</span>
+							)}
 							{time && (
 								<span className="text-sm font-normal text-slate-500 dark:text-slate-400">
 									{time}
 								</span>
 							)}
-							{isMobile && (
+							{/* {isMobile && ( */}
+							{true && (
 								<Image
 									className="w-10 h-10 rounded-full"
 									width={12}
