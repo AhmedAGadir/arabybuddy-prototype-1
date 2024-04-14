@@ -121,9 +121,9 @@ const ChatPage = () => {
 
 	const onRecordingComplete = async (audioBlob: Blob) => {
 		// 1. transcribe the user audio
-		setProgressBarValue(1);
 		setActiveTask("speech-to-text");
 		const { transcription } = await speechToText(audioBlob);
+		setProgressBarValue(25);
 		await setChatHistoryWithTypewriterOnLatestMessage([
 			...chatHistory,
 			{ role: "user", content: transcription },
@@ -131,7 +131,6 @@ const ChatPage = () => {
 		setShowMessageLoadingSpinner(true);
 
 		// 2. add the user message to the chat
-		setProgressBarValue(25);
 		setActiveTask("assistant");
 		const { chatHistory: updatedChatHistory } = await addChatMessage({
 			role: "user",
@@ -146,7 +145,7 @@ const ChatPage = () => {
 		);
 
 		// 4. play assistants response and update chat history
-		setProgressBarValue(99);
+		setProgressBarValue(100);
 		setActiveTask(null);
 		// setShowMessageLoadingSpinner(false); // this glitches, so do it inside of setchatwithtypewriter
 		setChatHistoryWithTypewriterOnLatestMessage(updatedChatHistory);
@@ -343,7 +342,7 @@ const ChatPage = () => {
 
 	const progressBarContent = (
 		<Progress
-			className="rounded-none h-2"
+			className="rounded-none h-1 md:h-2"
 			innerClassName="bg-gradient-to-r to-araby-purple from-araby-purple"
 			value={progressBarValueRef.current}
 		/>
@@ -359,12 +358,7 @@ const ChatPage = () => {
 				cairo.className
 			)}
 		>
-			{(isProcessing || isPlaying) && (
-				<div className="w-screen absolute top-0 left-0">
-					{progressBarContent}
-				</div>
-			)}
-			{/* <div className="flex justify-end w-full mt-3">{preferencesContent}</div> */}
+			<div className="w-screen absolute top-0 left-0">{progressBarContent}</div>
 			<div className="h-full w-full flex flex-col justify-center items-center">
 				<div className={cn("flex flex-col w-full")}>
 					<div className="w-full md:w-auto max-w-3xl m-auto">
