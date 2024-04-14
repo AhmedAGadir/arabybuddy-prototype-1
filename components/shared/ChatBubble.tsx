@@ -60,7 +60,7 @@ const ChatBubble = ({
 					className={cn(
 						"hover:bg-slate-100",
 						chatMenuDisabled &&
-							"pointer-events-none opacity-15 hover:bg-transparent"
+							"pointer-events-none opacity-0 hover:bg-transparent"
 					)}
 				>
 					<svg

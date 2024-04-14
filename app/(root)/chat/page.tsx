@@ -50,6 +50,8 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import Image from "next/image";
+import { Progress } from "@/components/ui/progress";
+import BeatLoader from "react-spinners/BeatLoader";
 
 const statusEnum = {
 	IDLE: "IDLE",
@@ -90,6 +92,10 @@ const ChatPage = () => {
 	>(null);
 	activeTaskRef.current = activeTask;
 
+	const [progressBarValue, setProgressBarValue] = useState(0);
+	const progressBarValueRef = useRef<number>();
+	progressBarValueRef.current = progressBarValue;
+
 	const { addChatMessage, cancelAddChatMessageRequest } =
 		useChatService(chatHistory);
 	const {
@@ -104,6 +110,7 @@ const ChatPage = () => {
 
 	const onRecordingComplete = async (audioBlob: Blob) => {
 		// 1. transcribe the user audio
+		setProgressBarValue(0);
 		setActiveTask("speech-to-text");
 		const { transcription } = await speechToText(audioBlob);
 		setChatHistoryWithTypewriterOnLatestMessage([
@@ -112,6 +119,7 @@ const ChatPage = () => {
 		]);
 
 		// 2. add the user message to the chat
+		setProgressBarValue(25);
 		setActiveTask("assistant");
 		const { chatHistory: updatedChatHistory } = await addChatMessage({
 			role: "user",
@@ -119,16 +127,19 @@ const ChatPage = () => {
 		});
 
 		// 3. convert the assistants response to audio
+		setProgressBarValue(75);
 		setActiveTask("text-to-speech");
 		const { base64Audio } = await textToSpeech(
 			(_.last(updatedChatHistory) as ChatMessage).content
 		);
 
 		// 4. play assistants response and update chat history
+		setProgressBarValue(99);
 		setActiveTask(null);
 		setChatHistoryWithTypewriterOnLatestMessage(updatedChatHistory);
 
 		await playAudio(base64Audio);
+		setProgressBarValue(100);
 		return;
 	};
 
@@ -188,13 +199,17 @@ const ChatPage = () => {
 		}
 	};
 
+	const isProcessing = STATUS === statusEnum.PROCESSING;
+	const isDoingSpeechToText = activeTaskRef.current === "speech-to-text";
+	const isDoingAssistant = activeTaskRef.current === "assistant";
+	const isDoingTextToSpeech = activeTaskRef.current === "text-to-speech";
+
 	const taskEmoji = useMemo(() => {
-		if (activeTaskRef.current === "speech-to-text") return "🎤";
-		if (activeTaskRef.current === "assistant") return "🤔";
-		if (activeTaskRef.current === "text-to-speech") return "💬";
+		if (isDoingSpeechToText) return "🎤";
+		if (isDoingAssistant) return "🤔";
+		if (isDoingTextToSpeech) return "💬";
 		return "";
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [activeTask, activeTaskRef.current]);
+	}, [isDoingAssistant, isDoingSpeechToText, isDoingTextToSpeech]);
 
 	const [completedTyping, setCompletedTyping] = useState(false);
 
@@ -254,9 +269,11 @@ const ChatPage = () => {
 		displayedChatMessage?.role === "assistant";
 
 	const paginationPrevDisabled =
-		!completedTyping || displayedChatMessageInd === 0;
+		isProcessing || !completedTyping || displayedChatMessageInd === 0;
 	const paginationNextDisabled =
-		!completedTyping || displayedChatMessageInd === chatHistory.length - 1;
+		isProcessing ||
+		!completedTyping ||
+		displayedChatMessageInd === chatHistory.length - 1;
 
 	const preferencesContent = (
 		// <TooltipProvider>
@@ -329,6 +346,14 @@ const ChatPage = () => {
 		</Transition>
 	);
 
+	const progressBarContent = (
+		<Progress
+			className="rounded-none h-2"
+			innerClassName="bg-gradient-to-r to-araby-purple from-araby-purple"
+			value={progressBarValueRef.current}
+		/>
+	);
+
 	return (
 		<div
 			className={cn(
@@ -336,42 +361,85 @@ const ChatPage = () => {
 				cairo.className
 			)}
 		>
+			{isProcessing && (
+				<div className="w-screen absolute top-0 left-0">
+					{progressBarContent}
+				</div>
+			)}
 			{/* <div className="flex justify-end w-full mt-3">{preferencesContent}</div> */}
 			<div className="h-full w-full flex flex-col justify-center items-center">
 				{/* {true && ( */}
-				{!isChatEmpty && (
+				{(!isChatEmpty || isProcessing) && (
 					<div className={cn("flex flex-col w-full")}>
 						<div className="w-full md:w-auto max-w-3xl m-auto">
-							<ChatBubble
-								name={displayedChatMessageIsAssistant ? "ArabyBuddy" : "You"}
-								avatarSrc={
-									displayedChatMessageIsAssistant
-										? "/assets/arabybuddy.svg"
-										: "/assets/user.svg"
-								}
-								avatarAlt={
-									displayedChatMessageIsAssistant
-										? "ArabyBuddy avatar"
-										: "User avatar"
-								}
-								glow={isPlaying}
-								chatMenuItems={chatMenuItems}
-								chatMenuDisabled={STATUS !== statusEnum.IDLE}
-								reverse
-								rtl
-								content={
-									<span
-										className={cn(
-											// "font-bold",
-											"text-xl md:text-3xl  text-transparent bg-clip-text leading-loose text-slate-900",
-											isPlaying &&
-												"bg-gradient-to-r to-araby-purple from-araby-purple"
-										)}
-									>
-										{displayedChatMessage?.content}
-									</span>
-								}
-							/>
+							{/* {true && ( */}
+							{isProcessing && (
+								<ChatBubble
+									name="ArabyBuddy"
+									avatarSrc="/assets/arabybuddy.svg"
+									avatarAlt="ArabyBuddy avatar"
+									glow={true}
+									chatMenuItems={[]}
+									chatMenuDisabled={true}
+									reverse
+									rtl
+									content={
+										<span
+											className={cn(
+												// "font-bold",
+												"text-xl md:text-3xl  text-transparent bg-clip-text leading-loose text-slate-900",
+												isPlaying &&
+													"bg-gradient-to-r to-araby-purple from-araby-purple"
+											)}
+										>
+											<BeatLoader
+												color="#5E17EB"
+												loading
+												cssOverride={{
+													display: "block",
+													margin: "0",
+													width: 250,
+												}}
+												size={10}
+												aria-label="Loading Spinner"
+												data-testid="loader"
+											/>
+										</span>
+									}
+								/>
+							)}
+							{!isChatEmpty && !isProcessing && (
+								<ChatBubble
+									name={displayedChatMessageIsAssistant ? "ArabyBuddy" : "You"}
+									avatarSrc={
+										displayedChatMessageIsAssistant
+											? "/assets/arabybuddy.svg"
+											: "/assets/user.svg"
+									}
+									avatarAlt={
+										displayedChatMessageIsAssistant
+											? "ArabyBuddy avatar"
+											: "User avatar"
+									}
+									glow={isPlaying}
+									chatMenuItems={chatMenuItems}
+									chatMenuDisabled={STATUS !== statusEnum.IDLE}
+									reverse
+									rtl
+									content={
+										<span
+											className={cn(
+												// "font-bold",
+												"text-xl md:text-3xl  text-transparent bg-clip-text leading-loose text-slate-900",
+												isPlaying &&
+													"bg-gradient-to-r to-araby-purple from-araby-purple"
+											)}
+										>
+											{displayedChatMessage?.content}
+										</span>
+									}
+								/>
+							)}
 						</div>
 						{paginationContent}
 					</div>
@@ -383,9 +451,9 @@ const ChatPage = () => {
 						"absolute -top-[70px] md:-top-[60px] left-1/2 -translate-x-1/2 w-screen"
 					)}
 				>
-					{STATUS === statusEnum.PROCESSING && (
+					{/* {STATUS === statusEnum.PROCESSING && (
 						<div className="text-5xl text-center">{taskEmoji}</div>
-					)}
+					)} */}
 
 					{instructionContent}
 				</div>
