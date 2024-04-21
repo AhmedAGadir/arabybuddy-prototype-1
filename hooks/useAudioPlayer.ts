@@ -21,10 +21,10 @@ const useAudioPlayer = () => {
 
 		audioRef.current.src = audioSrc;
 
-		const originalVolume = audioRef.current.volume;
+		// const originalVolume = audioRef.current.volume;
 
-		audioRef.current.muted = true;
-		audioRef.current.autoplay = true;
+		// audioRef.current.muted = true;
+		// audioRef.current.autoplay = true;
 
 		setIsPlaying(true);
 
@@ -50,8 +50,8 @@ const useAudioPlayer = () => {
 				logger.log("Playing audio");
 				await audioRef.current.play();
 
-				audioRef.current.volume = originalVolume;
-				audioRef.current.muted = false;
+				// audioRef.current.volume = originalVolume;
+				// audioRef.current.muted = false;
 			} catch (err) {
 				reject(new Error("Failed to play audio"));
 			}
