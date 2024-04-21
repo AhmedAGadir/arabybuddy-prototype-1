@@ -12,6 +12,7 @@ const useChatService = (chatHistory: ChatMessage[]) => {
 	const addChatMessage = useCallback(
 		async (latestChatMessage: ChatMessage) => {
 			logger.log("making request to: /api/chat/assistant...");
+			console.log("adding chat message", latestChatMessage, chatHistory);
 
 			const { chatHistory: updatedChatHistory } = await makeServerlessRequest(
 				"/api/chat/assistant",

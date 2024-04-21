@@ -7,14 +7,14 @@ import { Status } from "@/app/(root)/chat/page";
 const MicrophoneBlob = ({
 	onClick,
 	mode,
+	disabled,
 	amplitude,
 }: {
 	onClick: () => void;
 	mode: Status;
+	disabled?: boolean;
 	amplitude: number | null;
 }) => {
-	const disabled = mode === "PROCESSING";
-
 	const microphoneFillColor = useMemo(() => {
 		switch (mode) {
 			case "RECORDING":

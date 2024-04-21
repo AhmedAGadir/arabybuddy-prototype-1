@@ -81,7 +81,10 @@ const useAudioPlayer = () => {
 		logger.log("Stopping audio playback");
 		audioRef.current.pause();
 		audioRef.current.currentTime = 0;
-		setIsPlaying(false);
+		// setIsPlaying(false);
+		// Manually trigger the 'ended' event
+		const endedEvent = new Event("ended");
+		audioRef.current.dispatchEvent(endedEvent);
 	};
 
 	const pausePlaying = () => {

@@ -49,6 +49,12 @@ const useRecording = (
 				return;
 			}
 
+			if (force) {
+				logger.log("Stopping audio recording");
+				stopRecordingCleanup();
+				return;
+			}
+
 			stopSound?.play();
 			recorderRef.current?.stop();
 			recorderRef.current?.exportWAV(async (blob: Blob) => {
@@ -57,12 +63,13 @@ const useRecording = (
 				stopSilenceDetection();
 				setIsRecording(false);
 
-				if (force) {
-					logger.log("Stopping audio recording");
-					stopRecordingCleanup();
-					return;
+				try {
+					await onRecordingComplete(blob);
+				} catch (error) {
+					if (isRecording) {
+						stopRecording({ force: true });
+					}
 				}
-				await onRecordingComplete(blob);
 
 				// clean up
 				stopRecordingCleanup();
@@ -74,6 +81,7 @@ const useRecording = (
 			});
 		},
 		[
+			isRecording,
 			logger,
 			onRecordingComplete,
 			options.autoRestartRecording,

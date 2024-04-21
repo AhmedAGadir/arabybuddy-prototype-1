@@ -40,6 +40,7 @@ export default function Home() {
 		resolver: zodResolver(formSchema),
 		defaultValues: {
 			nativeLanguage: "English",
+			arabicDialect: "Modern Standard Arabic",
 		},
 	});
 

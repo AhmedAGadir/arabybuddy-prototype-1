@@ -10,7 +10,7 @@ import React, {
 } from "react";
 import LanguageContext from "@/context/languageContext";
 import { useLogger } from "@/hooks/useLogger";
-import _ from "lodash";
+import _, { set } from "lodash";
 import { useAudioService } from "@/hooks/useAudioService";
 import { useChatService } from "@/hooks/useChatService";
 import { useAudioPlayer } from "@/hooks/useAudioPlayer";
@@ -60,6 +60,8 @@ import Image from "next/image";
 import { Progress } from "@/components/ui/progress";
 import PulseLoader from "react-spinners/PulseLoader";
 import ScaleLoader from "react-spinners/ScaleLoader";
+import { useToast } from "@/components/ui/use-toast";
+import { clear } from "console";
 
 const statusEnum = {
 	IDLE: "IDLE",
@@ -80,24 +82,31 @@ const instructions: {
 	PROCESSING: [""],
 };
 
+const taskEnum = {
+	SPEECH_TO_TEXT: "SPEECH_TO_TEXT",
+	ASSISTANT: "ASSISTANT",
+	TEXT_TO_SPEECH: "TEXT_TO_SPEECH",
+} as const;
+
+export type Task = (typeof taskEnum)[keyof typeof taskEnum];
+
 // try to keep business logic out of this page as its a presentation/view component
 const ChatPage = () => {
 	const logger = useLogger({ label: "ChatPage", color: "#fe7de9" });
 
 	const { nativeLanguage, arabicDialect } = useContext(LanguageContext);
 
+	const { toast, dismiss } = useToast();
+
 	const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
+	const [chatHistoryBackup, setChatHistoryBackup] = useState<ChatMessage[]>([]);
 
 	const [displayedChatMessageInd, setDisplayedChatMessageInd] =
 		useState<number>(0);
 
-	const [activeTask, setActiveTask] = useState<
-		"speech-to-text" | "assistant" | "text-to-speech" | null
-	>(null);
+	const [activeTask, setActiveTask] = useState<Task | null>(null);
 
-	const activeTaskRef = useRef<
-		"speech-to-text" | "assistant" | "text-to-speech" | null
-	>(null);
+	const activeTaskRef = useRef<Task | null>(null);
 	activeTaskRef.current = activeTask;
 
 	const [progressBarValue, setProgressBarValue] = useState(0);
@@ -116,54 +125,97 @@ const ChatPage = () => {
 	const { playAudio, isPlaying, initAudioElement, stopPlaying } =
 		useAudioPlayer();
 
-	const [showMessageLoadingSpinner, setShowMessageLoadingSpinner] =
-		useState(false);
+	const onRecordingComplete = useCallback(
+		async (audioBlob: Blob) => {
+			try {
+				// 1. transcribe the user audio
+				setActiveTask(taskEnum.SPEECH_TO_TEXT);
+				const { transcription } = await speechToText(audioBlob);
+				setProgressBarValue(25);
+				await setChatHistoryWithTypewriterOnLatestMessage([
+					...chatHistory,
+					{ role: "user", content: transcription },
+				]);
 
-	const onRecordingComplete = async (audioBlob: Blob) => {
-		// 1. transcribe the user audio
-		setActiveTask("speech-to-text");
-		const { transcription } = await speechToText(audioBlob);
-		setProgressBarValue(25);
-		await setChatHistoryWithTypewriterOnLatestMessage([
-			...chatHistory,
-			{ role: "user", content: transcription },
-		]);
-		setShowMessageLoadingSpinner(true);
+				// add the loading message and update the displayed message index
+				// right now were using a hack so that we dont have to remove the loading message
+				// i think its because when we call addChatMessage, there is a closure over the chatHistory
+				// TODO: fix this hack
+				let chatHistoryLength = chatHistory.length;
+				setChatHistory((prevChatHistory) => {
+					const updatedChatHistory: ChatMessage[] = [
+						...prevChatHistory,
+						{ role: "assistant", content: "loading" },
+					];
+					chatHistoryLength = updatedChatHistory.length;
+					return updatedChatHistory;
+				});
+				setDisplayedChatMessageInd(chatHistoryLength - 1);
 
-		// 2. add the user message to the chat
-		setActiveTask("assistant");
-		const { chatHistory: updatedChatHistory } = await addChatMessage({
-			role: "user",
-			content: transcription,
-		});
+				// 2. add the user message to the chat
+				setActiveTask(taskEnum.ASSISTANT);
+				const { chatHistory: updatedChatHistory } = await addChatMessage({
+					role: "user",
+					content: transcription,
+				});
 
-		// 3. convert the assistants response to audio
-		setProgressBarValue(75);
-		setActiveTask("text-to-speech");
-		const { base64Audio } = await textToSpeech(
-			(_.last(updatedChatHistory) as ChatMessage).content
-		);
+				// 3. convert the assistants response to audio
+				setProgressBarValue(75);
+				setActiveTask(taskEnum.TEXT_TO_SPEECH);
+				const { base64Audio } = await textToSpeech(
+					(_.last(updatedChatHistory) as ChatMessage).content
+				);
 
-		// 4. play assistants response and update chat history
-		setProgressBarValue(100);
-		setActiveTask(null);
-		// setShowMessageLoadingSpinner(false); // this glitches, so do it inside of setchatwithtypewriter
-		setChatHistoryWithTypewriterOnLatestMessage(updatedChatHistory);
-		await playAudio(base64Audio);
-		setProgressBarValue(0);
+				// 4. play assistants response and update chat history
+				setProgressBarValue(100);
+				setActiveTask(null);
+				// remove loading message
+				// setChatHistory((prevChatHistory) => prevChatHistory.slice(0, -1));
+				setChatHistoryWithTypewriterOnLatestMessage(updatedChatHistory);
+				await playAudio(base64Audio);
+				setProgressBarValue(0);
+				setChatHistoryBackup([]);
+			} catch (error) {
+				logger.error("error", error);
+				toast({
+					title: "Uh oh! Something went wrong.",
+					description: "There was a problem with your request.",
+					variant: "destructive",
+				});
+				setChatHistory(chatHistoryBackup);
+				if (isPlaying) {
+					stopPlaying();
+				}
 
-		return;
-	};
+				setActiveTask(null);
+				setProgressBarValue(0);
+
+				setTimeout(() => {
+					dismiss();
+					setChatHistoryBackup([]);
+				}, 10000);
+
+				// propogate the error so that the recording can be stopped
+				throw error;
+			}
+		},
+		[
+			addChatMessage,
+			chatHistory,
+			chatHistoryBackup,
+			dismiss,
+			isPlaying,
+			logger,
+			playAudio,
+			speechToText,
+			stopPlaying,
+			textToSpeech,
+			toast,
+		]
+	);
 
 	const { isRecording, startRecording, stopRecording, amplitude } =
 		useRecording(onRecordingComplete, { autoRestartRecording: false });
-
-	const STATUS: Status = useMemo(() => {
-		if (isRecording) return statusEnum.RECORDING;
-		if (isPlaying) return statusEnum.PLAYING;
-		if (activeTaskRef.current !== null) return statusEnum.PROCESSING;
-		return statusEnum.IDLE;
-	}, [isPlaying, isRecording]);
 
 	const [showInstruction, setShowInstruction] = useState(false);
 
@@ -172,6 +224,17 @@ const ChatPage = () => {
 			setShowInstruction(true);
 		}, 1000);
 	}, [isRecording]);
+
+	const STATUS: Status = useMemo(() => {
+		if (isRecording) return statusEnum.RECORDING;
+		if (isPlaying) return statusEnum.PLAYING;
+		if (activeTaskRef.current !== null) return statusEnum.PROCESSING;
+		return statusEnum.IDLE;
+	}, [isPlaying, isRecording]);
+
+	const isDoingSpeechToText = activeTaskRef.current === taskEnum.SPEECH_TO_TEXT;
+	const isDoingAssistant = activeTaskRef.current === taskEnum.ASSISTANT;
+	const isDoingTextToSpeech = activeTaskRef.current === taskEnum.TEXT_TO_SPEECH;
 
 	const instruction = useMemo(() => {
 		const statusInstructions = instructions[STATUS];
@@ -188,6 +251,7 @@ const ChatPage = () => {
 
 		if (!isRecording) {
 			initAudioElement();
+			setChatHistoryBackup(chatHistory);
 			startRecording();
 			return;
 		}
@@ -197,13 +261,13 @@ const ChatPage = () => {
 		if (isPlaying) {
 			stopPlaying();
 		}
-		if (activeTaskRef.current === "speech-to-text") {
+		if (activeTaskRef.current === taskEnum.SPEECH_TO_TEXT) {
 			cancelSpeechToTextRequest();
 		}
-		if (activeTaskRef.current === "text-to-speech") {
+		if (activeTaskRef.current === taskEnum.TEXT_TO_SPEECH) {
 			cancelTextToSpeechRequest();
 		}
-		if (activeTaskRef.current === "assistant") {
+		if (activeTaskRef.current === taskEnum.ASSISTANT) {
 			cancelAddChatMessageRequest();
 		}
 		if (isRecording) {
@@ -211,24 +275,20 @@ const ChatPage = () => {
 		}
 	};
 
-	const isProcessing = STATUS === statusEnum.PROCESSING;
-	const isDoingSpeechToText = activeTaskRef.current === "speech-to-text";
-	const isDoingAssistant = activeTaskRef.current === "assistant";
-	const isDoingTextToSpeech = activeTaskRef.current === "text-to-speech";
-
-	// const taskEmoji = useMemo(() => {
-	// 	if (isDoingSpeechToText) return "🎤";
-	// 	if (isDoingAssistant) return "🤔";
-	// 	if (isDoingTextToSpeech) return "💬";
-	// 	return "";
-	// }, [isDoingAssistant, isDoingSpeechToText, isDoingTextToSpeech]);
-
 	const [completedTyping, setCompletedTyping] = useState(false);
+	const [skipTyping, setSkipTyping] = useState(false);
+	const skipTypingRef = useRef(false);
+	skipTypingRef.current = skipTyping;
+
+	const stopPlayingBtnHandler = useCallback(() => {
+		stopPlaying();
+		setSkipTyping(true);
+	}, [stopPlaying]);
 
 	const setChatHistoryWithTypewriterOnLatestMessage = async (
 		chatHistory: ChatMessage[]
 	) => {
-		const previousChatHistory = chatHistory.slice(0, chatHistory.length - 1);
+		const previousChatHistory = chatHistory.slice(0, -1);
 		const latestChatMessage = _.last(chatHistory) as ChatMessage;
 
 		setCompletedTyping(false);
@@ -237,6 +297,21 @@ const ChatPage = () => {
 
 		const promise = new Promise<void>((resolve) => {
 			const intervalId = setInterval(() => {
+				if (skipTypingRef.current) {
+					setChatHistory([
+						...previousChatHistory,
+						{
+							...latestChatMessage,
+							content: latestChatMessage.content,
+						},
+					]);
+					setCompletedTyping(true);
+					clearInterval(intervalId);
+					setSkipTyping(false);
+					resolve();
+					return;
+				}
+
 				setChatHistory([
 					...previousChatHistory,
 					{
@@ -244,7 +319,6 @@ const ChatPage = () => {
 						content: latestChatMessage.content.slice(0, i),
 					},
 				]);
-				setShowMessageLoadingSpinner(false);
 				setDisplayedChatMessageInd(chatHistory.length - 1);
 
 				i++;
@@ -286,8 +360,6 @@ const ChatPage = () => {
 
 	const isChatEmpty = _.isEmpty(chatHistory);
 	const displayedChatMessage = chatHistory[displayedChatMessageInd];
-	const displayedChatMessageIsAssistant =
-		displayedChatMessage?.role === "assistant";
 
 	const paginationPrevDisabled = isPlaying || displayedChatMessageInd === 0;
 	const paginationNextDisabled =
@@ -325,7 +397,7 @@ const ChatPage = () => {
 	const instructionContent = (
 		<Transition
 			className={cn(
-				"text-center px-5 font-extrabold text-xl md:text-3xl tracking-tight",
+				"text-center px-5 font-extrabold text-2xl md:text-3xl tracking-tight",
 				"opacity-50 text-transparent bg-clip-text bg-gradient-to-r to-araby-purple from-araby-blue p-10 text-slate-700 "
 			)}
 			show={showInstruction}
@@ -362,79 +434,20 @@ const ChatPage = () => {
 			<div className="h-full w-full flex flex-col justify-center items-center">
 				<div className={cn("flex flex-col w-full")}>
 					<div className="w-full md:w-auto max-w-3xl m-auto">
-						{/* {true && ( */}
-						{showMessageLoadingSpinner && (
+						{!isChatEmpty && (
 							<ChatBubble
-								// name="ArabyBuddy"
-								avatarSrc="/assets/arabybuddy.svg"
-								avatarAlt="ArabyBuddy avatar"
-								// glow={true}
-								chatMenuItems={[]}
-								chatMenuDisabled={true}
-								reverse
-								rtl
-								content={
-									<span
-										className={cn(
-											// "font-bold",
-											"text-xl md:text-3xl text-transparent bg-clip-text leading-loose text-slate-900"
-											// isPlaying &&
-											// "bg-gradient-to-r to-araby-purple from-araby-purple "
-										)}
-									>
-										{/* {messageLoadingSpinner} */}
-										{/* {isDoingSpeechToText && <span>🎤</span>} */}
-										{/* {isDoingAssistant && <span>🤔</span>} */}
-										{/* {isDoingTextToSpeech && <span>💬</span>} */}
-										{/* {true && ( */}
-										{/* {isDoingAssistant && ( */}
-										{/* <> */}
-										<PulseLoader
-											color="#5E17EB"
-											loading
-											cssOverride={{
-												display: "block",
-												margin: "0",
-												width: 250,
-											}}
-											size={isMobile ? 6 : 8}
-											aria-label="Loading Spinner"
-											data-testid="loader"
-										/>
-										{/* </> */}
-										{/* )} */}
-										{/* {isDoingTextToSpeech && (
-											<div className="min-w-[250px]">💬</div>
-										)} */}
-										{/* {true && ( */}
-										{/* {isDoingTextToSpeech && (
-											<ScaleLoader
-												color="#5E17EB"
-												loading
-												cssOverride={{
-													display: "block",
-													margin: "0",
-													width: 250,
-												}}
-												height={20}
-												aria-label="Loading Spinner"
-												data-testid="loader"
-											/>
-										)} */}
-									</span>
+								name={
+									displayedChatMessage?.role === "assistant"
+										? "ArabyBuddy"
+										: "You"
 								}
-							/>
-						)}
-						{!isChatEmpty && !showMessageLoadingSpinner && (
-							<ChatBubble
-								name={displayedChatMessageIsAssistant ? "ArabyBuddy" : "You"}
 								avatarSrc={
-									displayedChatMessageIsAssistant
+									displayedChatMessage?.role === "assistant"
 										? "/assets/arabybuddy.svg"
 										: "/assets/user.svg"
 								}
 								avatarAlt={
-									displayedChatMessageIsAssistant
+									displayedChatMessage?.role === "assistant"
 										? "ArabyBuddy avatar"
 										: "User avatar"
 								}
@@ -452,31 +465,54 @@ const ChatPage = () => {
 												"bg-gradient-to-r to-araby-purple from-araby-purple"
 										)}
 									>
-										{displayedChatMessage?.content}
+										{displayedChatMessage?.role === "assistant" &&
+											displayedChatMessage?.content === "loading" && (
+												<PulseLoader
+													color="#5E17EB"
+													loading
+													cssOverride={{
+														display: "block",
+														margin: "0",
+														width: 250,
+													}}
+													size={isMobile ? 6 : 8}
+													aria-label="Loading Spinner"
+													data-testid="loader"
+												/>
+											)}
+										{displayedChatMessage?.content !== "loading" &&
+											displayedChatMessage?.content}
 									</span>
 								}
 							/>
 						)}
 					</div>
-					{!isChatEmpty && !showMessageLoadingSpinner && paginationContent}
+					{!isChatEmpty && paginationContent}
 				</div>
 			</div>
 			<div className="relative w-fit">
 				<div
 					className={cn(
-						"absolute -top-[70px] md:-top-[60px] left-1/2 -translate-x-1/2 w-screen"
+						"absolute -top-[70px] md:-top-[60px] left-1/2 -translate-x-1/2 w-screen text-center"
 					)}
 				>
 					{/* {STATUS === statusEnum.PROCESSING && (
 						<div className="text-5xl text-center">{taskEmoji}</div>
 					)} */}
-
-					{instructionContent}
+					{STATUS === statusEnum.PLAYING && (
+						<Button onClick={stopPlayingBtnHandler} variant="default">
+							Stop Playing
+						</Button>
+					)}
+					{/* {instructionContent} */}
 				</div>
 				<div className="text-center w-fit m-auto ">
 					<MicrophoneBlob
 						onClick={toggleRecording}
 						mode={STATUS}
+						disabled={
+							STATUS === statusEnum.PROCESSING || STATUS === statusEnum.PLAYING
+						}
 						amplitude={amplitude}
 					/>
 				</div>
@@ -486,6 +522,13 @@ const ChatPage = () => {
 };
 
 export default ChatPage;
+
+// const taskEmoji = useMemo(() => {
+// 	if (isDoingSpeechToText) return "🎤";
+// 	if (isDoingAssistant) return "🤔";
+// 	if (isDoingTextToSpeech) return "💬";
+// 	return "";
+// }, [isDoingAssistant, isDoingSpeechToText, isDoingTextToSpeech]);
 
 // {/* <p> */}
 // 		{/* Chat {nativeLanguage} - {arabicDialect}

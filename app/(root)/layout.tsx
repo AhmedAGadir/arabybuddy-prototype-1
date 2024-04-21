@@ -5,6 +5,7 @@ import Image from "next/image";
 import LanguageContext, {
 	type LanguageSettings,
 } from "@/context/languageContext";
+import { Toaster } from "@/components/ui/toaster";
 
 const Layout = ({ children }: { children: React.ReactNode }) => {
 	const [languages, setLanguages] = useState<LanguageSettings>({
@@ -34,6 +35,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
 				/>
 			</div>
 			{children}
+			<Toaster />
 		</LanguageContext.Provider>
 	);
 };
