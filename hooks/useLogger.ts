@@ -26,7 +26,7 @@ const useLogger = ({
 	};
 
 	const error = (...params: any) => {
-		console.log(...params);
+		console.error(...params);
 	};
 
 	return { log, warn, error };

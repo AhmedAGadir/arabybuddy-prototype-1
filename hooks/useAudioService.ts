@@ -8,59 +8,69 @@ const useAudioService = () => {
 
 	const {
 		makeServerlessRequest: makeServerlessRequestSpeechToText,
-		abortRequest: cancelSpeechToTextRequest,
+		abortRequest: abortSpeechToTextRequest,
 	} = useServerlessRequest();
 
 	const speechToText = useCallback(
 		async (audioBlob: Blob) => {
-			const base64Audio = await blobToBase64(audioBlob);
+			try {
+				const base64Audio = await blobToBase64(audioBlob);
 
-			logger.log("making request to: /api/chat/speech-to-text...");
-			const { transcription } = await makeServerlessRequestSpeechToText(
-				"/api/chat/speech-to-text",
-				{
-					audio: {
-						base64Audio,
-						type: audioBlob.type.split("/")[1],
-					},
-				}
-			);
+				logger.log("making request to: /api/chat/speech-to-text...");
+				const { transcription } = await makeServerlessRequestSpeechToText(
+					"/api/chat/speech-to-text",
+					{
+						audio: {
+							base64Audio,
+							type: audioBlob.type.split("/")[1],
+						},
+					}
+				);
 
-			logger.log("transcription", transcription);
+				logger.log("transcription", transcription);
 
-			return { transcription };
+				return { transcription };
+			} catch (error) {
+				logger.error("Failed to convert speech to text", error);
+				throw error;
+			}
 		},
-		[logger]
+		[logger, makeServerlessRequestSpeechToText]
 	);
 
 	const {
 		makeServerlessRequest: makeServerlessRequestTextToSpeech,
-		abortRequest: cancelTextToSpeechRequest,
+		abortRequest: abortTextToSpeechRequest,
 	} = useServerlessRequest();
 
 	const textToSpeech = useCallback(
 		async (content: string) => {
-			logger.log("making request to: /api/chat/text-to-speech...");
+			try {
+				logger.log("making request to: /api/chat/text-to-speech...");
 
-			const { base64Audio } = await makeServerlessRequestTextToSpeech(
-				"/api/chat/text-to-speech",
-				{
-					content,
-				}
-			);
+				const { base64Audio } = await makeServerlessRequestTextToSpeech(
+					"/api/chat/text-to-speech",
+					{
+						content,
+					}
+				);
 
-			logger.log("base64Audio", `${base64Audio.slice(0, 10)}...`);
+				logger.log("base64Audio", `${base64Audio.slice(0, 10)}...`);
 
-			return { base64Audio };
+				return { base64Audio };
+			} catch (error) {
+				logger.error("Failed to convert text to speech", error);
+				throw error;
+			}
 		},
-		[logger]
+		[logger, makeServerlessRequestTextToSpeech]
 	);
 
 	return {
 		speechToText,
 		textToSpeech,
-		cancelSpeechToTextRequest,
-		cancelTextToSpeechRequest,
+		abortSpeechToTextRequest,
+		abortTextToSpeechRequest,
 	};
 };
 

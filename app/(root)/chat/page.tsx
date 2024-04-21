@@ -61,7 +61,6 @@ import { Progress } from "@/components/ui/progress";
 import PulseLoader from "react-spinners/PulseLoader";
 import ScaleLoader from "react-spinners/ScaleLoader";
 import { useToast } from "@/components/ui/use-toast";
-import { clear } from "console";
 
 const statusEnum = {
 	IDLE: "IDLE",
@@ -105,7 +104,7 @@ const ChatPage = () => {
 		useState<number>(0);
 
 	const [activeTask, setActiveTask] = useState<Task | null>(null);
-
+	// only to be used in onRecordingComplete since it has a closure over the activeTask state
 	const activeTaskRef = useRef<Task | null>(null);
 	activeTaskRef.current = activeTask;
 
@@ -113,13 +112,13 @@ const ChatPage = () => {
 	const progressBarValueRef = useRef<number>();
 	progressBarValueRef.current = progressBarValue;
 
-	const { addChatMessage, cancelAddChatMessageRequest } =
+	const { addChatMessage, abortAddChatMessageRequest } =
 		useChatService(chatHistory);
 	const {
 		speechToText,
 		textToSpeech,
-		cancelSpeechToTextRequest,
-		cancelTextToSpeechRequest,
+		abortSpeechToTextRequest,
+		abortTextToSpeechRequest,
 	} = useAudioService();
 
 	const { playAudio, isPlaying, initAudioElement, stopPlaying } =
@@ -176,7 +175,7 @@ const ChatPage = () => {
 				setProgressBarValue(0);
 				setChatHistoryBackup([]);
 			} catch (error) {
-				logger.error("error", error);
+				logger.error("onRecordingComplete failed", error);
 				toast({
 					title: "Uh oh! Something went wrong.",
 					description: "There was a problem with your request.",
@@ -195,7 +194,7 @@ const ChatPage = () => {
 					setChatHistoryBackup([]);
 				}, 10000);
 
-				// propogate the error so that the recording can be stopped
+				// propagate the error so that the recording can be stopped
 				throw error;
 			}
 		},
@@ -228,13 +227,13 @@ const ChatPage = () => {
 	const STATUS: Status = useMemo(() => {
 		if (isRecording) return statusEnum.RECORDING;
 		if (isPlaying) return statusEnum.PLAYING;
-		if (activeTaskRef.current !== null) return statusEnum.PROCESSING;
+		if (activeTask !== null) return statusEnum.PROCESSING;
 		return statusEnum.IDLE;
-	}, [isPlaying, isRecording]);
+	}, [activeTask, isPlaying, isRecording]);
 
-	const isDoingSpeechToText = activeTaskRef.current === taskEnum.SPEECH_TO_TEXT;
-	const isDoingAssistant = activeTaskRef.current === taskEnum.ASSISTANT;
-	const isDoingTextToSpeech = activeTaskRef.current === taskEnum.TEXT_TO_SPEECH;
+	const isDoingSpeechToText = activeTask === taskEnum.SPEECH_TO_TEXT;
+	const isDoingAssistant = activeTask === taskEnum.ASSISTANT;
+	const isDoingTextToSpeech = activeTask === taskEnum.TEXT_TO_SPEECH;
 
 	const instruction = useMemo(() => {
 		const statusInstructions = instructions[STATUS];
@@ -257,23 +256,28 @@ const ChatPage = () => {
 		}
 	};
 
-	const stopEverything = () => {
-		if (isPlaying) {
-			stopPlaying();
+	const abortProcessingBtnHandler = useCallback(() => {
+		if (STATUS !== statusEnum.PROCESSING) return;
+		switch (activeTask) {
+			case taskEnum.SPEECH_TO_TEXT:
+				abortSpeechToTextRequest();
+				break;
+			case taskEnum.TEXT_TO_SPEECH:
+				abortTextToSpeechRequest();
+				break;
+			case taskEnum.ASSISTANT:
+				abortAddChatMessageRequest();
+				break;
+			default:
+				break;
 		}
-		if (activeTaskRef.current === taskEnum.SPEECH_TO_TEXT) {
-			cancelSpeechToTextRequest();
-		}
-		if (activeTaskRef.current === taskEnum.TEXT_TO_SPEECH) {
-			cancelTextToSpeechRequest();
-		}
-		if (activeTaskRef.current === taskEnum.ASSISTANT) {
-			cancelAddChatMessageRequest();
-		}
-		if (isRecording) {
-			stopRecording({ force: true });
-		}
-	};
+	}, [
+		STATUS,
+		abortAddChatMessageRequest,
+		abortSpeechToTextRequest,
+		abortTextToSpeechRequest,
+		activeTask,
+	]);
 
 	const [completedTyping, setCompletedTyping] = useState(false);
 	const [skipTyping, setSkipTyping] = useState(false);
@@ -496,15 +500,17 @@ const ChatPage = () => {
 						"absolute -top-[70px] md:-top-[60px] left-1/2 -translate-x-1/2 w-screen text-center"
 					)}
 				>
-					{/* {STATUS === statusEnum.PROCESSING && (
-						<div className="text-5xl text-center">{taskEmoji}</div>
-					)} */}
+					{STATUS === statusEnum.PROCESSING && (
+						<Button onClick={abortProcessingBtnHandler} variant="destructive">
+							Cancel
+						</Button>
+					)}
 					{STATUS === statusEnum.PLAYING && (
 						<Button onClick={stopPlayingBtnHandler} variant="default">
 							Stop Playing
 						</Button>
 					)}
-					{/* {instructionContent} */}
+					{instructionContent}
 				</div>
 				<div className="text-center w-fit m-auto ">
 					<MicrophoneBlob
