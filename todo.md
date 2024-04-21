@@ -20,6 +20,7 @@
 - [ ] language support, dialect support - if not then diasble options on home page
 - [ ] toggle between previous and next messages
 - [ ] rephrase a message
+- [ ] migrate from serverless functions to a seperate nodejs render backend, then unsubscribe to vercels pro plan
 
 # Features for MVP
 

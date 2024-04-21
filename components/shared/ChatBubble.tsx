@@ -24,7 +24,6 @@ const ChatBubble = ({
 	time,
 	status,
 	rtl = true,
-	className = "",
 	reverse = false,
 	glow = false,
 }: {
@@ -44,7 +43,6 @@ const ChatBubble = ({
 	chatMenuDisabled?: boolean;
 	time?: string;
 	rtl?: boolean;
-	className?: string;
 	reverse?: boolean;
 	glow?: boolean;
 }) => {
@@ -92,73 +90,79 @@ const ChatBubble = ({
 		</DropdownMenu>
 	);
 
-	return (
+	const topBarContent = (
 		<div
 			className={cn(
+				"flex items-center space-x-2 gap-2",
+				reverse && "justify-end space-x-reverse"
+			)}
+		>
+			{name && (
+				<span className="text-lg font-medium md:font-semibold text-slate-900 dark:text-white">
+					{name}
+				</span>
+			)}
+			{time && (
+				<span className="text-sm font-normal text-slate-500 dark:text-slate-400">
+					{time}
+				</span>
+			)}
+			{/* {isMobile && ( */}
+			{true && (
+				<Image
+					className="w-10 h-10 rounded-full"
+					width={12}
+					height={12}
+					src={avatarSrc}
+					alt="Araby Buddy logo"
+				/>
+			)}
+		</div>
+	);
+
+	const statusContent = status && (
+		<span className="text-sm font-normal text-slate-500 dark:text-slate-400">
+			Delivered
+		</span>
+	);
+
+	return (
+		<BackgroundGradient
+			className={cn(
+				"flex-1",
 				"flex align-center gap-3 md:gap-5",
 				reverse && "flex-row-reverse",
 				isMobile && "width-full flex-1"
 			)}
+			animate={false}
+			glow={glow}
 		>
-			<BackgroundGradient className={cn("flex-1")} animate={false} glow={glow}>
+			<div
+				className={cn(
+					"pl-8 relative rounded-[22px] bg-slate-100 bg-opacity-85 flex items-start gap-2.5",
+					reverse && "flex-row-reverse"
+				)}
+			>
 				<div
 					className={cn(
-						"pl-8 relative rounded-[22px] bg-slate-100 bg-opacity-85 flex items-start gap-2.5",
-						reverse && "flex-row-reverse",
-						className
+						"flex flex-col leading-1.5 p-4 rounded-xl "
+						// 'border-gray-200 bg-slate-400  dark:bg-slate-700 rounded-e-xl rounded-es-xl'
 					)}
 				>
-					<div
+					{topBarContent}
+					<p
 						className={cn(
-							"flex flex-col leading-1.5 p-4 rounded-xl "
-							// 'border-gray-200 bg-slate-400  dark:bg-slate-700 rounded-e-xl rounded-es-xl'
+							"text-xl md:text-3xl lg:text-3xl font-normal py-2.5 text-slate-900 dark:text-white"
 						)}
+						style={{ direction: rtl ? "rtl" : "ltr" }}
 					>
-						<div
-							className={cn(
-								"flex items-center space-x-2 gap-2",
-								reverse && "justify-end space-x-reverse"
-							)}
-						>
-							{name && (
-								<span className="text-lg font-medium md:font-semibold text-slate-900 dark:text-white">
-									{name}
-								</span>
-							)}
-							{time && (
-								<span className="text-sm font-normal text-slate-500 dark:text-slate-400">
-									{time}
-								</span>
-							)}
-							{/* {isMobile && ( */}
-							{true && (
-								<Image
-									className="w-10 h-10 rounded-full"
-									width={12}
-									height={12}
-									src={avatarSrc}
-									alt="Araby Buddy logo"
-								/>
-							)}
-						</div>
-						<p
-							className={cn(
-								"text-xl md:text-3xl lg:text-3xl font-normal py-2.5 text-slate-900 dark:text-white"
-							)}
-							style={{ direction: rtl ? "rtl" : "ltr" }}
-						>
-							{content}
-						</p>
-						{status && (
-							<span className="text-sm font-normal text-slate-500 dark:text-slate-400">
-								Delivered
-							</span>
-						)}
-					</div>
-					<div className="absolute top-3 left-2">{dropDownMenu}</div>
+						{content}
+					</p>
+					{statusContent}
 				</div>
-			</BackgroundGradient>
-		</div>
+				<div className="absolute top-3 left-2">{dropDownMenu}</div>
+			</div>
+		</BackgroundGradient>
 	);
 };
 
