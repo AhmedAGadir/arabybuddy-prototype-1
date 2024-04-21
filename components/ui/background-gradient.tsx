@@ -80,7 +80,7 @@ export const BackgroundGradient = ({
 				)}
 			/>
 
-			<div className={cn("relative z-10")}>{children}</div>
+			<div className={cn("relative z-10 w-full md:w-content")}>{children}</div>
 		</div>
 	);
 };
