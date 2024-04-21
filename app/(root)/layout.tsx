@@ -1,11 +1,10 @@
 "use client";
 
+import LanguageContext, { LanguageSettings } from "@/context/languageContext";
 import React, { useState } from "react";
 import Image from "next/image";
-import LanguageContext, {
-	type LanguageSettings,
-} from "@/context/languageContext";
 import { Toaster } from "@/components/ui/toaster";
+import Sidebar from "@/components/shared/Sidebar";
 
 const Layout = ({ children }: { children: React.ReactNode }) => {
 	const [languages, setLanguages] = useState<LanguageSettings>({
@@ -21,8 +20,9 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
 		<LanguageContext.Provider
 			value={{ ...languages, setLanguages: updateLanguages }}
 		>
-			<div className="bg-wrap">
-				<Image
+			<main className="bg-slate-100">
+				{/* <main className="bg-wrap"> */}
+				{/* <Image
 					alt="background"
 					src={"/assets/background.png"}
 					// placeholder="blur"
@@ -32,10 +32,16 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
 					style={{
 						objectFit: "cover",
 					}}
-				/>
-			</div>
-			{children}
-			<Toaster />
+				/> */}
+				<div className="root">
+					<Sidebar />
+					{/* <MobileNav />  */}
+					<div className="root-container">
+						<div className="wrapper">{children}</div>
+					</div>
+				</div>
+				<Toaster />
+			</main>
 		</LanguageContext.Provider>
 	);
 };

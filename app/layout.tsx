@@ -1,5 +1,11 @@
 import type { Metadata } from "next";
-import { ClerkProvider } from "@clerk/nextjs";
+import {
+	ClerkProvider,
+	SignInButton,
+	SignedIn,
+	SignedOut,
+	UserButton,
+} from "@clerk/nextjs";
 
 import "./globals.css";
 import { inter } from "@/lib/fonts";
@@ -15,7 +21,7 @@ export default function RootLayout({
 	children: React.ReactNode;
 }>) {
 	return (
-		<ClerkProvider>
+		<ClerkProvider appearance={{ variables: { colorPrimary: "#38B6FF" } }}>
 			<html lang="en">
 				<head>
 					{
@@ -27,7 +33,17 @@ export default function RootLayout({
 						// <script src="https://cdn.jsdelivr.net/gh/c-kick/mobileConsole/hnl.mobileconsole.min.js"></script>
 					}
 				</head>
-				<body className={inter.className}>{children}</body>
+				<body className={inter.className}>
+					<header>
+						<SignedOut>
+							<SignInButton />
+						</SignedOut>
+						<SignedIn>
+							<UserButton />
+						</SignedIn>
+					</header>
+					{children}
+				</body>
 			</html>
 		</ClerkProvider>
 	);

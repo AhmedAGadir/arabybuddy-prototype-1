@@ -405,7 +405,7 @@ const ChatPage = () => {
 				"opacity-50 text-transparent bg-clip-text bg-gradient-to-r to-araby-purple from-araby-blue p-10 text-slate-700 "
 			)}
 			show={showInstruction}
-			enter="transition-all ease-in-out duration-500 delay-[200ms]"
+			enter="transition-all ease-in-out duration-500 delay-200"
 			enterFrom="opacity-0 translate-y-6"
 			enterTo="opacity-100 translate-y-0"
 			leave="transition-all ease-in-out duration-300"
