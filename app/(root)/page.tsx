@@ -55,7 +55,9 @@ export default function Home() {
 						<SignedIn>
 							<div className="flex flex-col md:flex-row w-full md:w-fit">
 								<SignOutButton>
-									<Button size="lg">Log out</Button>
+									<Button size="lg" variant="outline">
+										Log out
+									</Button>
 								</SignOutButton>
 							</div>
 						</SignedIn>
