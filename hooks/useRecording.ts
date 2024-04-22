@@ -1,8 +1,8 @@
 import { useState, useRef, useCallback } from "react";
-import { useSilenceDetection } from "@/hooks/useRecording/useSilenceDetection";
+import { useSilenceDetection } from "@/hooks/useSilenceDetection";
 import { useSound } from "@/hooks/useSound";
 import { Recorder } from "@/lib/recorder";
-import { useLogger } from "../useLogger";
+import { useLogger } from "./useLogger";
 
 // this version of useRecording IS compatible with iOS
 // however it asks for microphone permission every time the user starts recording

@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { useLogger } from "../useLogger";
+import { useLogger } from "./useLogger";
 
 const useSilenceDetectionLogger = () => {
 	const logger = useLogger({

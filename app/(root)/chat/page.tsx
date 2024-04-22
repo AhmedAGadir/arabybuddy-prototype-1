@@ -18,7 +18,7 @@ import { Transition } from "@headlessui/react";
 
 import { ChatMessage } from "@/types/messageTypes";
 import MicrophoneBlob from "@/components/shared/MicrophoneBlob";
-import { useRecording } from "@/hooks/useRecording/useRecording";
+import { useRecording } from "@/hooks/useRecording";
 
 import { StopButton } from "@/components/shared/icons/Stop";
 import ChatBubble from "@/components/shared/ChatBubble";
@@ -175,12 +175,19 @@ const ChatPage = () => {
 				setProgressBarValue(0);
 				setChatHistoryBackup([]);
 			} catch (error) {
-				logger.error("onRecordingComplete failed", error);
-				toast({
-					title: "Uh oh! Something went wrong.",
-					description: "There was a problem with your request.",
-					variant: "destructive",
-				});
+				if ((error as any).name === "AbortError") {
+					toast({
+						title: "Message cancelled",
+						description: "The request was aborted.",
+					});
+				} else {
+					logger.error("onRecordingComplete failed", error);
+					toast({
+						title: "Uh oh! Something went wrong.",
+						description: "There was a problem with your request.",
+						variant: "destructive",
+					});
+				}
 				setChatHistory(chatHistoryBackup);
 				if (isPlaying) {
 					stopPlaying();
@@ -501,12 +508,16 @@ const ChatPage = () => {
 					)}
 				>
 					{STATUS === statusEnum.PROCESSING && (
-						<Button onClick={abortProcessingBtnHandler} variant="destructive">
+						<Button
+							onClick={abortProcessingBtnHandler}
+							variant="outline"
+							size="lg"
+						>
 							Cancel
 						</Button>
 					)}
 					{STATUS === statusEnum.PLAYING && (
-						<Button onClick={stopPlayingBtnHandler} variant="default">
+						<Button onClick={stopPlayingBtnHandler} variant="default" size="lg">
 							Stop Playing
 						</Button>
 					)}
