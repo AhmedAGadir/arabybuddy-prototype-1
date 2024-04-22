@@ -1,23 +1,23 @@
-export const NATIVE_LANGUAGES = [
-	"English",
-	"French",
-	"German",
-	"Italian",
-	"Japanese",
-	"Malay",
-	"Mandarin",
-	"Pashto",
-	"Persian",
-	"Russian",
-	"Spanish",
-	"Swahili",
-	"Thai",
-	"Turkish",
-	"Urdu",
-	"Uzbek",
-] as const;
+// export const NATIVE_LANGUAGES = [
+// 	"English",
+// 	"French",
+// 	"German",
+// 	"Italian",
+// 	"Japanese",
+// 	"Malay",
+// 	"Mandarin",
+// 	"Pashto",
+// 	"Persian",
+// 	"Russian",
+// 	"Spanish",
+// 	"Swahili",
+// 	"Thai",
+// 	"Turkish",
+// 	"Urdu",
+// 	"Uzbek",
+// ] as const;
 
-export type NativeLanguage = (typeof NATIVE_LANGUAGES)[number];
+// export type NativeLanguage = (typeof NATIVE_LANGUAGES)[number];
 
 export const ARABIC_DIALECTS = [
 	"Modern Standard Arabic",
@@ -31,4 +31,3 @@ export const ARABIC_DIALECTS = [
 ] as const;
 
 export type ArabicDialect = (typeof ARABIC_DIALECTS)[number];
-

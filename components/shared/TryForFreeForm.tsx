@@ -29,7 +29,6 @@ const TryForFreeForm = ({ onSubmit }: { onSubmit?: (values: any) => void }) => {
 	const form = useForm<z.infer<typeof formSchema>>({
 		resolver: zodResolver(formSchema),
 		defaultValues: {
-			nativeLanguage: "English",
 			arabicDialect: "Modern Standard Arabic",
 		},
 	});
@@ -44,35 +43,6 @@ const TryForFreeForm = ({ onSubmit }: { onSubmit?: (values: any) => void }) => {
 				onSubmit={form.handleSubmit(formSubmitHandler)}
 				className="space-y-6 md:space-y-8 w-full md:w-fit"
 			>
-				<FormField
-					control={form.control}
-					name="nativeLanguage"
-					render={({ field }) => (
-						<FormItem>
-							<FormLabel>Native Language</FormLabel>
-							<Select
-								onValueChange={field.onChange}
-								defaultValue={field.value}
-								{...field}
-							>
-								<FormControl>
-									<SelectTrigger className="w-full md:w-[250px] mx-auto">
-										<SelectValue placeholder="Select Language" />
-									</SelectTrigger>
-								</FormControl>
-								<SelectContent>
-									{NATIVE_LANGUAGES.map((language) => (
-										<SelectItem value={language} key={language}>
-											{language}
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
-
-							<FormMessage />
-						</FormItem>
-					)}
-				/>
 				<FormField
 					control={form.control}
 					name="arabicDialect"

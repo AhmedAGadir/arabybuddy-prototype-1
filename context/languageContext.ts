@@ -1,19 +1,14 @@
-import { ArabicDialect, NativeLanguage } from "@/types/languagesTypes";
+import { ArabicDialect } from "@/types/languagesTypes";
 import React from "react";
 
-export type LanguageSettings = {
-	nativeLanguage: NativeLanguage | null;
+export type LanguageContextType = {
 	arabicDialect: ArabicDialect | null;
-};
-
-export type LanguageContextType = LanguageSettings & {
-	setLanguages: (newLanguages: LanguageSettings) => void;
+	setDialect: (newDialect: ArabicDialect) => void;
 };
 
 const LanguageContext = React.createContext<LanguageContextType>({
-	nativeLanguage: null,
 	arabicDialect: null,
-	setLanguages: () => {},
+	setDialect: () => {},
 });
 
 export default LanguageContext;

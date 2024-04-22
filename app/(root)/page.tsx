@@ -4,7 +4,7 @@ import { useContext } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 
-import LanguageContext, { LanguageSettings } from "@/context/languageContext";
+import LanguageContext from "@/context/languageContext";
 import TryForFreeForm from "@/components/shared/TryForFreeForm";
 import {
 	SignedOut,
@@ -16,21 +16,22 @@ import {
 } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
 import { useMediaQuery } from "@react-hooks-hub/use-media-query";
+import { ArabicDialect } from "@/types/languagesTypes";
 
 export default function Home() {
-	const { setLanguages } = useContext(LanguageContext);
+	const { setDialect } = useContext(LanguageContext);
 
 	const router = useRouter();
 
-	function onSubmit(values: LanguageSettings) {
-		setLanguages(values);
+	function onSubmit(values: ArabicDialect) {
+		setDialect(values);
 		router.push("/chat");
 	}
 
 	const { device } = useMediaQuery();
 	const isMobile = device === "mobile";
 
-	const logoSize = isMobile ? 170 : 220;
+	const logoSize = isMobile ? 190 : 220;
 
 	return (
 		<>
@@ -50,7 +51,7 @@ export default function Home() {
 							</div>
 						</SignedOut>
 					</div>
-					<div className="pt-0 md:mt-6 flex-1 text-center  flex flex-col items-center justify-center">
+					<div className="flex-1 text-center  flex flex-col items-center justify-center">
 						<Image
 							src="/assets/arabybuddy.svg"
 							alt="logo"
@@ -58,14 +59,16 @@ export default function Home() {
 							height={logoSize}
 							className="mx-auto mb-2"
 						/>
-						<h1 className="mb-4 text-4xl font-extrabold leading-none tracking-tight text-gray-900 md:text-5xl lg:text-6xl dark:text-white">
+						<h1 className="my-4 text-4xl font-extrabold leading-none tracking-tight text-gray-900 md:text-5xl lg:text-6xl dark:text-white">
 							Your AI Arabic Language Tutor
 						</h1>
-						<p className="mb-6 text-md md:text-lg font-normal text-gray-500 lg:text-xl sm:px-16 xl:px-48 dark:text-gray-400">
+						<p className="text-lg font-normal text-gray-500 lg:text-xl sm:px-16 xl:px-48 dark:text-gray-400">
 							Try out our AI language buddy and learn a new Arabic dialect
 							today! 🌎 ☕
 						</p>
-						<TryForFreeForm onSubmit={onSubmit} />
+						<div className="mt-10  w-full md:w-fit">
+							<TryForFreeForm onSubmit={onSubmit} />
+						</div>
 					</div>
 				</main>
 				<footer aria-labelledby="footer-heading">

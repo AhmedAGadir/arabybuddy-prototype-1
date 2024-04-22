@@ -1,24 +1,24 @@
 "use client";
 
-import LanguageContext, { LanguageSettings } from "@/context/languageContext";
+import LanguageContext from "@/context/languageContext";
 import React, { useState } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import Sidebar from "@/components/shared/Sidebar";
 import Background from "@/components/shared/Background";
+import { ArabicDialect } from "@/types/languagesTypes";
 
 const Layout = ({ children }: { children: React.ReactNode }) => {
-	const [languages, setLanguages] = useState<LanguageSettings>({
-		nativeLanguage: null,
-		arabicDialect: null,
-	});
+	const [arabicDialect, setArabicDialect] = useState<ArabicDialect | null>(
+		null
+	);
 
-	const updateLanguages = (newLanguages: LanguageSettings) => {
-		setLanguages(newLanguages);
+	const updateDialect = (newDialect: ArabicDialect) => {
+		setArabicDialect(newDialect);
 	};
 
 	return (
 		<LanguageContext.Provider
-			value={{ ...languages, setLanguages: updateLanguages }}
+			value={{ arabicDialect, setDialect: updateDialect }}
 		>
 			{/* for background image to use "fill" prop, parent needs position relative */}
 			<main className="relative">
