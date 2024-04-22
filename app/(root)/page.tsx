@@ -2,58 +2,49 @@
 
 import { useContext } from "react";
 import Image from "next/image";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { NATIVE_LANGUAGES, ARABIC_DIALECTS } from "@/types/languagesTypes";
 import { useRouter } from "next/navigation";
 
-import { Button } from "@/components/ui/button";
-import {
-	Form,
-	FormControl,
-	FormField,
-	FormItem,
-	FormLabel,
-	FormMessage,
-} from "@/components/ui/form";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
 import LanguageContext, { LanguageSettings } from "@/context/languageContext";
-
-const formSchema = z.object({
-	nativeLanguage: z.string().min(2).max(50),
-	arabicDialect: z.string().min(2).max(50),
-});
+import TryForFreeForm from "@/components/shared/TryForFreeForm";
+import {
+	SignedOut,
+	SignInButton,
+	SignedIn,
+	UserButton,
+	SignUp,
+	SignUpButton,
+} from "@clerk/nextjs";
+import { Button } from "@/components/ui/button";
 
 export default function Home() {
 	const { setLanguages } = useContext(LanguageContext);
 
 	const router = useRouter();
 
-	const form = useForm<z.infer<typeof formSchema>>({
-		resolver: zodResolver(formSchema),
-		defaultValues: {
-			nativeLanguage: "English",
-			arabicDialect: "Modern Standard Arabic",
-		},
-	});
-
-	function onSubmit(values: z.infer<typeof formSchema>) {
-		setLanguages(values as LanguageSettings);
+	function onSubmit(values: LanguageSettings) {
+		setLanguages(values);
 		router.push("/chat");
 	}
 
 	return (
 		<>
-			<div className="md:container md:mx-auto text-center h-svh relative flex flex-col justify-between">
-				<main className="flex-1 flex flex-col justify-center items-center px-4">
-					<div className="max-w-5xl pt-6">
+			<div className="md:container md:mx-auto h-svh relative flex flex-col justify-between ">
+				<main className="flex-1 flex flex-col items-center max-w-5xl mx-auto px-4 ">
+					<div className="py-3 flex justify-end w-full">
+						<SignedOut>
+							<div className="flex flex-col md:flex-row w-full md:w-fit gap-4">
+								<SignInButton>
+									<Button size="lg" variant="outline">
+										Log in
+									</Button>
+								</SignInButton>
+								<SignUpButton>
+									<Button size="lg">Sign up</Button>
+								</SignUpButton>
+							</div>
+						</SignedOut>
+					</div>
+					<div className=" pt-6 flex-1 text-center  flex flex-col items-center justify-center">
 						<Image
 							src="/assets/arabybuddy.svg"
 							alt="logo"
@@ -68,72 +59,7 @@ export default function Home() {
 							Try out our AI language buddy and learn a new Arabic dialect
 							today! 🌎 ☕
 						</p>
-						<Form {...form}>
-							<form
-								onSubmit={form.handleSubmit(onSubmit)}
-								className="space-y-8"
-							>
-								<FormField
-									control={form.control}
-									name="nativeLanguage"
-									render={({ field }) => (
-										<FormItem>
-											<FormLabel>Native Language</FormLabel>
-											<Select
-												onValueChange={field.onChange}
-												defaultValue={field.value}
-												{...field}
-											>
-												<FormControl>
-													<SelectTrigger className="w-[250px] mx-auto">
-														<SelectValue placeholder="Select Language" />
-													</SelectTrigger>
-												</FormControl>
-												<SelectContent>
-													{NATIVE_LANGUAGES.map((language) => (
-														<SelectItem value={language} key={language}>
-															{language}
-														</SelectItem>
-													))}
-												</SelectContent>
-											</Select>
-
-											<FormMessage />
-										</FormItem>
-									)}
-								/>
-								<FormField
-									control={form.control}
-									name="arabicDialect"
-									render={({ field }) => (
-										<FormItem>
-											<FormLabel>Arabic Dialect</FormLabel>
-											<Select
-												onValueChange={field.onChange}
-												defaultValue={field.value}
-												{...field}
-											>
-												<FormControl>
-													<SelectTrigger className="w-[250px] mx-auto">
-														<SelectValue placeholder="Select Dialect" />
-													</SelectTrigger>
-												</FormControl>
-												<SelectContent>
-													{ARABIC_DIALECTS.map((dialect) => (
-														<SelectItem value={dialect} key={dialect}>
-															{dialect}
-														</SelectItem>
-													))}
-												</SelectContent>
-											</Select>
-											<FormMessage />
-										</FormItem>
-									)}
-								/>
-
-								<Button type="submit">Submit</Button>
-							</form>
-						</Form>
+						<TryForFreeForm onSubmit={onSubmit} />
 					</div>
 				</main>
 				<footer aria-labelledby="footer-heading">

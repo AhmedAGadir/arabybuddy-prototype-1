@@ -20,9 +20,8 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
 		<LanguageContext.Provider
 			value={{ ...languages, setLanguages: updateLanguages }}
 		>
-			<main className="bg-slate-100">
-				{/* <main className="bg-wrap"> */}
-				{/* <Image
+			<main className="bg-wrap">
+				<Image
 					alt="background"
 					src={"/assets/background.png"}
 					// placeholder="blur"
@@ -32,14 +31,8 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
 					style={{
 						objectFit: "cover",
 					}}
-				/> */}
-				<div className="root">
-					<Sidebar />
-					{/* <MobileNav />  */}
-					<div className="root-container">
-						<div className="wrapper">{children}</div>
-					</div>
-				</div>
+				/>
+				{children}
 				<Toaster />
 			</main>
 		</LanguageContext.Provider>
