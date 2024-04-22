@@ -1,5 +1,5 @@
 import React from "react";
-import { NATIVE_LANGUAGES, ARABIC_DIALECTS } from "@/types/languagesTypes";
+import { ARABIC_DIALECTS } from "@/types/languagesTypes";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -21,7 +21,6 @@ import {
 } from "@/components/ui/select";
 
 const formSchema = z.object({
-	nativeLanguage: z.string().min(2).max(50),
 	arabicDialect: z.string().min(2).max(50),
 });
 
@@ -41,7 +40,7 @@ const TryForFreeForm = ({ onSubmit }: { onSubmit?: (values: any) => void }) => {
 		<Form {...form}>
 			<form
 				onSubmit={form.handleSubmit(formSubmitHandler)}
-				className="space-y-6 md:space-y-8 w-full md:w-fit"
+				className="space-y-6 md:space-y-8"
 			>
 				<FormField
 					control={form.control}
