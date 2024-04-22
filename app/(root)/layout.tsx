@@ -2,9 +2,9 @@
 
 import LanguageContext, { LanguageSettings } from "@/context/languageContext";
 import React, { useState } from "react";
-import Image from "next/image";
 import { Toaster } from "@/components/ui/toaster";
 import Sidebar from "@/components/shared/Sidebar";
+import Background from "@/components/shared/Background";
 
 const Layout = ({ children }: { children: React.ReactNode }) => {
 	const [languages, setLanguages] = useState<LanguageSettings>({
@@ -20,18 +20,8 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
 		<LanguageContext.Provider
 			value={{ ...languages, setLanguages: updateLanguages }}
 		>
-			<main className="bg-wrap">
-				<Image
-					alt="background"
-					src={"/assets/background.png"}
-					// placeholder="blur"
-					quality={100}
-					fill
-					sizes="100vw"
-					style={{
-						objectFit: "cover",
-					}}
-				/>
+			<main className="relative">
+				<Background />
 				{children}
 				<Toaster />
 			</main>
