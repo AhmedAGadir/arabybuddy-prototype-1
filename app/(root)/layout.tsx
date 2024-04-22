@@ -20,6 +20,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
 		<LanguageContext.Provider
 			value={{ ...languages, setLanguages: updateLanguages }}
 		>
+			{/* for background image to use "fill" prop, parent needs position relative */}
 			<main className="relative">
 				<Background />
 				{children}

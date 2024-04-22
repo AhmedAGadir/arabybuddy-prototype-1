@@ -15,6 +15,7 @@ import {
 	SignUpButton,
 } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
+import { useMediaQuery } from "@react-hooks-hub/use-media-query";
 
 export default function Home() {
 	const { setLanguages } = useContext(LanguageContext);
@@ -25,6 +26,11 @@ export default function Home() {
 		setLanguages(values);
 		router.push("/chat");
 	}
+
+	const { device } = useMediaQuery();
+	const isMobile = device === "mobile";
+
+	const logoSize = isMobile ? 150 : 220;
 
 	return (
 		<>
@@ -48,8 +54,8 @@ export default function Home() {
 						<Image
 							src="/assets/arabybuddy.svg"
 							alt="logo"
-							width={220}
-							height={220}
+							width={logoSize}
+							height={logoSize}
 							className="mx-auto mb-2"
 						/>
 						<h1 className="mb-4 text-4xl font-extrabold leading-none tracking-tight text-gray-900 md:text-5xl lg:text-6xl dark:text-white">
