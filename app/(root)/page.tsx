@@ -51,7 +51,7 @@ export default function Home() {
 							</div>
 						</SignedOut>
 					</div>
-					<div className="flex-1 text-center  flex flex-col items-center justify-center">
+					<div className="flex-1 text-center flex flex-col items-center justify-center mt-10 md:mt-0">
 						<Image
 							src="/assets/arabybuddy.svg"
 							alt="logo"
