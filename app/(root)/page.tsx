@@ -30,7 +30,7 @@ export default function Home() {
 	const { device } = useMediaQuery();
 	const isMobile = device === "mobile";
 
-	const logoSize = isMobile ? 150 : 220;
+	const logoSize = isMobile ? 170 : 220;
 
 	return (
 		<>
@@ -50,7 +50,7 @@ export default function Home() {
 							</div>
 						</SignedOut>
 					</div>
-					<div className=" pt-6 flex-1 text-center  flex flex-col items-center justify-center">
+					<div className="pt-0 md:mt-6 flex-1 text-center  flex flex-col items-center justify-center">
 						<Image
 							src="/assets/arabybuddy.svg"
 							alt="logo"
@@ -61,7 +61,7 @@ export default function Home() {
 						<h1 className="mb-4 text-4xl font-extrabold leading-none tracking-tight text-gray-900 md:text-5xl lg:text-6xl dark:text-white">
 							Your AI Arabic Language Tutor
 						</h1>
-						<p className="mb-6 text-lg font-normal text-gray-500 lg:text-xl sm:px-16 xl:px-48 dark:text-gray-400">
+						<p className="mb-6 text-md md:text-lg font-normal text-gray-500 lg:text-xl sm:px-16 xl:px-48 dark:text-gray-400">
 							Try out our AI language buddy and learn a new Arabic dialect
 							today! 🌎 ☕
 						</p>
@@ -69,7 +69,7 @@ export default function Home() {
 					</div>
 				</main>
 				<footer aria-labelledby="footer-heading">
-					<div className="mt-16 border-t border-white/10 pt-8 pb-4 sm:mt-20 md:flex md:items-center md:justify-between lg:mt-24">
+					<div className="mt-4 border-t border-white/10 pt-8 pb-4 md:mt-20 md:flex md:items-center md:justify-between lg:mt-24">
 						<div className="flex space-x-6 md:order-2">
 							<p className="mt-8 text-xs leading-5 text-gray-400 md:order-1 md:mt-0 px-4 md:px-0">
 								&copy; 2024 Gadir Tech Ltd. All rights reserved.
