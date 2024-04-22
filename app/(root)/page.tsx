@@ -13,6 +13,7 @@ import {
 	UserButton,
 	SignUp,
 	SignUpButton,
+	SignOutButton,
 } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
 import { useMediaQuery } from "@react-hooks-hub/use-media-query";
@@ -50,6 +51,14 @@ export default function Home() {
 								</SignUpButton>
 							</div>
 						</SignedOut>
+						{/* even though we will redirect away from here, we dont want to leave a chance of users getting stuck logged in */}
+						<SignedIn>
+							<div className="flex flex-col md:flex-row w-full md:w-fit">
+								<SignOutButton>
+									<Button size="lg">Log out</Button>
+								</SignOutButton>
+							</div>
+						</SignedIn>
 					</div>
 					<div className="flex-1 text-center flex flex-col items-center justify-center mt-8 md:mt-0">
 						<Image
