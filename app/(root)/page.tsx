@@ -1,10 +1,10 @@
 "use client";
 
-import { useContext } from "react";
+import { useContext, useEffect } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 
-import LanguageContext from "@/context/languageContext";
+import DialectContext, { useDialect } from "@/context/dialectContext";
 import TryForFreeForm from "@/components/shared/TryForFreeForm";
 import {
 	SignedOut,
@@ -14,18 +14,26 @@ import {
 	SignUp,
 	SignUpButton,
 	SignOutButton,
+	useUser,
 } from "@clerk/nextjs";
+import Clerk from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
 import { useMediaQuery } from "@react-hooks-hub/use-media-query";
 import { ArabicDialect } from "@/types/languagesTypes";
 
 export default function Home() {
-	const { setDialect } = useContext(LanguageContext);
+	const { setArabicDialect } = useDialect();
+
+	const { isSignedIn } = useUser();
 
 	const router = useRouter();
 
+	if (isSignedIn) {
+		router.push("/chat");
+	}
+
 	function onSubmit(values: ArabicDialect) {
-		setDialect(values);
+		setArabicDialect(values);
 		router.push("/chat");
 	}
 

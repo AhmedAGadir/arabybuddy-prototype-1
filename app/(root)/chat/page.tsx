@@ -8,7 +8,7 @@ import React, {
 	useRef,
 	useCallback,
 } from "react";
-import LanguageContext from "@/context/languageContext";
+import DialectContext from "@/context/dialectContext";
 import { useLogger } from "@/hooks/useLogger";
 import _ from "lodash";
 import { useAudioService } from "@/hooks/useAudioService";
@@ -93,7 +93,7 @@ export type Task = (typeof taskEnum)[keyof typeof taskEnum];
 const ChatPage = () => {
 	const logger = useLogger({ label: "ChatPage", color: "#fe7de9" });
 
-	const { arabicDialect } = useContext(LanguageContext);
+	const { arabicDialect } = useContext(DialectContext);
 
 	const { toast, dismiss } = useToast();
 

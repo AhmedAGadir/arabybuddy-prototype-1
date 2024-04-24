@@ -2,6 +2,8 @@ import { ChatMessage } from "@/types/messageTypes";
 import OpenAI from "openai";
 import { TextContentBlock } from "openai/resources/beta/threads/messages/messages.mjs";
 
+export const maxDuration = 60; // seconds
+
 // remember API calls wont work if the account balance is 0
 const openai = new OpenAI({
 	organization: process.env.OPENAI_ORG_ID,

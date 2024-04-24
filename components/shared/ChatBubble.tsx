@@ -74,6 +74,15 @@ const ChatBubble = ({
 						<path d="M3.5 1.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Zm0 6.041a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Zm0 5.959a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Z" />
 					</svg>
 				</Button>
+				{/* <Button
+					size="sm"
+					className={cn(
+						"text-white bg-gradient-to-br from-purple-600 to-blue-500 hover:bg-gradient-to-bl focus:ring-4 focus:outline-none focus:ring-blue-300 dark:focus:ring-blue-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2",
+						chatMenuDisabled && "hidden"
+					)}
+				>
+					actions
+				</Button> */}
 			</DropdownMenuTrigger>
 			<DropdownMenuContent className={cn(isMobile && "ml-3")}>
 				{chatMenuItems.map((item, ind) => {
