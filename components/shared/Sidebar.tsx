@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { UserButton, useUser } from "@clerk/nextjs";
 import { Disclosure } from "@headlessui/react";
 import Image from "next/image";
+import _ from "lodash";
 
 import {
 	CalendarIcon,
