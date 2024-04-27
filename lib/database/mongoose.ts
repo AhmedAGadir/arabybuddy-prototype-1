@@ -17,6 +17,7 @@ if (!cached) {
 
 export const connectToDatabase = async () => {
 	if (cached.conn) {
+		console.log("returning cached connection");
 		return cached.conn;
 	}
 
@@ -34,6 +35,8 @@ export const connectToDatabase = async () => {
 		});
 
 	cached.conn = await cached.promise;
+
+	console.log("connected to database");
 
 	return cached.conn;
 };
