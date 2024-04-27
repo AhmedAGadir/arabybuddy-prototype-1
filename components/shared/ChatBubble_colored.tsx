@@ -136,23 +136,19 @@ const ChatBubble = ({
 	);
 
 	return (
-		<div
+		<BackgroundGradient
 			className={cn(
 				"flex-1",
 				"flex align-center gap-3 md:gap-5",
 				reverse && "flex-row-reverse",
 				isMobile && "width-full flex-1"
-				// glow &&
-				// 	"bg-[radial-gradient(circle_farthest-side_at_0_100%,#38B6FF,transparent),radial-gradient(circle_farthest-side_at_100%_0,#5E17EB,transparent),radial-gradient(circle_farthest-side_at_100%_100%,#ffc414,transparent),radial-gradient(circle_farthest-side_at_0_0,#1ca0fb,#141316)]"
 			)}
-			// animate={false}
-			// glow={glow}
+			animate={false}
+			glow={glow}
 		>
 			<div
 				className={cn(
-					"pl-8 relative flex items-start gap-2.5 w-full border border-gray-500",
-					// "rounded-[22px]",
-					// "bg-slate-100 bg-opacity-85", // use this when using the background gradient component
+					"pl-8 relative rounded-[22px] bg-slate-100 bg-opacity-85 flex items-start gap-2.5",
 					reverse && "flex-row-reverse"
 				)}
 			>
@@ -175,7 +171,7 @@ const ChatBubble = ({
 				</div>
 				<div className="absolute top-3 left-2">{dropDownMenu}</div>
 			</div>
-		</div>
+		</BackgroundGradient>
 	);
 };
 

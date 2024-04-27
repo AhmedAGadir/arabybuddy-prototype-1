@@ -45,7 +45,7 @@ const MicrophoneBlob = ({
 	const { device } = useMediaQuery();
 	const isMobile = device === "mobile";
 
-	const baseSize = isMobile ? 150 : 200;
+	const baseSize = isMobile ? 100 : 150;
 
 	return (
 		<button

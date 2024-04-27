@@ -23,7 +23,7 @@ import { useRecording } from "@/hooks/useRecording";
 import { StopButton } from "@/components/shared/icons/Stop";
 import ChatBubble from "@/components/shared/ChatBubble";
 import { cn } from "@/lib/utils";
-import { cairo } from "@/lib/fonts";
+import { cairo, roboto } from "@/lib/fonts";
 import { BackgroundGradient } from "@/components/ui/background-gradient";
 import {
 	BookOpenIcon,
@@ -257,7 +257,7 @@ const ChatPage = () => {
 
 		if (!isRecording) {
 			initAudioElement();
-			setChatHistoryBackup(chatHistory);
+			setChatHistoryBackup(chatHistory.map((message) => ({ ...message })));
 			startRecording();
 			return;
 		}
@@ -408,8 +408,10 @@ const ChatPage = () => {
 	const instructionContent = (
 		<Transition
 			className={cn(
-				"text-center px-5 font-extrabold text-2xl md:text-3xl tracking-tight",
-				"opacity-50 text-transparent bg-clip-text bg-gradient-to-r to-araby-purple from-araby-blue p-10 text-slate-700 "
+				"text-center",
+				// "font-extrabold text-2xl md:text-3xl tracking-tight",
+				"text-xl tracking-tight",
+				"text-transparent bg-clip-text bg-gradient-to-r to-araby-purple from-araby-blue py-8 text-gray-600"
 			)}
 			show={showInstruction}
 			enter="transition-all ease-in-out duration-500 delay-200"
@@ -426,7 +428,8 @@ const ChatPage = () => {
 	const progressBarContent = (
 		<Progress
 			className="rounded-none h-1 md:h-2"
-			innerClassName="bg-gradient-to-r to-araby-purple from-araby-purple"
+			// innerClassName="bg-gradient-to-r to-araby-purple from-araby-purple"
+			innerClassName="bg-gray-300"
 			value={progressBarValueRef.current}
 		/>
 	);
@@ -437,8 +440,8 @@ const ChatPage = () => {
 	return (
 		<div
 			className={cn(
-				"w-full h-svh h-100dvh flex flex-col items-center justify-between max-w-3xl mx-auto px-5",
-				cairo.className
+				"w-full h-svh h-100dvh flex flex-col items-center justify-between max-w-3xl mx-auto px-4",
+				roboto.className
 			)}
 		>
 			<div className="w-screen absolute top-0 left-0">{progressBarContent}</div>
@@ -471,22 +474,25 @@ const ChatPage = () => {
 									<span
 										className={cn(
 											// "font-bold",
-											"text-xl md:text-3xl  text-transparent bg-clip-text leading-loose text-slate-900",
-											isPlaying &&
-												"bg-gradient-to-r to-araby-purple from-araby-purple"
+											// "text-xl md:text-3xl text-transparent bg-clip-text leading-loose text-slate-900",
+											"text-xl leading-loose text-slate-900",
+											cairo.className
+											// isPlaying &&
+											// 	"bg-gradient-to-r to-araby-purple from-araby-purple"
 										)}
 									>
 										{displayedChatMessage?.role === "assistant" &&
 											displayedChatMessage?.content === "loading" && (
 												<PulseLoader
-													color="#5E17EB"
+													// color="#5E17EB"
+													color="black"
 													loading
 													cssOverride={{
 														display: "block",
 														margin: "0",
 														width: 250,
 													}}
-													size={isMobile ? 6 : 8}
+													size={6}
 													aria-label="Loading Spinner"
 													data-testid="loader"
 												/>
@@ -504,7 +510,7 @@ const ChatPage = () => {
 			<div className="relative w-fit">
 				<div
 					className={cn(
-						"absolute -top-[70px] md:-top-[60px] left-1/2 -translate-x-1/2 w-screen text-center"
+						"absolute -top-[70px] left-1/2 -translate-x-1/2 w-screen text-center px-4"
 					)}
 				>
 					{STATUS === statusEnum.PROCESSING && (
@@ -512,18 +518,25 @@ const ChatPage = () => {
 							onClick={abortProcessingBtnHandler}
 							variant="outline"
 							size="lg"
+							className="w-full md:w-fit"
 						>
 							Cancel
 						</Button>
 					)}
 					{STATUS === statusEnum.PLAYING && (
-						<Button onClick={stopPlayingBtnHandler} variant="default" size="lg">
+						<Button
+							onClick={stopPlayingBtnHandler}
+							// variant="default"
+							variant="outline"
+							size="lg"
+							className="w-full md:w-fit"
+						>
 							Stop Playing
 						</Button>
 					)}
 					{instructionContent}
 				</div>
-				<div className="text-center w-fit m-auto ">
+				<div className="text-center w-fit m-auto pb-4 md:pb-8">
 					<MicrophoneBlob
 						onClick={toggleRecording}
 						mode={STATUS}

@@ -20,6 +20,7 @@ import Clerk from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
 import { useMediaQuery } from "@react-hooks-hub/use-media-query";
 import { ArabicDialect } from "@/types/languagesTypes";
+import Background from "@/components/shared/Background";
 
 export default function Home() {
 	const { setArabicDialect } = useDialect();
@@ -43,9 +44,10 @@ export default function Home() {
 	const logoSize = isMobile ? 190 : 220;
 
 	return (
-		<>
+		<div className="relative">
+			<Background />
 			<div className="md:container md:mx-auto min-h-svh relative flex flex-col justify-between ">
-				<main className="flex-1 flex flex-col items-center max-w-5xl mx-auto px-4 ">
+				<main className="flex-1 flex flex-col items-center max-w-5xl mx-auto px-4">
 					<div className="py-3 flex justify-end w-full">
 						<SignedOut>
 							<div className="flex flex-col md:flex-row w-full md:w-fit gap-4">
@@ -85,7 +87,7 @@ export default function Home() {
 							Try out our AI language buddy and learn a new Arabic dialect
 							today! 🌎 ☕
 						</p>
-						<div className="mt-10  w-full md:w-fit">
+						<div className="mt-10 w-full md:w-fit">
 							<TryForFreeForm onSubmit={onSubmit} />
 						</div>
 					</div>
@@ -100,6 +102,6 @@ export default function Home() {
 					</div>
 				</footer>
 			</div>
-		</>
+		</div>
 	);
 }

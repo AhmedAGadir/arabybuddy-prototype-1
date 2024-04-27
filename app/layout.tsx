@@ -22,7 +22,7 @@ export default function RootLayout({
 }>) {
 	return (
 		<ClerkProvider appearance={{ variables: { colorPrimary: "#38B6FF" } }}>
-			<html lang="en">
+			<html lang="en" className="h-full bg-gray-100">
 				<head>
 					{
 						// MOBILE CONSOLE DEVTOOLS
@@ -33,7 +33,7 @@ export default function RootLayout({
 						// <script src="https://cdn.jsdelivr.net/gh/c-kick/mobileConsole/hnl.mobileconsole.min.js"></script>
 					}
 				</head>
-				<body className={inter.className}>{children}</body>
+				<body className={(inter.className, "h-full")}>{children}</body>
 			</html>
 		</ClerkProvider>
 	);

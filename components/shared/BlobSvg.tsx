@@ -79,7 +79,7 @@ const BlobSVG = ({
 	const { device } = useMediaQuery();
 	const isMobile = device === "mobile";
 
-	const containerSize = isMobile ? 200 : 300;
+	const containerSize = isMobile ? 100 : 150;
 
 	return (
 		<div

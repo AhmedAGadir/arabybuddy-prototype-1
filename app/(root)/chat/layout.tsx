@@ -9,10 +9,16 @@ import {
 	SheetTrigger,
 } from "@/components/ui/sheet";
 import Sidebar from "@/components/shared/Sidebar";
+import Menubar from "@/components/shared/Menubar";
+
+// read all the docs here: https://clerk.com/docs/references/nextjs/current-user
 
 const Layout = ({ children }: { children: React.ReactNode }) => {
 	return (
 		<>
+			{/* <header>
+			
+			</header> */}
 			{/* <header>
 				<nav>
 					<Sheet>
@@ -42,8 +48,11 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
 					</Sheet>
 				</nav>
 			</header> */}
+			<div className="lg:hidden">
+				<Menubar />
+			</div>
 			<main className="flex">
-				<div className="hidden h-screen w-72  lg:flex">
+				<div className="hidden h-screen w-72 lg:flex">
 					<Sidebar />
 				</div>
 				{children}
