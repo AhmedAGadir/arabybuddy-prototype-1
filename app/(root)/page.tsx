@@ -10,7 +10,6 @@ import {
 	SignedOut,
 	SignInButton,
 	SignedIn,
-	UserButton,
 	SignUp,
 	SignUpButton,
 	SignOutButton,

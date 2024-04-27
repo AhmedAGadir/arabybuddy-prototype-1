@@ -137,7 +137,7 @@ export default function Sidebar() {
 								href="#"
 								className="flex items-center gap-x-4 px-6 py-3 text-sm font-semibold leading-6 text-gray-900 hover:bg-gray-50"
 							>
-								<UserButton />
+								<UserButton afterSignOutUrl="/" />
 								<span className="sr-only">Your profile</span>
 								<span aria-hidden="true">
 									{_.capitalize(user.username ?? "") ?? user.fullName ?? ""}
