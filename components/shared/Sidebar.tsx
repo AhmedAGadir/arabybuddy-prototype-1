@@ -22,6 +22,9 @@ import SkewLoader from "react-spinners/SkewLoader";
 import { on } from "events";
 import { Icon } from "next/dist/lib/metadata/types/metadata-types";
 import { IConversation } from "@/lib/database/models/conversation.model";
+import { useCallback, useState } from "react";
+import { PencilIcon } from "lucide-react";
+import ConfirmationDialog from "./ConfirmationDialog";
 
 // const navigation = [
 // 	{ name: "Dashboard", href: "#", icon: HomeIcon, count: "5", current: true },
@@ -44,85 +47,8 @@ import { IConversation } from "@/lib/database/models/conversation.model";
 // 	{ name: "Reports", href: "#", icon: ChartPieIcon, current: false },
 // ];
 
-const accountNavigation = [
-	{
-		name: "Preferences",
-		href: "/chat/preferences",
-		icon: AdjustmentsHorizontalIcon,
-	},
-	{ name: "Buy Credits", href: "/credits", icon: BanknotesIcon },
-	{ name: "Profile", href: "/profile", icon: UserIcon },
-];
-
-export default function Sidebar() {
-	const { isLoaded, user } = useUser();
-
-	const pathname = usePathname();
-
-	const router = useRouter();
-
-	const onConversationCreated = (data: IConversation) => {
-		router.push(`/chat/${data._id}`);
-	};
-
-	const onConversationDeleted = () => {
-		router.push("/chat");
-	};
-
-	const {
-		isPending,
-		error,
-		conversations,
-		deleteConversation,
-		createConversation,
-	} = useConversations({ onConversationCreated, onConversationDeleted });
-
-	console.log("{ isPending, error, conversations}", {
-		isPending,
-		error,
-		conversations,
-	});
-
-	const onRemoveConversation = (
-		e: React.MouseEvent<HTMLSpanElement, MouseEvent>,
-		id: string
-	) => {
-		e.preventDefault();
-		deleteConversation(id);
-	};
-
-	return (
-		<aside
-			className={cn(
-				"flex grow flex-col gap-y-5 overflow-y-auto border-r border-gray-200 bg-white px-6",
-				roboto.className
-			)}
-		>
-			<div className="flex p-4 shrink-0 items-center">
-				<Image
-					width={100}
-					height={100}
-					className="mx-auto"
-					src="/assets/arabybuddy.svg"
-					alt="ArabyBuddy logo"
-				/>
-			</div>
-			<nav className="flex flex-1 flex-col">
-				<Button
-					className="flex justify-between group"
-					onClick={createConversation}
-				>
-					<span>New Chat</span>
-					<PencilSquareIcon
-						className={cn(
-							"text-gray-400 group-hover:text-indigo-100",
-							"h-6 w-6 shrink-0"
-						)}
-						aria-hidden="true"
-					/>
-				</Button>
-				<ul role="list" className="flex flex-1 flex-col gap-y-7 mt-4">
-					{/* <li>
+{
+	/* <li>
 						<ul role="list" className="-mx-2 space-y-1">
 							{navigation.map((item) => (
 								<li key={item.name}>
@@ -149,10 +75,101 @@ export default function Sidebar() {
 								</li>
 							))}
 						</ul>
-					</li> */}
+					</li> */
+}
 
-					<li>
-						<ul role="list" className="-mx-2 space-y-1">
+const accountNavigation = [
+	{
+		name: "Preferences",
+		href: "/chat/preferences",
+		icon: AdjustmentsHorizontalIcon,
+	},
+	{ name: "Buy Credits", href: "/credits", icon: BanknotesIcon },
+	{ name: "Profile", href: "/profile", icon: UserIcon },
+];
+
+export default function Sidebar() {
+	const { isLoaded, user } = useUser();
+
+	const pathname = usePathname();
+
+	const router = useRouter();
+
+	const onConversationCreated = useCallback(
+		(data: IConversation) => {
+			router.push(`/chat/${data._id}`);
+		},
+		[router]
+	);
+
+	const onConversationDeleted = useCallback(() => {
+		router.push("/chat");
+	}, [router]);
+
+	const {
+		isPending,
+		error,
+		conversations,
+		deleteConversation,
+		createConversation,
+	} = useConversations({ onConversationCreated, onConversationDeleted });
+
+	console.log("{ isPending, error, conversations}", {
+		isPending,
+		error,
+		conversations,
+	});
+
+	const [conversationIdToDelete, setConversationIdToDelete] =
+		useState<string>();
+	const [confirmationDialogOpen, setConfirmationDialogOpen] = useState(false);
+
+	const onRemoveConversation = (
+		e: React.MouseEvent<HTMLSpanElement, MouseEvent>,
+		id: string
+	) => {
+		e.preventDefault();
+		setConversationIdToDelete(id);
+		setConfirmationDialogOpen(true);
+	};
+
+	const onRemoveConversationConfirmed = () => {
+		deleteConversation(conversationIdToDelete as string);
+		setConversationIdToDelete(undefined);
+	};
+
+	return (
+		<aside
+			className={cn(
+				"h-svh h-100dvh flex grow flex-col gap-y-5 overflow-y-auto border-r border-gray-200 bg-white px-6"
+			)}
+		>
+			<div className="flex p-4 shrink-0 items-center">
+				<Image
+					width={100}
+					height={100}
+					className="mx-auto"
+					src="/assets/arabybuddy.svg"
+					alt="ArabyBuddy logo"
+				/>
+			</div>
+			<nav className="flex-1 min-h-0 overflow-y-hidden flex flex-col">
+				<Button
+					className="flex justify-between group"
+					onClick={createConversation}
+				>
+					<span>New Chat</span>
+					<PencilSquareIcon
+						className={cn(
+							"text-gray-400 group-hover:text-indigo-100",
+							"h-6 w-6 shrink-0"
+						)}
+						aria-hidden="true"
+					/>
+				</Button>
+				<ul role="list" className="flex-1 min-h-0 flex flex-col gap-y-7 mt-4 ">
+					<li className="flex-1  overflow-y-scroll min-h-0">
+						<ul role="list" className="space-y-1">
 							{isPending && (
 								<div className="text-center my-10">
 									<SkewLoader
@@ -187,10 +204,11 @@ export default function Sidebar() {
 												)}
 											>
 												{label ?? lastMessage ?? "Untitled"}
+												{/* TODO: implement editable conversation labels */}
 												<span onClick={(e) => onRemoveConversation(e, _id)}>
 													<TrashIcon
 														className={cn(
-															"hidden text-gray-400 group-hover:block group-hover:text-indigo-600",
+															"hidden text-gray-400 group-hover:block hover:text-indigo-600",
 															"h-5 w-5 shrink-0"
 														)}
 														aria-hidden="true"
@@ -251,6 +269,12 @@ export default function Sidebar() {
 					</li>
 				</ul>
 			</nav>
+			<ConfirmationDialog
+				description="This action cannot be undone. This will permanently delete this conversation and all its messages from our servers."
+				open={confirmationDialogOpen}
+				onOpenChange={setConfirmationDialogOpen}
+				onConfirm={onRemoveConversationConfirmed}
+			/>
 		</aside>
 	);
 }

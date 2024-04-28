@@ -8,7 +8,7 @@ import {
 } from "@clerk/nextjs";
 
 import "./globals.css";
-import { inter } from "@/lib/fonts";
+import { inter, roboto } from "@/lib/fonts";
 
 export const metadata: Metadata = {
 	title: "ArabyBuddy",
@@ -33,7 +33,7 @@ export default function RootLayout({
 						// <script src="https://cdn.jsdelivr.net/gh/c-kick/mobileConsole/hnl.mobileconsole.min.js"></script>
 					}
 				</head>
-				<body className={(inter.className, "h-full")}>{children}</body>
+				<body className={(roboto.className, "h-full")}>{children}</body>
 			</html>
 		</ClerkProvider>
 	);
