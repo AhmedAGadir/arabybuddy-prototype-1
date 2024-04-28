@@ -23,7 +23,7 @@ export default function MobileNav() {
 					<div className="flex h-16 justify-between py-2">
 						<div className="flex">
 							<div className="flex flex-shrink-0 items-center">
-								<Link href="/">
+								<Link href="/chat">
 									<Image
 										width={160}
 										height={140}
