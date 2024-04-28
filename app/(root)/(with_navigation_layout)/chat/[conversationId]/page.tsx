@@ -437,7 +437,7 @@ const ConversationIdPage = () => {
 	return (
 		<div
 			className={cn(
-				"w-full h-svh h-100dvh flex flex-col items-center justify-between max-w-3xl mx-auto px-4",
+				"w-full flex flex-col items-center justify-between max-w-3xl mx-auto px-4",
 				roboto.className
 			)}
 		>

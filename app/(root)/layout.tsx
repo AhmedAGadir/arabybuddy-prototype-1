@@ -11,10 +11,8 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
 	return (
 		<QueryClientProvider client={queryClient}>
 			<DialectProvider>
-				<main>
-					{children}
-					<Toaster />
-				</main>
+				{children}
+				<Toaster />
 			</DialectProvider>
 		</QueryClientProvider>
 	);

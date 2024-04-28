@@ -25,7 +25,7 @@ import ConfirmationDialog from "./ConfirmationDialog";
 const accountNavigation = [
 	{
 		name: "Preferences",
-		href: "/chat/preferences",
+		href: "/preferences",
 		icon: AdjustmentsHorizontalIcon,
 	},
 	{ name: "Buy Credits", href: "/credits", icon: BanknotesIcon },
@@ -91,7 +91,7 @@ export default function Sidebar({
 	return (
 		<aside
 			className={cn(
-				"h-svh h-100dvh flex grow flex-col gap-y-5 overflow-y-auto border-r border-gray-200 bg-white px-6"
+				"flex grow flex-col gap-y-5 overflow-y-auto border-r border-gray-200 bg-white px-6 h-full"
 			)}
 		>
 			<div className={cn("flex p-4 shrink-0 items-center", hideLogo && "pt-6")}>
