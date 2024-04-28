@@ -68,7 +68,7 @@ const useConversations = ({
 			queryClient.setQueryData(
 				["conversations"],
 				previousConversations.filter(
-					(conversation: IConversation) => conversation.id !== conversationId
+					(conversation: IConversation) => conversation._id !== conversationId
 				)
 			);
 
@@ -78,7 +78,7 @@ const useConversations = ({
 			// Rollback on error
 			queryClient.setQueryData(
 				["conversations"],
-				context?.previousConversations
+				context?.previousConversations ?? ""
 			);
 		},
 		onSettled: () => {
