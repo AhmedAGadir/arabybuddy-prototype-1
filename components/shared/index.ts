@@ -1,1 +1,0 @@
-export { BlobSvg } from "./BlobSvg";
