@@ -43,6 +43,7 @@ const useConversations = ({
 			queryClient.invalidateQueries({ queryKey: ["conversations"] });
 			onConversationCreated?.(data);
 		},
+		// TODO: cancel outgoing fetches when creating a conversation
 	});
 
 	const createConversation = () => {

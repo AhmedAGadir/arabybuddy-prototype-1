@@ -23,7 +23,7 @@ const ChatPage = () => {
 	const { createConversation } = useConversations({ onConversationCreated });
 
 	return (
-		<div className="text-center w-full flex items-center justify-center">
+		<div className="text-center flex-1 flex items-center justify-center">
 			<div>
 				<PencilSquareIcon
 					className="mx-auto h-12 w-12 text-gray-400"
