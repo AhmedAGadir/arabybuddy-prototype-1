@@ -95,13 +95,15 @@ export default function Sidebar({
 			)}
 		>
 			<div className={cn("flex p-4 shrink-0 items-center", hideLogo && "pt-6")}>
-				<Image
-					width={100}
-					height={100}
-					className={cn("mx-auto", hideLogo && "hidden")}
-					src="/assets/arabybuddy.svg"
-					alt="ArabyBuddy logo"
-				/>
+				<Link href="/chat" className="mx-auto">
+					<Image
+						width={100}
+						height={100}
+						className={cn(hideLogo && "hidden")}
+						src="/assets/arabybuddy.svg"
+						alt="ArabyBuddy logo"
+					/>
+				</Link>
 			</div>
 			<nav className="flex-1 min-h-0 overflow-y-hidden flex flex-col">
 				<Button

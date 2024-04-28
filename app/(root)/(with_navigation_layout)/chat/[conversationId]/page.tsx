@@ -87,8 +87,8 @@ const taskEnum = {
 export type Task = (typeof taskEnum)[keyof typeof taskEnum];
 
 // try to keep business logic out of this page as its a presentation/view component
-const ChatPage = () => {
-	const logger = useLogger({ label: "ChatPage", color: "#fe7de9" });
+const ConversationIdPage = () => {
+	const logger = useLogger({ label: "ConversationIdPage", color: "#fe7de9" });
 
 	const { arabicDialect } = useContext(DialectContext);
 
@@ -548,4 +548,4 @@ const ChatPage = () => {
 	);
 };
 
-export default ChatPage;
+export default ConversationIdPage;
