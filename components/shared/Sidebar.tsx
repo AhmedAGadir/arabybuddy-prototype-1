@@ -14,12 +14,14 @@ import {
 	PencilSquareIcon,
 	TrashIcon,
 } from "@heroicons/react/24/outline";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "../ui/button";
 import { useConversations } from "@/hooks/useConversations";
 import SkewLoader from "react-spinners/SkewLoader";
 import { on } from "events";
+import { Icon } from "next/dist/lib/metadata/types/metadata-types";
+import { IConversation } from "@/lib/database/models/conversation.model";
 
 // const navigation = [
 // 	{ name: "Dashboard", href: "#", icon: HomeIcon, count: "5", current: true },
@@ -57,13 +59,23 @@ export default function Sidebar() {
 
 	const pathname = usePathname();
 
+	const router = useRouter();
+
+	const onConversationCreated = (data: IConversation) => {
+		router.push(`/chat/${data._id}`);
+	};
+
+	const onConversationDeleted = () => {
+		router.push("/chat");
+	};
+
 	const {
 		isPending,
 		error,
 		conversations,
 		deleteConversation,
 		createConversation,
-	} = useConversations();
+	} = useConversations({ onConversationCreated, onConversationDeleted });
 
 	console.log("{ isPending, error, conversations}", {
 		isPending,

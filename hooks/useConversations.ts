@@ -1,9 +1,16 @@
+"use client";
+
 import { IConversation } from "@/lib/database/models/conversation.model";
 import { useUser } from "@clerk/nextjs";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
 
-const useConversations = () => {
+const useConversations = ({
+	onConversationCreated,
+	onConversationDeleted,
+}: {
+	onConversationCreated?: (data: IConversation) => void;
+	onConversationDeleted?: () => void;
+}) => {
 	const { user } = useUser();
 
 	const queryClient = useQueryClient();
@@ -21,30 +28,26 @@ const useConversations = () => {
 
 	const createConversationMutation = useMutation({
 		mutationFn: () =>
-			fetch("/api/conversations/create", {
+			fetch(`/api/conversations/foo`, {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
 				},
-				body: JSON.stringify({
-					userId: user?.id, // Clerk user ID
-				}),
 			})
 				.then((res) => res.json())
 				.catch((error) =>
 					console.error("Error creating new conversation:", error)
 				),
-		onSuccess: () => {
+		onSuccess: (data) => {
 			// Invalidate and refetch
 			queryClient.invalidateQueries({ queryKey: ["conversations"] });
+			onConversationCreated?.(data);
 		},
 	});
 
 	const createConversation = () => {
 		createConversationMutation.mutate();
 	};
-
-	const conversations = data?.conversations as IConversation[];
 
 	const deleteConversationMutation = useMutation({
 		mutationFn: (conversationId: string) =>
@@ -81,12 +84,15 @@ const useConversations = () => {
 		onSettled: () => {
 			// Invalidate and refetch
 			queryClient.invalidateQueries({ queryKey: ["conversations"] });
+			onConversationDeleted?.();
 		},
 	});
 
 	const deleteConversation = (conversationId: string) => {
 		deleteConversationMutation.mutate(conversationId);
 	};
+
+	const conversations = data?.conversations as IConversation[];
 
 	return {
 		isPending,
