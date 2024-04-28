@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { UserButton, useUser } from "@clerk/nextjs";
+import { SignOutButton, UserButton, useUser } from "@clerk/nextjs";
 import Image from "next/image";
 import _ from "lodash";
 
@@ -11,6 +11,7 @@ import {
 	UserIcon,
 	PencilSquareIcon,
 	TrashIcon,
+	ArrowRightStartOnRectangleIcon,
 } from "@heroicons/react/24/outline";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
@@ -31,7 +32,13 @@ const accountNavigation = [
 	{ name: "Profile", href: "/profile", icon: UserIcon },
 ];
 
-export default function Sidebar({ hideLogo = false }: { hideLogo?: boolean }) {
+export default function Sidebar({
+	hideLogo = false,
+	logOutButton = false,
+}: {
+	hideLogo?: boolean;
+	logOutButton?: boolean;
+}) {
 	const { isLoaded, user } = useUser();
 
 	const pathname = usePathname();
@@ -160,7 +167,7 @@ export default function Sidebar({ hideLogo = false }: { hideLogo?: boolean }) {
 						</ul>
 					</li>
 
-					<li className="mt-auto">
+					<li className="mt-auto mb-3">
 						{isLoaded && user && (
 							<ul className="space-y-1">
 								{accountNavigation.map((item) => {
@@ -191,18 +198,41 @@ export default function Sidebar({ hideLogo = false }: { hideLogo?: boolean }) {
 										</li>
 									);
 								})}
-								<li className="-mx-6">
-									<a
-										href="#"
-										className="flex items-center gap-x-4 px-6 py-3 text-sm font-semibold leading-6 text-gray-900 hover:bg-gray-50"
-									>
-										<UserButton afterSignOutUrl="/" />
-										<span className="sr-only">Your profile</span>
-										<span aria-hidden="true">
-											{user.username ?? user.fullName ?? ""}
+								{logOutButton && (
+									<li className="-mx-6">
+										<span className="flex items-center px-6 text-sm font-semibold text-gray-900 hover:bg-gray-50">
+											<SignOutButton>
+												<Link
+													href="/"
+													className={cn(
+														"text-gray-700 hover:text-indigo-600 hover:bg-gray-50",
+														"group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold"
+													)}
+												>
+													<ArrowRightStartOnRectangleIcon
+														className={cn(
+															"text-gray-400 group-hover:text-indigo-600",
+															"h-6 w-6 shrink-0"
+														)}
+														aria-hidden="true"
+													/>
+													Sign out
+												</Link>
+											</SignOutButton>
 										</span>
-									</a>
-								</li>
+									</li>
+								)}
+								{!logOutButton && (
+									<li className="-mx-6">
+										<span className="flex items-center gap-x-4 px-6 py-2 text-sm font-semibold leading-6 text-gray-900 hover:bg-gray-50">
+											<UserButton afterSignOutUrl="/" />
+											<span className="sr-only">Your profile</span>
+											<span aria-hidden="true">
+												{user.username ?? user.fullName ?? ""}
+											</span>
+										</span>
+									</li>
+								)}
 							</ul>
 						)}
 					</li>

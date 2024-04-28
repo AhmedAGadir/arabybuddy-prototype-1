@@ -13,6 +13,7 @@ import {
 	SheetTrigger,
 } from "@/components/ui/sheet";
 import Sidebar from "./Sidebar";
+import Link from "next/link";
 
 export default function MobileNav() {
 	return (
@@ -22,13 +23,15 @@ export default function MobileNav() {
 					<div className="flex h-16 justify-between py-2">
 						<div className="flex">
 							<div className="flex flex-shrink-0 items-center">
-								<Image
-									width={160}
-									height={140}
-									src="/assets/araby-horizontal-with-mouth.svg"
-									alt="ArabyBuddy logo"
-									className="block lg:hidden"
-								/>
+								<Link href="/">
+									<Image
+										width={160}
+										height={140}
+										src="/assets/araby-horizontal-with-mouth.svg"
+										alt="ArabyBuddy logo"
+										className="block lg:hidden"
+									/>
+								</Link>
 							</div>
 						</div>
 						<div className="flex items-center">
@@ -46,7 +49,7 @@ export default function MobileNav() {
 									</div>
 								</SheetTrigger>
 								<SheetContent className="p-0">
-									<Sidebar hideLogo />
+									<Sidebar hideLogo logOutButton />
 								</SheetContent>
 							</Sheet>
 						</div>
