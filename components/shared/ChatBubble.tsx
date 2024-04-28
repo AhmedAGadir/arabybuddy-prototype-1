@@ -13,6 +13,7 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "../ui/button";
+import { EllipsisVerticalIcon } from "@heroicons/react/24/outline";
 
 const ChatBubble = ({
 	name,
@@ -62,17 +63,7 @@ const ChatBubble = ({
 						chatMenuDisabled && "opacity-50 hover:bg-transparent"
 					)}
 				>
-					<svg
-						className={cn(
-							"text-slate-500 dark:text-slate-400 w-4 h-4 md:w-4 md:h-4"
-						)}
-						aria-hidden="true"
-						xmlns="http://www.w3.org/2000/svg"
-						fill="currentColor"
-						viewBox="0 0 4 15"
-					>
-						<path d="M3.5 1.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Zm0 6.041a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Zm0 5.959a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Z" />
-					</svg>
+					<EllipsisVerticalIcon className="text-slate-500 dark:text-slate-400 w-6 h-6" />
 				</Button>
 				{/* <Button
 					size="sm"

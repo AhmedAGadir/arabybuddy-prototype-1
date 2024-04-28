@@ -20,7 +20,6 @@ import { ChatMessage } from "@/types/messageTypes";
 import Microphone from "@/components/shared/Microphone";
 import { useRecording } from "@/hooks/useRecording";
 
-import { StopButton } from "@/components/shared/icons/Stop";
 import ChatBubble from "@/components/shared/ChatBubble";
 import { cn } from "@/lib/utils";
 import { cairo, roboto } from "@/lib/fonts";
@@ -30,7 +29,6 @@ import {
 	BookOpenSolidIcon,
 	MagicWandIcon,
 	PlayIcon,
-	PreferencesIcon,
 	TranslateIcon,
 } from "@/components/shared/icons";
 import { useMediaQuery } from "@react-hooks-hub/use-media-query";

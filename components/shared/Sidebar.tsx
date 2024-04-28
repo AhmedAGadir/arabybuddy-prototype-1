@@ -1,9 +1,7 @@
 "use client";
 
-import { roboto } from "@/lib/fonts";
 import { cn } from "@/lib/utils";
 import { UserButton, useUser } from "@clerk/nextjs";
-import { Disclosure } from "@headlessui/react";
 import Image from "next/image";
 import _ from "lodash";
 
@@ -19,64 +17,9 @@ import Link from "next/link";
 import { Button } from "../ui/button";
 import { useConversations } from "@/hooks/useConversations";
 import SkewLoader from "react-spinners/SkewLoader";
-import { on } from "events";
-import { Icon } from "next/dist/lib/metadata/types/metadata-types";
 import { IConversation } from "@/lib/database/models/conversation.model";
 import { useCallback, useState } from "react";
-import { PencilIcon } from "lucide-react";
 import ConfirmationDialog from "./ConfirmationDialog";
-
-// const navigation = [
-// 	{ name: "Dashboard", href: "#", icon: HomeIcon, count: "5", current: true },
-// 	{ name: "Team", href: "#", icon: UsersIcon, current: false },
-// 	{
-// 		name: "Projects",
-// 		href: "#",
-// 		icon: FolderIcon,
-// 		count: "12",
-// 		current: false,
-// 	},
-// 	{
-// 		name: "Calendar",
-// 		href: "#",
-// 		icon: CalendarIcon,
-// 		count: "20+",
-// 		current: false,
-// 	},
-// 	{ name: "Documents", href: "#", icon: DocumentDuplicateIcon, current: false },
-// 	{ name: "Reports", href: "#", icon: ChartPieIcon, current: false },
-// ];
-
-{
-	/* <li>
-						<ul role="list" className="-mx-2 space-y-1">
-							{navigation.map((item) => (
-								<li key={item.name}>
-									<a
-										href={item.href}
-										className={cn(
-											item.current
-												? "bg-gray-50 text-indigo-600"
-												: "text-gray-700 hover:text-indigo-600 hover:bg-gray-50",
-											"group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold"
-										)}
-									>
-										<item.icon
-											className={cn(
-												item.current
-													? "text-indigo-600"
-													: "text-gray-400 group-hover:text-indigo-600",
-												"h-6 w-6 shrink-0"
-											)}
-											aria-hidden="true"
-										/>
-										{item.name}
-									</a>
-								</li>
-							))}
-						</ul>
-					</li> */
-}
 
 const accountNavigation = [
 	{
@@ -176,11 +119,7 @@ export default function Sidebar() {
 										// color="#5E17EB"
 										color="black"
 										loading
-										cssOverride={
-											{
-												// margin: "0",
-											}
-										}
+										// cssOverride={{ margin: "0"}}
 										size={10}
 										aria-label="Loading Spinner"
 										data-testid="loader"
