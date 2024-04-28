@@ -18,16 +18,16 @@ export default function MobileNav() {
 	return (
 		<div className="min-h-full">
 			<nav className="bg-white shadow-sm">
-				<div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-					<div className="flex h-16 justify-between">
+				<div className="mx-auto max-w-7xl px-4 sm:px-6 md:px-8">
+					<div className="flex h-16 justify-between py-2">
 						<div className="flex">
 							<div className="flex flex-shrink-0 items-center">
 								<Image
-									width={10}
-									height={10}
-									src="/assets/arabybuddy.svg"
+									width={160}
+									height={140}
+									src="/assets/araby-horizontal-with-mouth.svg"
 									alt="ArabyBuddy logo"
-									className="block w-11 h-auto lg:hidden"
+									className="block lg:hidden"
 								/>
 							</div>
 						</div>
@@ -46,7 +46,7 @@ export default function MobileNav() {
 									</div>
 								</SheetTrigger>
 								<SheetContent className="p-0">
-									<Sidebar />
+									<Sidebar hideLogo />
 								</SheetContent>
 							</Sheet>
 						</div>

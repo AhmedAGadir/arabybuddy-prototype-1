@@ -31,7 +31,7 @@ const accountNavigation = [
 	{ name: "Profile", href: "/profile", icon: UserIcon },
 ];
 
-export default function Sidebar() {
+export default function Sidebar({ hideLogo = false }: { hideLogo?: boolean }) {
 	const { isLoaded, user } = useUser();
 
 	const pathname = usePathname();
@@ -87,11 +87,11 @@ export default function Sidebar() {
 				"h-svh h-100dvh flex grow flex-col gap-y-5 overflow-y-auto border-r border-gray-200 bg-white px-6"
 			)}
 		>
-			<div className="flex p-4 shrink-0 items-center">
+			<div className={cn("flex p-4 shrink-0 items-center", hideLogo && "pt-6")}>
 				<Image
 					width={100}
 					height={100}
-					className="mx-auto"
+					className={cn("mx-auto", hideLogo && "hidden")}
 					src="/assets/arabybuddy.svg"
 					alt="ArabyBuddy logo"
 				/>
