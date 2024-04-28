@@ -1,4 +1,7 @@
+import { cn } from "@/lib/utils";
+import React, { useMemo } from "react";
 import { useMediaQuery } from "@react-hooks-hub/use-media-query";
+import { Status } from "@/app/(root)/chat/page";
 
 const blobDValues = [
 	"M64.7,-37.8C78.4,-13.5,80.5,17.1,67.8,39.3C55.1,61.5,27.5,75.2,0.1,75.2C-27.4,75.2,-54.8,61.3,-69.2,38.2C-83.5,15.1,-84.8,-17.3,-71.1,-41.6C-57.4,-65.9,-28.7,-82.1,-1.6,-81.2C25.5,-80.3,50.9,-62.2,64.7,-37.8Z",
@@ -33,7 +36,7 @@ const blobDValues = [
 const circleDValue =
 	"M65,-37.2C78.2,-14.7,78.6,15.5,65.7,38.9C52.7,62.4,26.4,79,-0.8,79.5C-28,80,-56,64.2,-69.7,40.4C-83.3,16.6,-82.6,-15.4,-68.6,-38.4C-54.6,-61.4,-27.3,-75.4,-0.7,-75C25.9,-74.6,51.8,-59.7,65,-37.2Z";
 
-const BlobInner = ({
+const Blob = ({
 	size,
 	duration,
 	values,
@@ -65,62 +68,101 @@ const BlobInner = ({
 	</div>
 );
 
-const BlobSVG = ({
-	size,
-	fill,
-	fillOpacity,
+const Microphone = ({
+	onClick,
+	mode,
+	disabled,
+	amplitude,
 }: {
-	size: number;
-	fill: string;
-	fillOpacity?: number;
+	onClick: () => void;
+	mode: Status;
+	disabled?: boolean;
+	amplitude: number | null;
 }) => {
-	const duration = 10;
+	const { fill, fillOpacity } = useMemo(() => {
+		switch (mode) {
+			case "RECORDING":
+				return {
+					fill: "#FF0066",
+				};
+			case "PLAYING":
+				return {
+					fill: "#5E17EB",
+				};
+			case "IDLE":
+				return {
+					fill: "#38B6FF",
+				};
+			case "PROCESSING":
+				return {
+					fill: "#64748b",
+					fillOpacity: 0.1,
+				};
+			default: {
+				return {
+					fill: "#38B6FF",
+				};
+			}
+		}
+	}, [mode]);
 
 	const { device } = useMediaQuery();
 	const isMobile = device === "mobile";
 
+	const baseSize = isMobile ? 100 : 150;
+
 	const containerSize = isMobile ? 100 : 150;
 
+	const duration = 10;
+
+	const size = amplitude ? baseSize + amplitude * 2 : baseSize;
+
 	return (
-		<div
-			style={{
-				position: "relative",
-				width: containerSize,
-				height: containerSize,
-			}}
+		<button
+			className={cn("m-auto rounded-full", !disabled && "cursor-pointer")}
+			disabled={disabled}
+			onClick={onClick}
 		>
-			<BlobInner
-				size={size}
-				duration={duration}
-				values={blobDValues.join(";")}
-				pathProps={{
-					fill,
-					fillOpacity: fillOpacity ?? 1,
+			<div
+				style={{
+					position: "relative",
+					width: containerSize,
+					height: containerSize,
 				}}
-			/>
+			>
+				<Blob
+					size={size}
+					duration={duration}
+					values={blobDValues.join(";")}
+					pathProps={{
+						fill,
+						fillOpacity: fillOpacity ?? 1,
+					}}
+				/>
 
-			<BlobInner
-				size={size}
-				duration={duration}
-				values={blobDValues.reverse().join(";")}
-				pathProps={{
-					fill,
-					fillOpacity: fillOpacity ?? 0.5,
-				}}
-			/>
+				<Blob
+					size={size}
+					duration={duration}
+					values={blobDValues.reverse().join(";")}
+					pathProps={{
+						fill,
+						fillOpacity: fillOpacity ?? 0.5,
+					}}
+				/>
 
-			<BlobInner
-				size={size}
-				duration={duration}
-				values={blobDValues.reverse().join(";")}
-				pathProps={{
-					fill,
-					fillOpacity: fillOpacity ?? 0.5,
-					filter: "blur(10px)",
-				}}
-			/>
-		</div>
+				<Blob
+					size={size}
+					duration={duration}
+					values={blobDValues.reverse().join(";")}
+					pathProps={{
+						fill,
+						fillOpacity: fillOpacity ?? 0.5,
+						filter: "blur(10px)",
+					}}
+				/>
+			</div>
+		</button>
 	);
 };
 
-export { BlobSVG as BlobSvg };
+export default Microphone;

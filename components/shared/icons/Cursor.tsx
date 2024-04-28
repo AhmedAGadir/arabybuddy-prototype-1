@@ -1,6 +1,6 @@
 import React from "react";
 
-const CursorSVG = () => {
+const Cursor = () => {
 	return (
 		<svg
 			viewBox="8 4 8 16"
@@ -12,4 +12,4 @@ const CursorSVG = () => {
 	);
 };
 
-export default CursorSVG;
+export default Cursor;

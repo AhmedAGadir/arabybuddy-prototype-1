@@ -9,31 +9,32 @@ export interface ITransaction extends Document {
 	buyer?: Types.ObjectId; // Optional because it's not marked as required, and it references another schema
 }
 
-const TransactionSchema = new Schema({
-	createdAt: {
-		type: Date,
-		default: Date.now,
+const TransactionSchema = new Schema(
+	{
+		stripeId: {
+			type: String,
+			required: true,
+			unique: true,
+		},
+		amount: {
+			type: Number,
+			required: true,
+		},
+		plan: {
+			type: String,
+		},
+		credits: {
+			type: Number,
+		},
+		buyer: {
+			type: Schema.Types.ObjectId,
+			ref: "User",
+		},
 	},
-	stripeId: {
-		type: String,
-		required: true,
-		unique: true,
-	},
-	amount: {
-		type: Number,
-		required: true,
-	},
-	plan: {
-		type: String,
-	},
-	credits: {
-		type: Number,
-	},
-	buyer: {
-		type: Schema.Types.ObjectId,
-		ref: "User",
-	},
-});
+	{
+		timestamps: true,
+	}
+);
 
 const Transaction =
 	models?.Transaction || model("Transaction", TransactionSchema);

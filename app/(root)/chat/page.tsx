@@ -17,7 +17,7 @@ import { useAudioPlayer } from "@/hooks/useAudioPlayer";
 import { Transition } from "@headlessui/react";
 
 import { ChatMessage } from "@/types/messageTypes";
-import MicrophoneBlob from "@/components/shared/MicrophoneBlob";
+import Microphone from "@/components/shared/Microphone";
 import { useRecording } from "@/hooks/useRecording";
 
 import { StopButton } from "@/components/shared/icons/Stop";
@@ -59,7 +59,6 @@ import {
 import Image from "next/image";
 import { Progress } from "@/components/ui/progress";
 import PulseLoader from "react-spinners/PulseLoader";
-import ScaleLoader from "react-spinners/ScaleLoader";
 import { useToast } from "@/components/ui/use-toast";
 
 const statusEnum = {
@@ -537,7 +536,7 @@ const ChatPage = () => {
 					{instructionContent}
 				</div>
 				<div className="text-center w-fit m-auto pb-4 md:pb-8">
-					<MicrophoneBlob
+					<Microphone
 						onClick={toggleRecording}
 						mode={STATUS}
 						disabled={
@@ -552,59 +551,3 @@ const ChatPage = () => {
 };
 
 export default ChatPage;
-
-// const taskEmoji = useMemo(() => {
-// 	if (isDoingSpeechToText) return "🎤";
-// 	if (isDoingAssistant) return "🤔";
-// 	if (isDoingTextToSpeech) return "💬";
-// 	return "";
-// }, [isDoingAssistant, isDoingSpeechToText, isDoingTextToSpeech]);
-
-// {/* <p> */}
-// 		{/* Chat {nativeLanguage} - {arabicDialect}
-// 		</p> */}
-// 		{/* <Link href="/">
-// 			<div className="rounded-md p-2 bg-white w-fit ">
-// 				<Image
-// 					src="/assets/arabybuddy.svg"
-// 					alt="logo"
-// 					width={50}
-// 					height={50}
-// 				/>
-// 			</div>
-// 		</Link> */}
-// 		{/* {
-// 			<div className="w-2/3 md:w-1/2 m-auto">
-// 				<BackgroundGradient
-// 					className="rounded-[22px] p-4 bg-white"
-// 					animate={false}
-// 				>
-// 					<div className="flex-1 flex w-full justify-between">
-// 						<div className="space-y-1">
-// 							<p className="text-sm font-medium leading-none">
-// 								{isPlaying
-// 									? "Playing"
-// 									: isRecording
-// 									? "Recording"
-// 									: "Recorded"}
-// 							</p>
-// 							<p className="text-sm">{displayedMessage}</p>
-// 						</div>
-
-// 						{isRecording && (
-// 							<div className="rounded-full w-4 h-4 bg-red-400 animate-pulse" />
-// 						)}
-// 					</div>
-// 				</BackgroundGradient>
-// 			</div>
-// 		} */}
-// 		{/* {result && (
-// 			<div className="w-2/3 md:w-1/2 m-auto my-4">
-// 				<BackgroundGradient
-// 					className="rounded-[22px] p-4 bg-white"
-// 					animate={false}
-// 				>
-// 					{result}
-// 				</BackgroundGradient>
-// 			</div>
-// 		)} */}
