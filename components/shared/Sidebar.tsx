@@ -153,7 +153,11 @@ export default function Sidebar({
 													"group flex justify-between gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold"
 												)}
 											>
-												{label ?? lastMessage ?? "Untitled"}
+												<span className="truncate" style={{ direction: "rtl" }}>
+													{_.truncate(label ?? lastMessage ?? "Untitled", {
+														length: 40,
+													})}
+												</span>
 												{/* TODO: implement editable conversation labels */}
 												<span onClick={(e) => onRemoveConversation(e, _id)}>
 													<TrashIcon
