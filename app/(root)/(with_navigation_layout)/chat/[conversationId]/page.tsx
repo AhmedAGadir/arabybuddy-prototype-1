@@ -149,7 +149,6 @@ const ConversationIdPage = ({
 				setProgressBarValue(25);
 				// update database with user message
 				await createMessage({ role: "user", content: transcription });
-				setTimeStamp(new Date());
 
 				// show loading message
 				setShowLoadingMessage(true);
@@ -164,7 +163,6 @@ const ConversationIdPage = ({
 					messages.map((m) => ({ role: m.role, content: m.content }))
 				);
 				await createMessage(_.last(updatedMessages) as IMessage);
-				setTimeStamp(new Date());
 
 				// 3. convert the assistants response to audio
 				setProgressBarValue(75);
