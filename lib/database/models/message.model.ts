@@ -1,6 +1,7 @@
 import { Schema, model, models } from "mongoose";
 
 export interface IMessage extends Document {
+	_id: string;
 	clerkId: string;
 	conversationId: string;
 	role: "user" | "assistant";
@@ -11,13 +12,13 @@ export interface IMessage extends Document {
 
 const MessageSchema = new Schema(
 	{
+		clerkId: {
+			type: String,
+			required: true,
+		},
 		conversationId: {
 			type: Schema.Types.ObjectId,
 			ref: "Conversation",
-			required: true,
-		},
-		clerkId: {
-			type: String,
 			required: true,
 		},
 		role: {

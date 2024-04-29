@@ -10,7 +10,7 @@ import React, {
 } from "react";
 import DialectContext from "@/context/dialectContext";
 import { useLogger } from "@/hooks/useLogger";
-import _ from "lodash";
+import _, { get } from "lodash";
 import { useAudioService } from "@/hooks/useAudioService";
 import { useChatService } from "@/hooks/useChatService";
 import { useAudioPlayer } from "@/hooks/useAudioPlayer";
@@ -53,6 +53,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { useMessages } from "@/hooks/useMessages";
 import SkewLoader from "react-spinners/SkewLoader";
 import { ToastAction } from "@radix-ui/react-toast";
+import { IMessage } from "@/lib/database/models/message.model";
 
 const statusEnum = {
 	IDLE: "IDLE",
@@ -89,44 +90,33 @@ const ConversationIdPage = ({
 }) => {
 	const logger = useLogger({ label: "ConversationIdPage", color: "#fe7de9" });
 
-	const { isPending, error, messages, createMessage, refetch } = useMessages({
-		conversationId,
-	});
-
-	console.log("{ isPending, error, messages, setMessages }", {
-		isPending,
-		error,
-		messages,
-	});
-
 	const { toast, dismiss } = useToast();
-
-	useEffect(() => {
-		if (error) {
-			toast({
-				title: "Error loading messages",
-				description:
-					"There was a problem loading this conversation's messages.",
-				variant: "destructive",
-				action: (
-					<ToastAction altText="Try again">
-						<Button variant="secondary" onClick={() => refetch()}>
-							Try again
-						</Button>
-					</ToastAction>
-				),
-			});
-		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [error]);
 
 	const { arabicDialect } = useContext(DialectContext);
 
-	const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
-	const [chatHistoryBackup, setChatHistoryBackup] = useState<ChatMessage[]>([]);
+	const {
+		isPending,
+		error,
+		messages,
+		createMessage,
+		deleteAllMessagesAfterTimeStamp,
+		refetch,
+	} = useMessages({
+		conversationId,
+	});
 
 	const [displayedChatMessageInd, setDisplayedChatMessageInd] =
 		useState<number>(0);
+
+	useEffect(() => {
+		setDisplayedChatMessageInd(messages.length - 1);
+	}, [messages]);
+
+	const [timeStamp, setTimeStamp] = useState<Date | null>();
+
+	const isChatEmpty = _.isEmpty(messages);
+
+	const displayedChatMessage = messages[displayedChatMessageInd];
 
 	const [activeTask, setActiveTask] = useState<Task | null>(null);
 	// only to be used in onRecordingComplete since it has a closure over the activeTask state
@@ -137,8 +127,7 @@ const ConversationIdPage = ({
 	const progressBarValueRef = useRef<number>();
 	progressBarValueRef.current = progressBarValue;
 
-	const { addChatMessage, abortAddChatMessageRequest } =
-		useChatService(chatHistory);
+	const { makeChatCompletion, abortMakeChatCompletion } = useChatService();
 	const {
 		speechToText,
 		textToSpeech,
@@ -149,6 +138,8 @@ const ConversationIdPage = ({
 	const { playAudio, isPlaying, initAudioElement, stopPlaying } =
 		useAudioPlayer();
 
+	const [showLoadingMessage, setShowLoadingMessage] = useState(false);
+
 	const onRecordingComplete = useCallback(
 		async (audioBlob: Blob) => {
 			try {
@@ -156,51 +147,38 @@ const ConversationIdPage = ({
 				setActiveTask(taskEnum.SPEECH_TO_TEXT);
 				const { transcription } = await speechToText(audioBlob);
 				setProgressBarValue(25);
-				await setChatHistoryWithTypewriterOnLatestMessage([
-					...chatHistory,
-					{ role: "user", content: transcription },
-				]);
-
+				// update database with user message
 				await createMessage({ role: "user", content: transcription });
 
-				// add the loading message and update the displayed message index
-				// right now were using a hack so that we dont have to remove the loading message
-				// i think its because when we call addChatMessage, there is a closure over the chatHistory
-				// TODO: fix this hack
-				let chatHistoryLength = chatHistory.length;
-				setChatHistory((prevChatHistory) => {
-					const updatedChatHistory: ChatMessage[] = [
-						...prevChatHistory,
-						{ role: "assistant", content: "loading" },
-					];
-					chatHistoryLength = updatedChatHistory.length;
-					return updatedChatHistory;
-				});
-				setDisplayedChatMessageInd(chatHistoryLength - 1);
+				// show loading message
+				setShowLoadingMessage(true);
 
-				// 2. add the user message to the chat
+				// // 2. add user transcription to chat completion
 				setActiveTask(taskEnum.ASSISTANT);
-				const { chatHistory: updatedChatHistory } = await addChatMessage({
-					role: "user",
-					content: transcription,
-				});
+				const { messages: updatedMessages } = await makeChatCompletion(
+					{
+						role: "user",
+						content: transcription,
+					},
+					messages.map((m) => ({ role: m.role, content: m.content }))
+				);
 
 				// 3. convert the assistants response to audio
 				setProgressBarValue(75);
 				setActiveTask(taskEnum.TEXT_TO_SPEECH);
 				const { base64Audio } = await textToSpeech(
-					(_.last(updatedChatHistory) as ChatMessage).content
+					(_.last(updatedMessages) as IMessage).content
 				);
 
-				// 4. play assistants response and update chat history
+				// 4. play assistants response and update message database
 				setProgressBarValue(100);
 				setActiveTask(null);
-				// remove loading message
-				// setChatHistory((prevChatHistory) => prevChatHistory.slice(0, -1));
-				setChatHistoryWithTypewriterOnLatestMessage(updatedChatHistory);
+				await createMessage(_.last(updatedMessages) as IMessage);
+				setShowLoadingMessage(false);
+				// setChatHistoryWithTypewriterOnLatestMessage(updatedChatHistory);
 				await playAudio(base64Audio);
 				setProgressBarValue(0);
-				setChatHistoryBackup([]);
+				setTimeStamp(null);
 			} catch (error) {
 				if ((error as any).name === "AbortError") {
 					toast({
@@ -215,7 +193,6 @@ const ConversationIdPage = ({
 						variant: "destructive",
 					});
 				}
-				setChatHistory(chatHistoryBackup);
 				if (isPlaying) {
 					stopPlaying();
 				}
@@ -223,9 +200,13 @@ const ConversationIdPage = ({
 				setActiveTask(null);
 				setProgressBarValue(0);
 
+				deleteAllMessagesAfterTimeStamp(timeStamp as Date);
+
+				setShowLoadingMessage(false);
+
 				setTimeout(() => {
 					dismiss();
-					setChatHistoryBackup([]);
+					setTimeStamp(null);
 				}, 10000);
 
 				// propagate the error so that the recording can be stopped
@@ -233,16 +214,13 @@ const ConversationIdPage = ({
 			}
 		},
 		[
-			addChatMessage,
-			chatHistory,
-			chatHistoryBackup,
+			makeChatCompletion,
+			createMessage,
 			dismiss,
 			isPlaying,
 			logger,
-			playAudio,
 			speechToText,
 			stopPlaying,
-			textToSpeech,
 			toast,
 		]
 	);
@@ -284,7 +262,7 @@ const ConversationIdPage = ({
 
 		if (!isRecording) {
 			initAudioElement();
-			setChatHistoryBackup(chatHistory.map((message) => ({ ...message })));
+			setTimeStamp(new Date());
 			startRecording();
 			return;
 		}
@@ -300,82 +278,101 @@ const ConversationIdPage = ({
 				abortTextToSpeechRequest();
 				break;
 			case taskEnum.ASSISTANT:
-				abortAddChatMessageRequest();
+				abortMakeChatCompletion();
 				break;
 			default:
 				break;
 		}
 	}, [
 		STATUS,
-		abortAddChatMessageRequest,
+		abortMakeChatCompletion,
 		abortSpeechToTextRequest,
 		abortTextToSpeechRequest,
 		activeTask,
 	]);
 
-	const [completedTyping, setCompletedTyping] = useState(false);
-	const [skipTyping, setSkipTyping] = useState(false);
-	const skipTypingRef = useRef(false);
-	skipTypingRef.current = skipTyping;
+	// const [completedTyping, setCompletedTyping] = useState(false);
+	// const [skipTyping, setSkipTyping] = useState(false);
+	// const skipTypingRef = useRef(false);
+	// skipTypingRef.current = skipTyping;
 
 	const stopPlayingBtnHandler = useCallback(() => {
 		stopPlaying();
-		setSkipTyping(true);
+		// setSkipTyping(true);
 	}, [stopPlaying]);
 
-	const setChatHistoryWithTypewriterOnLatestMessage = async (
-		chatHistory: ChatMessage[]
-	) => {
-		const previousChatHistory = chatHistory.slice(0, -1);
-		const latestChatMessage = _.last(chatHistory) as ChatMessage;
+	// const setChatHistoryWithTypewriterOnLatestMessage = async (
+	// 	chatHistory: ChatMessage[]
+	// ) => {
+	// 	const previousChatHistory = chatHistory.slice(0, -1);
+	// 	const latestChatMessage = _.last(chatHistory) as ChatMessage;
 
-		setCompletedTyping(false);
+	// 	setCompletedTyping(false);
 
-		let i = 0;
+	// 	let i = 0;
 
-		const promise = new Promise<void>((resolve) => {
-			const intervalId = setInterval(() => {
-				if (skipTypingRef.current) {
-					setChatHistory([
-						...previousChatHistory,
-						{
-							...latestChatMessage,
-							content: latestChatMessage.content,
-						},
-					]);
-					setCompletedTyping(true);
-					clearInterval(intervalId);
-					setSkipTyping(false);
-					resolve();
-					return;
-				}
+	// 	const promise = new Promise<void>((resolve) => {
+	// 		const intervalId = setInterval(() => {
+	// 			if (skipTypingRef.current) {
+	// 				setChatHistory([
+	// 					...previousChatHistory,
+	// 					{
+	// 						...latestChatMessage,
+	// 						content: latestChatMessage.content,
+	// 					},
+	// 				]);
+	// 				setCompletedTyping(true);
+	// 				clearInterval(intervalId);
+	// 				setSkipTyping(false);
+	// 				resolve();
+	// 				return;
+	// 			}
 
-				setChatHistory([
-					...previousChatHistory,
-					{
-						...latestChatMessage,
-						content: latestChatMessage.content.slice(0, i),
-					},
-				]);
-				setDisplayedChatMessageInd(chatHistory.length - 1);
+	// 			setChatHistory([
+	// 				...previousChatHistory,
+	// 				{
+	// 					...latestChatMessage,
+	// 					content: latestChatMessage.content.slice(0, i),
+	// 				},
+	// 			]);
+	// 			setDisplayedChatMessageInd(chatHistory.length - 1);
 
-				i++;
+	// 			i++;
 
-				if (i > latestChatMessage.content.length) {
-					clearInterval(intervalId);
-					setCompletedTyping(true);
+	// 			if (i > latestChatMessage.content.length) {
+	// 				clearInterval(intervalId);
+	// 				setCompletedTyping(true);
 
-					setTimeout(() => {
-						// wait a bit before resolving
-						resolve();
-					}, 750);
-				}
-			}, 40);
-		});
+	// 				setTimeout(() => {
+	// 					// wait a bit before resolving
+	// 					resolve();
+	// 				}, 750);
+	// 			}
+	// 		}, 40);
+	// 	});
 
-		return promise;
-		// return () => clearInterval(intervalId);
-	};
+	// 	return promise;
+	// 	// return () => clearInterval(intervalId);
+	// };
+
+	useEffect(() => {
+		if (error) {
+			toast({
+				title: "Error loading messages",
+				description:
+					"There was a problem loading this conversation's messages.",
+				variant: "destructive",
+				action: (
+					<ToastAction altText="Try again">
+						<Button variant="secondary" onClick={() => refetch()}>
+							Try again
+						</Button>
+					</ToastAction>
+				),
+			});
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [error]);
 
 	const chatMenuItems = useMemo(() => {
 		return [
@@ -396,12 +393,9 @@ const ConversationIdPage = ({
 		];
 	}, []);
 
-	const isChatEmpty = _.isEmpty(chatHistory);
-	const displayedChatMessage = chatHistory[displayedChatMessageInd];
-
 	const paginationPrevDisabled = isPlaying || displayedChatMessageInd === 0;
 	const paginationNextDisabled =
-		isPlaying || displayedChatMessageInd === chatHistory.length - 1;
+		isPlaying || displayedChatMessageInd === messages.length - 1;
 
 	const paginationContent = (
 		<Pagination className="mt-3">
@@ -487,7 +481,34 @@ const ConversationIdPage = ({
 			<div className="h-full w-full flex flex-col justify-center items-center">
 				<div className={cn("flex flex-col w-full")}>
 					<div className="w-full md:w-auto max-w-3xl m-auto">
-						{!isChatEmpty && (
+						{showLoadingMessage && (
+							<ChatBubble
+								name="ArabyBuddy"
+								avatarSrc="/assets/arabybuddy.svg"
+								avatarAlt="ArabyBuddy avatar"
+								chatMenuDisabled
+								reverse
+								rtl
+								content={
+									<span className={cn("text-xl leading-loose text-slate-900")}>
+										<PulseLoader
+											// color="#5E17EB"
+											color="black"
+											loading
+											cssOverride={{
+												display: "block",
+												margin: "0",
+												width: 250,
+											}}
+											size={6}
+											aria-label="Loading Spinner"
+											data-testid="loader"
+										/>
+									</span>
+								}
+							/>
+						)}
+						{!isChatEmpty && !showLoadingMessage && (
 							<ChatBubble
 								name={
 									displayedChatMessage?.role === "assistant"
@@ -520,30 +541,13 @@ const ConversationIdPage = ({
 											// 	"bg-gradient-to-r to-araby-purple from-araby-purple"
 										)}
 									>
-										{displayedChatMessage?.role === "assistant" &&
-											displayedChatMessage?.content === "loading" && (
-												<PulseLoader
-													// color="#5E17EB"
-													color="black"
-													loading
-													cssOverride={{
-														display: "block",
-														margin: "0",
-														width: 250,
-													}}
-													size={6}
-													aria-label="Loading Spinner"
-													data-testid="loader"
-												/>
-											)}
-										{displayedChatMessage?.content !== "loading" &&
-											displayedChatMessage?.content}
+										{displayedChatMessage?.content}
 									</span>
 								}
 							/>
 						)}
 					</div>
-					{!isChatEmpty && paginationContent}
+					{!isChatEmpty && !showLoadingMessage && paginationContent}
 				</div>
 			</div>
 			<div className="relative w-fit">

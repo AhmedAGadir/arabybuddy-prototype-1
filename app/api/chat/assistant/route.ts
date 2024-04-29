@@ -1,4 +1,4 @@
-import { ChatMessage } from "@/types/messageTypes";
+import { IMessage } from "@/lib/database/models/message.model";
 import OpenAI from "openai";
 import { TextContentBlock } from "openai/resources/beta/threads/messages/messages.mjs";
 
@@ -12,16 +12,16 @@ const openai = new OpenAI({
 
 export async function POST(req: Request, res: Response) {
 	try {
-		const { chatHistory, latestChatMessage } = await req.json();
+		const { messages, latestChatMessage } = await req.json();
 
-		const { updatedChatHistory } = await openAIAddChatMessageAndAwaitResponse(
-			chatHistory,
+		const { updatedMessages } = await openAIAddChatMessageAndAwaitResponse(
+			messages,
 			latestChatMessage
 		);
 
 		return Response.json(
 			{
-				chatHistory: updatedChatHistory,
+				messages: updatedMessages,
 			},
 			{ status: 200 }
 		);
@@ -32,8 +32,8 @@ export async function POST(req: Request, res: Response) {
 }
 
 const openAIAddChatMessageAndAwaitResponse = async (
-	chatHistory: ChatMessage[],
-	latestChatMessage: ChatMessage
+	messages: Pick<IMessage, "role" | "content">[],
+	latestChatMessage: Pick<IMessage, "role" | "content">
 ) => {
 	// create the assistant
 	console.log("Creating assistant");
@@ -44,10 +44,10 @@ const openAIAddChatMessageAndAwaitResponse = async (
 		model: "gpt-4-turbo-preview",
 	});
 
-	console.log("Adding chat history to thread", chatHistory);
+	console.log("Adding message history to thread", messages);
 	// create the thread and pass all previous messages
 	const thread = await openai.beta.threads.create({
-		messages: chatHistory,
+		messages,
 	});
 
 	console.log("adding latest chat message to thread", latestChatMessage);
@@ -63,20 +63,20 @@ const openAIAddChatMessageAndAwaitResponse = async (
 	});
 
 	console.log("run.status", run.status);
-	let updatedChatHistory = [];
+	let updatedMessages = [];
 
 	if (run.status === "completed") {
 		const messagesPage: OpenAI.Beta.Threads.Messages.MessagesPage =
 			await openai.beta.threads.messages.list(run.thread_id);
 
-		updatedChatHistory = messagesPage.data.reverse().map((message) => ({
+		updatedMessages = messagesPage.data.reverse().map((message) => ({
 			role: message.role,
 			content: (message.content[0] as TextContentBlock).text.value,
 		}));
-		console.log("updatedChatHistory", updatedChatHistory);
+		console.log("updatedMessages", updatedMessages);
 	} else {
 		throw new Error("Thread run either failed or is not completed");
 	}
 
-	return { updatedChatHistory };
+	return { updatedMessages };
 };

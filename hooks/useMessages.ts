@@ -3,9 +3,11 @@
 import { IMessage } from "@/lib/database/models/message.model";
 import { useUser } from "@clerk/nextjs";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useLogger } from "./useLogger";
 
 const useMessages = ({ conversationId }: { conversationId: string }) => {
+	const logger = useLogger({ label: "useMessages", color: "#a5ff90" });
+
 	const { user } = useUser();
 
 	const queryClient = useQueryClient();
@@ -19,6 +21,7 @@ const useMessages = ({ conversationId }: { conversationId: string }) => {
 		queryKey: ["messages", user?.id, conversationId],
 		refetchOnWindowFocus: true,
 		queryFn: async () => {
+			logger.log("fetching messages for conversationId", conversationId);
 			const response = await fetch(
 				`/api/conversations/${conversationId}/messages`
 			);
@@ -32,9 +35,9 @@ const useMessages = ({ conversationId }: { conversationId: string }) => {
 			content,
 			role,
 		}: Pick<IMessage, "role" | "content">) => {
-			debugger;
+			logger.log("creating message for conversationId", conversationId);
 			const response = await fetch(
-				`/api/conversations/${conversationId}/messages/foo`,
+				`/api/conversations/${conversationId}/messages`,
 				{
 					method: "POST",
 					headers: {
@@ -55,10 +58,10 @@ const useMessages = ({ conversationId }: { conversationId: string }) => {
 		// 	await queryClient.cancelQueries({ queryKey: ["messages"] });
 
 		// 	// Snapshot the previous value
-		// 	const previousMessages = queryClient.getQueryData(["messages"]);
+		// 	const previousMessages = queryClient.getQueryData(["messages"]) ?? [];
 
 		// 	// Optimistically update to the new value
-		// 	queryClient.setQueryData(["messages"], (old: IMessage[]) => [
+		// 	queryClient.setQueryData(["messages"], (old: IMessage[] = []) => [
 		// 		...old,
 		// 		{ content, role },
 		// 	]);
@@ -73,6 +76,7 @@ const useMessages = ({ conversationId }: { conversationId: string }) => {
 		// },
 		// Always refetch after error or success:
 		onSettled: () => {
+			logger.log("message created, invalidating cache now");
 			queryClient.invalidateQueries({ queryKey: ["messages"] });
 		},
 	});
@@ -84,7 +88,42 @@ const useMessages = ({ conversationId }: { conversationId: string }) => {
 		await createMessageMutation.mutateAsync({ content, role });
 	};
 
-	return { isPending, error, messages, refetch, createMessage };
+	const deleteAllMessagesAfterTimeStampMutation = useMutation({
+		mutationFn: async (timestamp: Date) => {
+			logger.log("deleting all messages after timestamp", timestamp);
+			const response = await fetch(
+				`/api/conversations/${conversationId}/messages`,
+				{
+					method: "DELETE",
+					headers: {
+						"Content-Type": "application/json",
+					},
+					body: JSON.stringify({ timestamp: timestamp.toISOString() }),
+				}
+			);
+			if (!response.ok) {
+				throw new Error("Network response was not ok");
+			}
+			return response.json();
+		},
+		onSettled: () => {
+			logger.log("messages deleted, invalidating cache now");
+			queryClient.invalidateQueries({ queryKey: ["messages"] });
+		},
+	});
+
+	const deleteAllMessagesAfterTimeStamp = async (timestamp: Date) => {
+		await deleteAllMessagesAfterTimeStampMutation.mutateAsync(timestamp);
+	};
+
+	return {
+		isPending,
+		error,
+		messages: (messages ?? []) as IMessage[],
+		refetch,
+		createMessage,
+		deleteAllMessagesAfterTimeStamp,
+	};
 };
 
 export { useMessages };

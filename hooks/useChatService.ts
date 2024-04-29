@@ -1,38 +1,41 @@
 import { useCallback } from "react";
 import { useLogger } from "./useLogger";
 import { useServerlessRequest } from "./useServerlessRequest";
-import { ChatMessage } from "@/types/messageTypes";
+import { IMessage } from "@/lib/database/models/message.model";
 
-const useChatService = (chatHistory: ChatMessage[]) => {
+const useChatService = () => {
 	const logger = useLogger({ label: "ChatService", color: "#fe7de9" });
 
-	const { makeServerlessRequest, abortRequest: abortAddChatMessageRequest } =
+	const { makeServerlessRequest, abortRequest: abortMakeChatCompletion } =
 		useServerlessRequest();
 
-	const addChatMessage = useCallback(
-		async (latestChatMessage: ChatMessage) => {
+	const makeChatCompletion = useCallback(
+		async (
+			latestChatMessage: Pick<IMessage, "role" | "content">,
+			messages: Pick<IMessage, "role" | "content">[]
+		) => {
 			try {
 				logger.log("making request to: /api/chat/assistant...");
-				const { chatHistory: updatedChatHistory } = await makeServerlessRequest(
+				const { messages: updatedMessages } = await makeServerlessRequest(
 					"/api/chat/assistant",
 					{
-						chatHistory,
+						messages,
 						latestChatMessage,
 					}
 				);
 
-				logger.log("updatedChatHistory", JSON.stringify(updatedChatHistory));
+				logger.log("updatedMessages", JSON.stringify(updatedMessages));
 
-				return { chatHistory: updatedChatHistory };
+				return { messages: updatedMessages };
 			} catch (error) {
 				logger.error("Failed to add chat message", error);
 				throw error;
 			}
 		},
-		[chatHistory, logger, makeServerlessRequest]
+		[logger, makeServerlessRequest]
 	);
 
-	return { addChatMessage, abortAddChatMessageRequest };
+	return { makeChatCompletion, abortMakeChatCompletion };
 };
 
 export { useChatService };

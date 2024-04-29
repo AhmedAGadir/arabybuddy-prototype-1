@@ -27,7 +27,7 @@ const useConversations = ({
 
 	const createConversationMutation = useMutation({
 		mutationFn: async () => {
-			const response = await fetch(`/api/conversations/foo`, {
+			const response = await fetch(`/api/conversations`, {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
