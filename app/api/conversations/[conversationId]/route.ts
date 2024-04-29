@@ -1,11 +1,16 @@
 import Conversation from "@/lib/database/models/conversation.model";
+import { connectToDatabase } from "@/lib/database/mongoose";
 import { auth } from "@clerk/nextjs/server";
 
 export async function POST(req: Request) {
 	try {
 		const { userId } = auth();
 
-		// const { conversationId } = params;
+		if (!userId) {
+			throw new Error("User not authenticated");
+		}
+
+		await connectToDatabase();
 
 		console.log("creating new conversation - userId", userId);
 
@@ -28,6 +33,12 @@ export async function DELETE(
 ) {
 	try {
 		const { userId } = auth();
+
+		if (!userId) {
+			throw new Error("User not authenticated");
+		}
+
+		await connectToDatabase();
 
 		const { conversationId } = params;
 

@@ -18,26 +18,30 @@ const useConversations = ({
 	const { isPending, error, data } = useQuery({
 		queryKey: ["conversations", user?.id],
 		refetchOnWindowFocus: true,
-		queryFn: () =>
-			fetch("/api/conversations")
-				.then((res) => res.json())
-				.catch((error) =>
-					console.error("Error fetching user conversations:", error)
-				),
+		queryFn: async () => {
+			const response = await fetch("/api/conversations");
+			const data = await response.json();
+			return data;
+		},
 	});
 
 	const createConversationMutation = useMutation({
-		mutationFn: () =>
-			fetch(`/api/conversations/foo`, {
+		mutationFn: async () => {
+			const response = await fetch(`/api/conversations/foo`, {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
 				},
-			})
-				.then((res) => res.json())
-				.catch((error) =>
-					console.error("Error creating new conversation:", error)
-				),
+			});
+			if (!response.ok) {
+				throw new Error("Network response was not ok");
+			}
+			return response.json();
+		},
+		onError: (err) => {
+			console.error("Error creating conversation:", err);
+			throw err;
+		},
 		onSuccess: (data) => {
 			// Invalidate and refetch
 			queryClient.invalidateQueries({ queryKey: ["conversations"] });
@@ -46,17 +50,20 @@ const useConversations = ({
 		// TODO: cancel outgoing fetches when creating a conversation
 	});
 
-	const createConversation = () => {
-		createConversationMutation.mutate();
+	const createConversation = async () => {
+		await createConversationMutation.mutateAsync();
 	};
 
 	const deleteConversationMutation = useMutation({
-		mutationFn: (conversationId: string) =>
-			fetch(`/api/conversations/${conversationId}`, {
+		mutationFn: async (conversationId: string) => {
+			const response = await fetch(`/api/conversations/${conversationId}`, {
 				method: "DELETE",
-			})
-				.then((res) => res.json())
-				.catch((error) => console.error("Error deleting conversation:", error)),
+			});
+			if (!response.ok) {
+				throw new Error("Network response was not ok");
+			}
+			return response.json();
+		},
 		onMutate: async (conversationId: string) => {
 			// Cancel any outgoing refetches
 			await queryClient.cancelQueries({ queryKey: ["conversations"] });
@@ -89,8 +96,8 @@ const useConversations = ({
 		},
 	});
 
-	const deleteConversation = (conversationId: string) => {
-		deleteConversationMutation.mutate(conversationId);
+	const deleteConversation = async (conversationId: string) => {
+		await deleteConversationMutation.mutateAsync(conversationId);
 	};
 
 	const conversations = data?.conversations as IConversation[];

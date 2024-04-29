@@ -13,6 +13,7 @@ const ChatPage = () => {
 
 	const router = useRouter();
 
+	// TODO: remove this as a callback and just use await createConversation
 	const onConversationCreated = useCallback(
 		(data: IConversation) => {
 			router.push(`/chat/${data._id}`);

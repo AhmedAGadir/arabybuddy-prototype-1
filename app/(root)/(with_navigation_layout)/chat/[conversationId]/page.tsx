@@ -46,18 +46,13 @@ import {
 } from "@/components/ui/pagination";
 import { Button } from "@/components/ui/button";
 
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuLabel,
-	DropdownMenuSeparator,
-	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import Image from "next/image";
 import { Progress } from "@/components/ui/progress";
 import PulseLoader from "react-spinners/PulseLoader";
 import { useToast } from "@/components/ui/use-toast";
+import { useMessages } from "@/hooks/useMessages";
+import SkewLoader from "react-spinners/SkewLoader";
+import { ToastAction } from "@radix-ui/react-toast";
 
 const statusEnum = {
 	IDLE: "IDLE",
@@ -87,12 +82,45 @@ const taskEnum = {
 export type Task = (typeof taskEnum)[keyof typeof taskEnum];
 
 // try to keep business logic out of this page as its a presentation/view component
-const ConversationIdPage = () => {
+const ConversationIdPage = ({
+	params: { conversationId },
+}: {
+	params: { conversationId: string };
+}) => {
 	const logger = useLogger({ label: "ConversationIdPage", color: "#fe7de9" });
 
-	const { arabicDialect } = useContext(DialectContext);
+	const { isPending, error, messages, createMessage, refetch } = useMessages({
+		conversationId,
+	});
+
+	console.log("{ isPending, error, messages, setMessages }", {
+		isPending,
+		error,
+		messages,
+	});
 
 	const { toast, dismiss } = useToast();
+
+	useEffect(() => {
+		if (error) {
+			toast({
+				title: "Error loading messages",
+				description:
+					"There was a problem loading this conversation's messages.",
+				variant: "destructive",
+				action: (
+					<ToastAction altText="Try again">
+						<Button variant="secondary" onClick={() => refetch()}>
+							Try again
+						</Button>
+					</ToastAction>
+				),
+			});
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [error]);
+
+	const { arabicDialect } = useContext(DialectContext);
 
 	const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
 	const [chatHistoryBackup, setChatHistoryBackup] = useState<ChatMessage[]>([]);
@@ -132,6 +160,8 @@ const ConversationIdPage = () => {
 					...chatHistory,
 					{ role: "user", content: transcription },
 				]);
+
+				await createMessage({ role: "user", content: transcription });
 
 				// add the loading message and update the displayed message index
 				// right now were using a hack so that we dont have to remove the loading message
@@ -406,6 +436,7 @@ const ConversationIdPage = () => {
 		<Transition
 			className={cn(
 				"text-center",
+				cairo.className,
 				// "font-extrabold text-2xl md:text-3xl tracking-tight",
 				"text-xl tracking-tight",
 				"text-transparent bg-clip-text bg-gradient-to-r to-araby-purple from-araby-blue py-8 text-gray-600"
@@ -434,11 +465,22 @@ const ConversationIdPage = () => {
 	const { device } = useMediaQuery();
 	const isMobile = device === "mobile";
 
+	if (isPending) {
+		return <></>;
+	}
+
+	if (error) {
+		return (
+			<div className="flex-1 flex items-center justify-center h-screen">
+				<span>Error loading messages</span>
+			</div>
+		);
+	}
+
 	return (
 		<div
 			className={cn(
-				"w-full flex flex-col items-center justify-between max-w-3xl mx-auto px-4",
-				roboto.className
+				"w-full flex flex-col items-center justify-between max-w-3xl mx-auto px-4"
 			)}
 		>
 			<div className="w-screen absolute top-0 left-0">{progressBarContent}</div>
