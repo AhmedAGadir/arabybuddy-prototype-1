@@ -2,6 +2,14 @@ import { Webhook } from "svix";
 import { headers } from "next/headers";
 import { WebhookEvent, clerkClient } from "@clerk/nextjs/server";
 import { createUser, deleteUser, updateUser } from "@/lib/actions/user.actions";
+import {
+	DEFAULT_USER_PREFERENCES,
+	IPreferences,
+} from "@/lib/database/models/preferences.model";
+import {
+	createPreferences,
+	deletePreferences,
+} from "@/lib/actions/preferences.actions";
 
 export async function POST(req: Request) {
 	// You can find this in the Clerk Dashboard -> Webhooks -> choose the webhook
@@ -69,6 +77,13 @@ export async function POST(req: Request) {
 
 		const newUser = await createUser(user);
 
+		const userPreferences: IPreferences = {
+			clerkId: id,
+			...DEFAULT_USER_PREFERENCES,
+		};
+
+		const newPreferences = await createPreferences(userPreferences);
+
 		// Set public metadata
 		if (newUser) {
 			await clerkClient.users.updateUserMetadata(id, {
@@ -78,7 +93,11 @@ export async function POST(req: Request) {
 			});
 		}
 
-		return Response.json({ message: "OK", user: newUser });
+		return Response.json({
+			message: "OK",
+			user: newUser,
+			preferences: newPreferences,
+		});
 	}
 
 	// UPDATE
@@ -103,7 +122,13 @@ export async function POST(req: Request) {
 
 		const deletedUser = await deleteUser(id!);
 
-		return Response.json({ message: "OK", user: deletedUser });
+		const deletedPreferences = await deletePreferences(id!);
+
+		return Response.json({
+			message: "OK",
+			user: deletedUser,
+			preferences: deletedPreferences,
+		});
 	}
 
 	console.log(`Webhook with and ID of ${id} and type of ${eventType}`);

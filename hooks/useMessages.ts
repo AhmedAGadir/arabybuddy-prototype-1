@@ -85,7 +85,7 @@ const useMessages = ({ conversationId }: { conversationId: string }) => {
 		content,
 		role,
 	}: Pick<IMessage, "role" | "content">) => {
-		await createMessageMutation.mutateAsync({ content, role });
+		return await createMessageMutation.mutateAsync({ content, role });
 	};
 
 	const deleteAllMessagesAfterTimeStampMutation = useMutation({
@@ -113,7 +113,7 @@ const useMessages = ({ conversationId }: { conversationId: string }) => {
 	});
 
 	const deleteAllMessagesAfterTimeStamp = async (timestamp: Date) => {
-		await deleteAllMessagesAfterTimeStampMutation.mutateAsync(timestamp);
+		return await deleteAllMessagesAfterTimeStampMutation.mutateAsync(timestamp);
 	};
 
 	return {

@@ -10,13 +10,12 @@ import React, {
 } from "react";
 import DialectContext from "@/context/dialectContext";
 import { useLogger } from "@/hooks/useLogger";
-import _, { get } from "lodash";
+import _ from "lodash";
 import { useAudioService } from "@/hooks/useAudioService";
 import { useChatService } from "@/hooks/useChatService";
 import { useAudioPlayer } from "@/hooks/useAudioPlayer";
 import { Transition } from "@headlessui/react";
 
-import { ChatMessage } from "@/types/messageTypes";
 import Microphone from "@/components/shared/Microphone";
 import { useRecording } from "@/hooks/useRecording";
 
@@ -203,7 +202,7 @@ const ConversationIdPage = ({
 				setActiveTask(null);
 				setProgressBarValue(0);
 
-				deleteAllMessagesAfterTimeStamp(timeStamp as Date);
+				await deleteAllMessagesAfterTimeStamp(timeStamp as Date);
 
 				setShowLoadingMessage(false);
 

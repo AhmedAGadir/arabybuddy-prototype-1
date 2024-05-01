@@ -5,10 +5,10 @@ export interface IUser extends Document {
 	email: string;
 	username: string;
 	photo: string;
-	firstName?: string; // Optional because it's not marked as required
-	lastName?: string; // Optional because it's not marked as required
-	planId: number; // Defaults are handled at the schema/model level, not in TypeScript
-	creditBalance: number; // Defaults are handled at the schema/model level, not in TypeScript
+	firstName?: string;
+	lastName?: string;
+	planId: number;
+	creditBalance: number;
 }
 
 const UserSchema = new Schema(

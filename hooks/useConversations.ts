@@ -4,11 +4,7 @@ import { IConversation } from "@/lib/database/models/conversation.model";
 import { useUser } from "@clerk/nextjs";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-const useConversations = ({
-	onConversationDeleted,
-}: {
-	onConversationDeleted?: () => void;
-} = {}) => {
+const useConversations = () => {
 	const { user } = useUser();
 
 	const queryClient = useQueryClient();
@@ -89,12 +85,11 @@ const useConversations = ({
 		onSettled: () => {
 			// Invalidate and refetch
 			queryClient.invalidateQueries({ queryKey: ["conversations"] });
-			onConversationDeleted?.();
 		},
 	});
 
 	const deleteConversation = async (conversationId: string) => {
-		await deleteConversationMutation.mutateAsync(conversationId);
+		return await deleteConversationMutation.mutateAsync(conversationId);
 	};
 
 	const conversations = data?.conversations as IConversation[];
