@@ -5,6 +5,9 @@ import path from "path";
  * @type {import('next').NextConfig}
  */
 const nextConfig = {
+	images: {
+		domains: ["img.clerk.com"],
+	},
 	webpack: (config, { buildId, dev, isServer, defaultLoaders, webpack }) => {
 		// Fixes npm packages that depend on 'fs' module, but only when not on the server
 		if (!isServer) {

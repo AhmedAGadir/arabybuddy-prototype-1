@@ -5,12 +5,10 @@ import { useUser } from "@clerk/nextjs";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 const useConversations = ({
-	onConversationCreated,
 	onConversationDeleted,
 }: {
-	onConversationCreated?: (data: IConversation) => void;
 	onConversationDeleted?: () => void;
-}) => {
+} = {}) => {
 	const { user } = useUser();
 
 	const queryClient = useQueryClient();
@@ -45,13 +43,12 @@ const useConversations = ({
 		onSuccess: (data) => {
 			// Invalidate and refetch
 			queryClient.invalidateQueries({ queryKey: ["conversations"] });
-			onConversationCreated?.(data);
 		},
 		// TODO: cancel outgoing fetches when creating a conversation
 	});
 
 	const createConversation = async () => {
-		await createConversationMutation.mutateAsync();
+		return await createConversationMutation.mutateAsync();
 	};
 
 	const deleteConversationMutation = useMutation({

@@ -27,6 +27,7 @@ const ChatBubble = ({
 	rtl = true,
 	reverse = false,
 	glow = false,
+	className,
 }: {
 	name?: string;
 	avatarSrc: string;
@@ -46,6 +47,7 @@ const ChatBubble = ({
 	rtl?: boolean;
 	reverse?: boolean;
 	glow?: boolean;
+	className?: string;
 }) => {
 	const { device } = useMediaQuery();
 	const isMobile = device === "mobile";
@@ -129,10 +131,10 @@ const ChatBubble = ({
 	return (
 		<div
 			className={cn(
-				"flex-1",
-				"flex align-center gap-3 md:gap-5",
+				"flex-1 flex align-center gap-3 md:gap-5",
 				reverse && "flex-row-reverse",
-				isMobile && "width-full flex-1"
+				isMobile && "width-full flex-1",
+				className
 				// glow &&
 				// 	"bg-[radial-gradient(circle_farthest-side_at_0_100%,#38B6FF,transparent),radial-gradient(circle_farthest-side_at_100%_0,#5E17EB,transparent),radial-gradient(circle_farthest-side_at_100%_100%,#ffc414,transparent),radial-gradient(circle_farthest-side_at_0_0,#1ca0fb,#141316)]"
 			)}
@@ -141,7 +143,7 @@ const ChatBubble = ({
 		>
 			<div
 				className={cn(
-					"pl-8 relative flex items-start gap-2.5 w-full border border-gray-500",
+					"relative flex items-start gap-2.5 w-full border border-gray-500",
 					// "rounded-[22px]",
 					// "bg-slate-100 bg-opacity-85", // use this when using the background gradient component
 					reverse && "flex-row-reverse"
@@ -149,14 +151,14 @@ const ChatBubble = ({
 			>
 				<div
 					className={cn(
-						"flex flex-col leading-1.5 p-4 rounded-xl "
+						"h-full flex flex-col leading-1.5 p-4 rounded-xl "
 						// 'border-gray-200 bg-slate-400  dark:bg-slate-700 rounded-e-xl rounded-es-xl'
 					)}
 				>
 					{topBarContent}
 					<p
 						className={cn(
-							"text-xl md:text-3xl lg:text-3xl font-normal py-2.5 text-slate-900 dark:text-white"
+							"overflow-y-scroll text-xl md:text-3xl lg:text-3xl font-normal py-2.5 text-slate-900 dark:text-white min-w-[130px]"
 						)}
 						style={{ direction: rtl ? "rtl" : "ltr" }}
 					>

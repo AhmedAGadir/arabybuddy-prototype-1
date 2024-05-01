@@ -45,17 +45,9 @@ export default function Sidebar({
 
 	const router = useRouter();
 
-	// TODO: remove this as a callback and just use await createConversation
-	const onConversationCreated = useCallback(
-		(data: IConversation) => {
-			router.push(`/chat/${data._id}`);
-		},
-		[router]
-	);
-
-	// TODO: remove this as a callback and just use await deleteConversation
-	const onConversationDeleted = useCallback(() => {
-		router.push("/chat");
+	const newChatHandler = useCallback(async () => {
+		const data = await createConversation();
+		router.push(`/chat/${data._id}`);
 	}, [router]);
 
 	const {
@@ -64,13 +56,7 @@ export default function Sidebar({
 		conversations,
 		deleteConversation,
 		createConversation,
-	} = useConversations({ onConversationCreated, onConversationDeleted });
-
-	console.log("{ isPending, error, conversations}", {
-		isPending,
-		error,
-		conversations,
-	});
+	} = useConversations();
 
 	const [conversationIdToDelete, setConversationIdToDelete] =
 		useState<string>();
@@ -85,9 +71,10 @@ export default function Sidebar({
 		setConfirmationDialogOpen(true);
 	};
 
-	const onRemoveConversationConfirmed = () => {
-		deleteConversation(conversationIdToDelete as string);
+	const onDeleteConversationConfirmed = async () => {
+		await deleteConversation(conversationIdToDelete as string);
 		setConversationIdToDelete(undefined);
+		router.push("/chat");
 	};
 
 	return (
@@ -108,10 +95,7 @@ export default function Sidebar({
 				</Link>
 			</div>
 			<nav className="flex-1 min-h-0  flex flex-col">
-				<Button
-					className="flex justify-between group"
-					onClick={createConversation}
-				>
+				<Button className="flex justify-between group" onClick={newChatHandler}>
 					<span>New Chat</span>
 					<PencilSquareIcon
 						className={cn(
@@ -249,7 +233,7 @@ export default function Sidebar({
 				description="This action cannot be undone. This will permanently delete this conversation and all its messages from our servers."
 				open={confirmationDialogOpen}
 				onOpenChange={setConfirmationDialogOpen}
-				onConfirm={onRemoveConversationConfirmed}
+				onConfirm={onDeleteConversationConfirmed}
 			/>
 		</aside>
 	);

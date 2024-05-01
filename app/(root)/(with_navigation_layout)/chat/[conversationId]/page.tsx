@@ -54,6 +54,7 @@ import { useMessages } from "@/hooks/useMessages";
 import SkewLoader from "react-spinners/SkewLoader";
 import { ToastAction } from "@radix-ui/react-toast";
 import { IMessage } from "@/lib/database/models/message.model";
+import { useUser } from "@clerk/nextjs";
 
 const statusEnum = {
 	IDLE: "IDLE",
@@ -93,6 +94,8 @@ const ConversationIdPage = ({
 	const { toast, dismiss } = useToast();
 
 	const { arabicDialect } = useContext(DialectContext);
+
+	const { user } = useUser();
 
 	const {
 		isPending,
@@ -433,7 +436,7 @@ const ConversationIdPage = ({
 				cairo.className,
 				// "font-extrabold text-2xl md:text-3xl tracking-tight",
 				"text-xl tracking-tight",
-				"text-transparent bg-clip-text bg-gradient-to-r to-araby-purple from-araby-blue py-8 text-gray-600"
+				"text-transparent bg-clip-text bg-gradient-to-r to-araby-purple from-araby-blue py-4 text-gray-600"
 			)}
 			show={showInstruction}
 			enter="transition-all ease-in-out duration-500 delay-200"
@@ -478,11 +481,13 @@ const ConversationIdPage = ({
 			)}
 		>
 			<div className="w-screen absolute top-0 left-0">{progressBarContent}</div>
-			<div className="h-full w-full flex flex-col justify-center items-center">
-				<div className={cn("flex flex-col w-full")}>
-					<div className="w-full md:w-auto max-w-3xl m-auto">
+			<div className="flex-1 min-h-0 basis-0 overflow-y-hidden flex flex-col justify-center items-center">
+				{/* chat bubble and pagination wrapper */}
+				<div className="flex flex-col justify-center items-center w-full h-full">
+					<div className="min-h-0 w-full md:w-auto max-w-3xl mx-auto mt-8">
 						{showLoadingMessage && (
 							<ChatBubble
+								className="h-full"
 								name="ArabyBuddy"
 								avatarSrc="/assets/arabybuddy.svg"
 								avatarAlt="ArabyBuddy avatar"
@@ -510,6 +515,7 @@ const ConversationIdPage = ({
 						)}
 						{!isChatEmpty && !showLoadingMessage && (
 							<ChatBubble
+								className="h-full"
 								name={
 									displayedChatMessage?.role === "assistant"
 										? "ArabyBuddy"
@@ -518,7 +524,7 @@ const ConversationIdPage = ({
 								avatarSrc={
 									displayedChatMessage?.role === "assistant"
 										? "/assets/arabybuddy.svg"
-										: "/assets/user.svg"
+										: user?.imageUrl ?? "/assets/user.svg"
 								}
 								avatarAlt={
 									displayedChatMessage?.role === "assistant"
@@ -535,7 +541,7 @@ const ConversationIdPage = ({
 										className={cn(
 											// "font-bold",
 											// "text-xl md:text-3xl text-transparent bg-clip-text leading-loose text-slate-900",
-											"text-xl leading-loose text-slate-900",
+											"text-xl leading-loose text-slate-900 overflow-y-scroll",
 											cairo.className
 											// isPlaying &&
 											// 	"bg-gradient-to-r to-araby-purple from-araby-purple"
@@ -550,12 +556,8 @@ const ConversationIdPage = ({
 					{!isChatEmpty && !showLoadingMessage && paginationContent}
 				</div>
 			</div>
-			<div className="relative w-fit">
-				<div
-					className={cn(
-						"absolute -top-[70px] left-1/2 -translate-x-1/2 w-screen text-center px-4"
-					)}
-				>
+			<div className="w-fit ">
+				<div className={cn("w-max")}>
 					{STATUS === statusEnum.PROCESSING && (
 						<Button
 							onClick={abortProcessingBtnHandler}
@@ -579,7 +581,7 @@ const ConversationIdPage = ({
 					)}
 					{instructionContent}
 				</div>
-				<div className="text-center w-fit m-auto pb-4 md:pb-8">
+				<div className="text-center w-fit m-auto pb-4">
 					<Microphone
 						onClick={toggleRecording}
 						mode={STATUS}
