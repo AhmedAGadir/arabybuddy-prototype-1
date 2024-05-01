@@ -27,7 +27,7 @@ export default function MobileNav() {
 									<Image
 										width={160}
 										height={140}
-										src="/assets/araby-horizontal-with-mouth.svg"
+										src="/assets/araby-text-logo.svg"
 										alt="ArabyBuddy logo"
 										className="block lg:hidden"
 									/>

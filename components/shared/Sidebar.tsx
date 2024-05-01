@@ -18,7 +18,6 @@ import Link from "next/link";
 import { Button } from "../ui/button";
 import { useConversations } from "@/hooks/useConversations";
 import SkewLoader from "react-spinners/SkewLoader";
-import { IConversation } from "@/lib/database/models/conversation.model";
 import { useCallback, useState } from "react";
 import ConfirmationDialog from "./ConfirmationDialog";
 
@@ -62,7 +61,7 @@ export default function Sidebar({
 		useState<string>();
 	const [confirmationDialogOpen, setConfirmationDialogOpen] = useState(false);
 
-	const onRemoveConversation = (
+	const openDeleteConversationDialog = (
 		e: React.MouseEvent<HTMLSpanElement, MouseEvent>,
 		id: string
 	) => {
@@ -143,7 +142,9 @@ export default function Sidebar({
 													})}
 												</span>
 												{/* TODO: implement editable conversation labels */}
-												<span onClick={(e) => onRemoveConversation(e, _id)}>
+												<span
+													onClick={(e) => openDeleteConversationDialog(e, _id)}
+												>
 													<TrashIcon
 														className={cn(
 															"hidden text-gray-400 group-hover:block hover:text-indigo-600",
