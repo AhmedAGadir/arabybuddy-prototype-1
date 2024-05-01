@@ -166,7 +166,7 @@ const PreferencesPage = () => {
 				.map(([key, value]) => (
 					<div key={key}>
 						<div>
-							<strong>{key}</strong>: {value}
+							<strong>{key}</strong>: {value as unknown as string}
 						</div>
 					</div>
 				))}
