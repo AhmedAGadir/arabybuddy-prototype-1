@@ -1,31 +1,31 @@
-// "use client";
+"use client";
 
-// import { useLogger } from "@/hooks/useLogger";
-// import { usePreferences } from "@/hooks/usePreferences";
-// import {
-// 	createPreferences,
-// 	getPreferencesById,
-// } from "@/lib/actions/preferences.actions";
-// import { DEFAULT_USER_PREFERENCES } from "@/lib/database/models/preferences.model";
-// import { useUser } from "@clerk/nextjs";
-// import { zodResolver } from "@hookform/resolvers/zod";
-// import React, { useEffect } from "react";
-// import { useForm } from "react-hook-form";
-// import {
-// 	Form,
-// 	FormControl,
-// 	FormField,
-// 	FormItem,
-// 	FormLabel,
-// 	FormMessage,
-// } from "@/components/ui/form";
-// import {
-// 	Select,
-// 	SelectContent,
-// 	SelectItem,
-// 	SelectTrigger,
-// 	SelectValue,
-// } from "@/components/ui/select";
+import { useLogger } from "@/hooks/useLogger";
+import { usePreferences } from "@/hooks/usePreferences";
+import {
+	createPreferences,
+	getPreferencesById,
+} from "@/lib/actions/preferences.actions";
+import { DEFAULT_USER_PREFERENCES } from "@/lib/database/models/preferences.model";
+import { useUser } from "@clerk/nextjs";
+import { zodResolver } from "@hookform/resolvers/zod";
+import React, { useEffect } from "react";
+import { useForm } from "react-hook-form";
+import {
+	Form,
+	FormControl,
+	FormField,
+	FormItem,
+	FormLabel,
+	FormMessage,
+} from "@/components/ui/form";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 
 // // export interface IPreferences {
 // // 	clerkId: string;
@@ -140,3 +140,38 @@
 // };
 
 // export default PreferencesPage;
+
+const PreferencesPage = () => {
+	const {
+		isPending,
+		error,
+		preferences,
+		createPreferences,
+		updatePreferences,
+	} = usePreferences();
+
+	const { user } = useUser();
+
+	if (!user || isPending) return <div>Loading preferences...</div>;
+
+	if (error) return <div>Error loading preferences: {error.message}</div>;
+
+	console.log("preferences data", preferences);
+
+	return (
+		<div>
+			<h1>Preferences</h1>
+			{Object.entries(preferences)
+				.filter(([key, value]) => key !== "clerkId" && key !== "_id")
+				.map(([key, value]) => (
+					<div key={key}>
+						<div>
+							<strong>{key}</strong>: {value}
+						</div>
+					</div>
+				))}
+		</div>
+	);
+};
+
+export default PreferencesPage;
