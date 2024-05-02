@@ -59,7 +59,7 @@ const usePreferences = () => {
 				headers: {
 					"Content-Type": "application/json",
 				},
-				body: JSON.stringify(preferences),
+				body: JSON.stringify({ preferences }),
 			});
 			if (!response.ok) {
 				throw new Error("Network response was not ok");

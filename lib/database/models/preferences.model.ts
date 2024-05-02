@@ -6,7 +6,7 @@ export interface IPreferences {
 	arabic_dialect: ArabicDialect;
 	assistant_language_level: "beginner" | "intermediate" | "native";
 	assistant_gender: "young_male" | "young_female" | "old_male" | "old_female";
-	assistant_response_style: "formal" | "informal";
+	assistant_tone: "casual" | "professional";
 	assistant_detail_level: "low" | "medium" | "high";
 	voice_stability: number;
 	voice_similarity_boost: number;
@@ -18,7 +18,7 @@ export const DEFAULT_USER_PREFERENCES: Omit<IPreferences, "clerkId"> = {
 	arabic_dialect: "Modern Standard Arabic",
 	assistant_language_level: "intermediate",
 	assistant_gender: "young_male",
-	assistant_response_style: "informal",
+	assistant_tone: "casual",
 	assistant_detail_level: "medium",
 	voice_stability: 0.5,
 	voice_similarity_boost: 0.75,
@@ -45,7 +45,7 @@ const PreferencesSchema = new Schema(
 			type: String,
 			required: true,
 		},
-		assistant_response_style: {
+		assistant_tone: {
 			type: String,
 			required: true,
 		},
