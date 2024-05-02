@@ -82,7 +82,7 @@ const usePreferences = () => {
 		return await updatePreferencesMutation.mutateAsync(preferences);
 	};
 
-	const preferences = data?.preferences as IPreferences[];
+	const preferences = data?.preferences as IPreferences;
 
 	return {
 		isPending,

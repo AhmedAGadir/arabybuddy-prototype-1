@@ -4,12 +4,12 @@ import MobileNav from "@/components/shared/MobileNav";
 
 const Layout = ({ children }: { children: React.ReactNode }) => {
 	return (
-		<div className="flex flex-col h-svh h-100dvh">
-			<div className="lg:hidden">
+		<div className="flex flex-col min-h-svh">
+			<div className="lg:hidden sticky top-0">
 				<MobileNav />
 			</div>
 			<div className="flex-1 flex">
-				<div className="hidden h-screen w-72 lg:flex">
+				<div className="hidden h-svh w-72 lg:flex">
 					<Sidebar />
 				</div>
 				{children}

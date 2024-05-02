@@ -467,7 +467,7 @@ const ConversationIdPage = ({
 
 	if (error) {
 		return (
-			<div className="flex-1 flex items-center justify-center h-screen">
+			<div className="flex-1 flex items-center justify-center min-h-svh">
 				<span>Error loading messages</span>
 			</div>
 		);
