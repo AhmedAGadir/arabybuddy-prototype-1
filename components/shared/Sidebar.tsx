@@ -44,11 +44,6 @@ export default function Sidebar({
 
 	const router = useRouter();
 
-	const newChatHandler = useCallback(async () => {
-		const data = await createConversation();
-		router.push(`/chat/${data._id}`);
-	}, [router]);
-
 	const {
 		isPending,
 		error,
@@ -56,6 +51,11 @@ export default function Sidebar({
 		deleteConversation,
 		createConversation,
 	} = useConversations();
+
+	const newChatHandler = useCallback(async () => {
+		const data = await createConversation();
+		router.push(`/chat/${data._id}`);
+	}, [router, createConversation]);
 
 	const [conversationIdToDelete, setConversationIdToDelete] =
 		useState<string>();

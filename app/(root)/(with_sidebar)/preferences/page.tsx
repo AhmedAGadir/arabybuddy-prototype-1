@@ -151,6 +151,7 @@ const PreferencesPage = () => {
 				...DEFAULT_USER_PREFERENCES,
 			});
 		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [preferences, user, error, isPending]);
 
 	if (isPending) return <div>Loading preferences...</div>;

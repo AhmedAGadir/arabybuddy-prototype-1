@@ -224,6 +224,11 @@ const ConversationIdPage = ({
 			speechToText,
 			stopPlaying,
 			toast,
+			deleteAllMessagesAfterTimeStamp,
+			messages,
+			playAudio,
+			textToSpeech,
+			timeStamp,
 		]
 	);
 
