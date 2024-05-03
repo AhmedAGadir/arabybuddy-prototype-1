@@ -172,9 +172,9 @@ const PreferencesPage = () => {
 								Personalisation
 							</h2>
 							<p className="mt-1 text-sm leading-6 text-gray-600">
-								Configure your assistant's language, style, and gender to match
-								your preferences. Adjust how formally they speak and the level
-								of detail they provide.
+								Configure your assistant&apos;s language, style, and gender to
+								match your preferences. Adjust how formally they speak and the
+								level of detail they provide.
 							</p>
 						</div>
 
@@ -956,8 +956,8 @@ const PreferencesPage = () => {
 								Notifications
 							</h2>
 							<p className="mt-1 text-sm leading-6 text-gray-600">
-								We'll always let you know about important changes, but you pick
-								what else you want to hear about.
+								We&apos;ll always let you know about important changes, but you
+								pick what else you want to hear about.
 							</p>
 						</div>
 
