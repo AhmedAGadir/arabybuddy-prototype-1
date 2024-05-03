@@ -5,7 +5,7 @@ import MobileNav from "@/components/shared/MobileNav";
 const Layout = ({ children }: { children: React.ReactNode }) => {
 	return (
 		<div className="flex flex-col min-h-svh">
-			<div className="lg:hidden sticky top-0">
+			<div className="lg:hidden sticky top-0 z-10">
 				<MobileNav />
 			</div>
 			<div className="flex-1 flex">

@@ -116,7 +116,8 @@ const ChatBubble = ({
 					width={12}
 					height={12}
 					src={avatarSrc}
-					alt="Araby Buddy logo"
+					alt={avatarAlt}
+					unoptimized
 				/>
 			)}
 		</div>

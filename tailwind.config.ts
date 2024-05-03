@@ -84,6 +84,10 @@ const config = {
 				"accordion-down": "accordion-down 0.2s ease-out",
 				"accordion-up": "accordion-up 0.2s ease-out",
 			},
+			backgroundImage: {
+				gradient:
+					"url('/public/assets/background.png'), url('/assets/background.png')",
+			},
 		},
 	},
 	plugins: [require("tailwindcss-animate")],

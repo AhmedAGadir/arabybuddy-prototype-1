@@ -4,7 +4,7 @@ import { useUser } from "@clerk/nextjs";
 import { IPreferences } from "@/lib/database/models/preferences.model";
 
 const usePreferences = () => {
-	const logger = useLogger({ label: "usePreferences", color: "#ff9d00" });
+	const logger = useLogger({ label: "usePreferences", color: "#00ffb3" });
 
 	const { user } = useUser();
 
@@ -24,7 +24,7 @@ const usePreferences = () => {
 
 	const createPreferencesMutation = useMutation({
 		mutationFn: async (preferences: IPreferences) => {
-			console.log("passing these props to body", preferences);
+			logger.log("creating preferences", preferences);
 			const response = await fetch(`/api/preferences`, {
 				method: "POST",
 				headers: {

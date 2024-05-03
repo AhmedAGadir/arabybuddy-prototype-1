@@ -43,8 +43,7 @@ export default function Home() {
 	const logoSize = isMobile ? 190 : 220;
 
 	return (
-		<div className="relative">
-			<Background />
+		<div className="bg-gradient bg-cover bg-center">
 			<div className="md:container md:mx-auto min-h-svh relative flex flex-col justify-between ">
 				<main className="flex-1 flex flex-col items-center max-w-5xl mx-auto px-4">
 					<div className="py-3 flex justify-end w-full">

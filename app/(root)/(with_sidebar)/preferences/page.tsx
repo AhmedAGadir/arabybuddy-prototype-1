@@ -82,6 +82,12 @@ const preferencesFormSchema = z.object({
 });
 
 const PreferencesPage = () => {
+	const logger = useLogger({
+		label: "PreferencesPage",
+		color: "#00ffb3",
+	});
+	const [preferencesInitialized, setPreferencesInitialized] =
+		React.useState(false);
 	const {
 		isPending,
 		error,
@@ -93,8 +99,6 @@ const PreferencesPage = () => {
 	// TODO: useToast, handle errors, loading states, saving state etc.
 
 	const { user } = useUser();
-
-	console.log("preferences", preferences);
 
 	const form = useForm<z.infer<typeof preferencesFormSchema>>({
 		resolver: zodResolver(preferencesFormSchema),
@@ -113,7 +117,12 @@ const PreferencesPage = () => {
 	});
 
 	useEffect(() => {
-		if (!isPending && !error && preferences) {
+		logger.log("mounted");
+	}, []);
+
+	useEffect(() => {
+		if (!isPending && !error && preferences && !preferencesInitialized) {
+			console.log("resetting");
 			// Update form default values
 			form.reset({
 				arabic_dialect: preferences.arabic_dialect,
@@ -126,16 +135,17 @@ const PreferencesPage = () => {
 				voice_style: preferences.voice_style,
 				voice_use_speaker_boost: preferences.voice_use_speaker_boost,
 			});
+			setPreferencesInitialized(true);
 		}
 	}, [isPending, error, preferences, form]);
 
 	// Watch all inputs in the form
-	const formState = form.watch();
+	// const formState = form.watch();
 
-	useEffect(() => {
-		// Log the form state whenever it changes
-		console.log("Form state:", formState);
-	}, [formState]);
+	// useEffect(() => {
+	// 	// Log the form state whenever it changes
+	// 	// console.log("Form state:", formState);
+	// }, [formState]);
 
 	const formSubmitHandler = (values: z.infer<typeof preferencesFormSchema>) => {
 		updatePreferences({
@@ -144,23 +154,21 @@ const PreferencesPage = () => {
 		});
 	};
 
-	useEffect(() => {
-		if (!error && !isPending && !preferences && user?.id) {
-			createPreferences({
-				clerkId: user.id,
-				...DEFAULT_USER_PREFERENCES,
-			});
-		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [preferences, user, error, isPending]);
+	// useEffect(() => {
+	// 	if (!error && !isPending && !preferences && user?.id) {
+	// 		createPreferences({
+	// 			clerkId: user.id,
+	// 			...DEFAULT_USER_PREFERENCES,
+	// 		});
+	// 	}
+	// 	// eslint-disable-next-line react-hooks/exhaustive-deps
+	// }, [preferences, user, error, isPending]);
 
 	if (isPending) return <div>Loading preferences...</div>;
 
-	if (error) return <div>Error loading preferences: {error.message}</div>;
+	if (!preferencesInitialized) return <div>Initializing preferences...</div>;
 
-	console.log("preferences data", preferences);
-	// log out form state
-	console.log("form", form);
+	if (error) return <div>Error loading preferences: {error.message}</div>;
 
 	const formContent = (
 		<Form {...form}>
@@ -194,7 +202,7 @@ const PreferencesPage = () => {
 												// {...field}
 											>
 												<FormControl>
-													<SelectTrigger>
+													<SelectTrigger className="focus:ring-indigo-600">
 														<SelectValue placeholder="Select Dialect" />
 													</SelectTrigger>
 												</FormControl>
@@ -211,53 +219,6 @@ const PreferencesPage = () => {
 									)}
 								/>
 							</div>
-							{/* 
-							<div className="sm:col-span-4">
-								<FormField
-									control={form.control}
-									name="assistant_language_level"
-									render={({ field }) => (
-										<FormItem className="space-y-3">
-											<FormLabel className="block text-sm font-medium leading-6 text-gray-900">
-												Language level
-											</FormLabel>
-											<FormControl>
-												<RadioGroupRadix
-													onValueChange={field.onChange}
-													defaultValue={field.value}
-													className="flex flex-col space-y-1"
-												>
-													<FormItem className="flex items-center space-x-3 space-y-0">
-														<FormControl>
-															<RadioGroupItemRadix value="beginner" />
-														</FormControl>
-														<FormLabel className="font-normal">
-															Beginner
-														</FormLabel>
-													</FormItem>
-													<FormItem className="flex items-center space-x-3 space-y-0">
-														<FormControl>
-															<RadioGroupItemRadix value="intermediate" />
-														</FormControl>
-														<FormLabel className="font-normal">
-															Intermediate
-														</FormLabel>
-													</FormItem>
-													<FormItem className="flex items-center space-x-3 space-y-0">
-														<FormControl>
-															<RadioGroupItemRadix value="native" />
-														</FormControl>
-														<FormLabel className="font-normal">
-															Native
-														</FormLabel>
-													</FormItem>
-												</RadioGroupRadix>
-											</FormControl>
-											<FormMessage />
-										</FormItem>
-									)}
-								/>
-							</div> */}
 
 							<div className="sm:col-span-6">
 								<FormField
@@ -453,7 +414,7 @@ const PreferencesPage = () => {
 								/>
 							</div>
 
-							<div className="sm:col-span-6">
+							{/* <div className="sm:col-span-6">
 								<FormField
 									control={form.control}
 									name="assistant_detail_level"
@@ -546,12 +507,12 @@ const PreferencesPage = () => {
 										</FormItem>
 									)}
 								/>
-							</div>
+							</div> */}
 
-							{/* <div className="sm:col-span-6">
+							<div className="sm:col-span-6">
 								<FormField
 									control={form.control}
-									name="assistant_detail_level"
+									name="assistant_gender"
 									render={({ field }) => (
 										<FormItem className="space-y-3">
 											<RadioGroup
@@ -560,49 +521,85 @@ const PreferencesPage = () => {
 												defaultValue={field.value}
 											>
 												<RadioGroup.Label className="block text-sm font-medium leading-6 text-gray-900">
-													Response Detail
+													Character Profile
 												</RadioGroup.Label>
 
 												<div className="mt-2 flex flex-col md:flex-row gap-2">
 													{[
 														{
-															id: "low",
-															title: "Low",
-															available: true,
+															id: "young_male",
+															title: "Young - Man",
+															description:
+																"Your assistant will personify a young man.",
 														},
 														{
-															id: "medium",
-															title: "Medium",
-															available: true,
+															id: "young_female",
+															title: "Young - Woman",
+															description:
+																"Your assistant will personify a young woman.",
 														},
 														{
-															id: "high",
-															title: "High",
-															available: true,
+															id: "old_male",
+															title: "Old - Man",
+															description:
+																"Your assistant will personify an older man.",
 														},
-													].map((detail) => (
+														{
+															id: "old_female",
+															title: "Old - Woman",
+															description:
+																"Your assistant will personify an older woman.",
+														},
+													].map((gender) => (
 														<RadioGroup.Option
-															key={detail.id}
-															value={detail.id}
-															className={({ active, checked }) =>
+															key={gender.id}
+															value={gender.id}
+															className={({ active }) =>
 																cn(
-																	detail.available
-																		? "cursor-pointer focus:outline-none"
-																		: "cursor-not-allowed opacity-25",
 																	active
-																		? "ring-2 ring-indigo-600 ring-offset-2"
-																		: "",
-																	checked
-																		? "bg-indigo-600 text-white hover:bg-indigo-500"
-																		: "ring-1 ring-inset ring-gray-300 bg-white text-gray-900 hover:bg-gray-50",
-																	"flex items-center justify-center rounded-md py-3 px-3 text-sm font-semibold sm:flex-1"
+																		? "border-indigo-600 ring-2 ring-indigo-600"
+																		: "border-gray-300",
+																	"relative flex cursor-pointer rounded-lg border bg-white p-4 shadow-sm focus:outline-none"
 																)
 															}
-															disabled={!detail.available}
 														>
-															<RadioGroup.Label as="span">
-																{detail.title}
-															</RadioGroup.Label>
+															{({ checked, active }) => (
+																<>
+																	<span className="flex flex-1">
+																		<span className="flex flex-col">
+																			<RadioGroup.Label
+																				as="span"
+																				className="block text-sm font-medium text-gray-900"
+																			>
+																				{gender.title}
+																			</RadioGroup.Label>
+																			<RadioGroup.Description
+																				as="span"
+																				className="mt-1 flex items-center text-sm text-gray-500"
+																			>
+																				{gender.description}
+																			</RadioGroup.Description>
+																		</span>
+																	</span>
+																	<CheckCircleIcon
+																		className={cn(
+																			!checked ? "invisible" : "",
+																			"h-5 w-5 text-indigo-600"
+																		)}
+																		aria-hidden="true"
+																	/>
+																	<span
+																		className={cn(
+																			active ? "border" : "border-2",
+																			checked
+																				? "border-indigo-600"
+																				: "border-transparent",
+																			"pointer-events-none absolute -inset-px rounded-lg"
+																		)}
+																		aria-hidden="true"
+																	/>
+																</>
+															)}
 														</RadioGroup.Option>
 													))}
 												</div>
@@ -611,9 +608,79 @@ const PreferencesPage = () => {
 										</FormItem>
 									)}
 								/>
-							</div> */}
+							</div>
 
 							<div className="sm:col-span-6">
+								<FormField
+									control={form.control}
+									name="assistant_detail_level"
+									render={({ field }) => {
+										return (
+											<FormItem className="space-y-3">
+												<RadioGroup
+													value={field.value}
+													onChange={field.onChange}
+													defaultValue={field.value}
+												>
+													<RadioGroup.Label className="block text-sm font-medium leading-6 text-gray-900">
+														Response Detail
+													</RadioGroup.Label>
+
+													<div
+														// className="mt-4 grid grid-cols-1 gap-y-6 sm:grid-cols-3 sm:gap-x-4"
+														className="mt-2 flex flex-col md:flex-row gap-2"
+													>
+														{[
+															{
+																id: "low",
+																title: "Low",
+																available: true,
+															},
+															{
+																id: "medium",
+																title: "Medium",
+																available: true,
+															},
+															{
+																id: "high",
+																title: "High",
+																available: true,
+															},
+														].map((detail) => (
+															<RadioGroup.Option
+																key={detail.id}
+																value={detail.id}
+																className={({ active, checked }) =>
+																	cn(
+																		detail.available
+																			? "cursor-pointer focus:outline-none"
+																			: "cursor-not-allowed opacity-25",
+																		active
+																			? "ring-2 ring-indigo-600 ring-offset-2"
+																			: "",
+																		checked
+																			? "bg-indigo-600 text-white hover:bg-indigo-500"
+																			: "ring-1 ring-inset ring-gray-300 bg-white text-gray-900 hover:bg-gray-50",
+																		"flex items-center justify-center rounded-md py-3 px-3 text-sm font-semibold sm:flex-1"
+																	)
+																}
+																disabled={!detail.available}
+															>
+																<RadioGroup.Label as="span">
+																	{detail.title}
+																</RadioGroup.Label>
+															</RadioGroup.Option>
+														))}
+													</div>
+												</RadioGroup>
+												<FormMessage />
+											</FormItem>
+										);
+									}}
+								/>
+							</div>
+
+							{/* <div className="sm:col-span-6">
 								<FormField
 									control={form.control}
 									name="assistant_gender"
@@ -654,13 +721,13 @@ const PreferencesPage = () => {
 																title: "Old - Woman",
 																available: true,
 															},
-														].map((persona) => (
+														].map((gender) => (
 															<RadioGroup.Option
-																key={persona.id}
-																value={persona.id}
+																key={gender.id}
+																value={gender.id}
 																className={({ active, checked }) =>
 																	cn(
-																		persona.available
+																		gender.available
 																			? "cursor-pointer focus:outline-none"
 																			: "cursor-not-allowed opacity-25",
 																		active
@@ -672,10 +739,10 @@ const PreferencesPage = () => {
 																		"flex items-center justify-center rounded-md py-3 px-3 text-sm font-semibold sm:flex-1"
 																	)
 																}
-																disabled={!persona.available}
+																disabled={!gender.available}
 															>
 																<RadioGroup.Label as="span">
-																	{persona.title}
+																	{gender.title}
 																</RadioGroup.Label>
 															</RadioGroup.Option>
 														))}
@@ -686,106 +753,6 @@ const PreferencesPage = () => {
 										);
 									}}
 								/>
-							</div>
-
-							{/* <div className="sm:col-span-4">
-								<label
-									htmlFor="website"
-									className="block text-sm font-medium leading-6 text-gray-900"
-								>
-									Website
-								</label>
-								<div className="mt-2">
-									<div className="flex rounded-md shadow-sm ring-1 ring-inset ring-gray-300 focus-within:ring-2 focus-within:ring-inset focus-within:ring-indigo-600 sm:max-w-md">
-										<span className="flex select-none items-center pl-3 text-gray-500 sm:text-sm">
-											http://
-										</span>
-										<input
-											type="text"
-											name="website"
-											id="website"
-											className="block flex-1 border-0 bg-transparent py-1.5 pl-1 text-gray-900 placeholder:text-gray-400 focus:ring-0 sm:text-sm sm:leading-6"
-											placeholder="www.example.com"
-										/>
-									</div>
-								</div>
-							</div>
-
-							<div className="col-span-full">
-								<label
-									htmlFor="about"
-									className="block text-sm font-medium leading-6 text-gray-900"
-								>
-									About
-								</label>
-								<div className="mt-2">
-									<textarea
-										id="about"
-										name="about"
-										rows={3}
-										className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-										defaultValue={""}
-									/>
-								</div>
-								<p className="mt-3 text-sm leading-6 text-gray-600">
-									Write a few sentences about yourself.
-								</p>
-							</div>
-
-							<div className="col-span-full">
-								<label
-									htmlFor="photo"
-									className="block text-sm font-medium leading-6 text-gray-900"
-								>
-									Photo
-								</label>
-								<div className="mt-2 flex items-center gap-x-3">
-									<UserCircleIcon
-										className="h-12 w-12 text-gray-300"
-										aria-hidden="true"
-									/>
-									<button
-										type="button"
-										className="rounded-md bg-white px-2.5 py-1.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
-									>
-										Change
-									</button>
-								</div>
-							</div>
-
-							<div className="col-span-full">
-								<label
-									htmlFor="cover-photo"
-									className="block text-sm font-medium leading-6 text-gray-900"
-								>
-									Cover photo
-								</label>
-								<div className="mt-2 flex justify-center rounded-lg border border-dashed border-gray-900/25 px-6 py-10">
-									<div className="text-center">
-										<PhotoIcon
-											className="mx-auto h-12 w-12 text-gray-300"
-											aria-hidden="true"
-										/>
-										<div className="mt-4 flex text-sm leading-6 text-gray-600">
-											<label
-												htmlFor="file-upload"
-												className="relative cursor-pointer rounded-md bg-white font-semibold text-indigo-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-indigo-600 focus-within:ring-offset-2 hover:text-indigo-500"
-											>
-												<span>Upload a file</span>
-												<input
-													id="file-upload"
-													name="file-upload"
-													type="file"
-													className="sr-only"
-												/>
-											</label>
-											<p className="pl-1">or drag and drop</p>
-										</div>
-										<p className="text-xs leading-5 text-gray-600">
-											PNG, JPG, GIF up to 10MB
-										</p>
-									</div>
-								</div>
 							</div> */}
 						</div>
 					</div>
@@ -1109,7 +1076,7 @@ const PreferencesPage = () => {
 	);
 
 	return (
-		<div className="lg:h-svh lg:overflow-y-scroll w-full py-6 bg-white">
+		<div className="lg:h-svh lg:overflow-y-scroll w-full py-6 bg-white ">
 			{formContent}
 		</div>
 	);
