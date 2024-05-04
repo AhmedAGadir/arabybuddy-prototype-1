@@ -8,6 +8,7 @@ const nextConfig = {
 	images: {
 		domains: ["img.clerk.com"],
 	},
+	// reactStrictMode: false,
 	webpack: (config, { buildId, dev, isServer, defaultLoaders, webpack }) => {
 		// Fixes npm packages that depend on 'fs' module, but only when not on the server
 		if (!isServer) {

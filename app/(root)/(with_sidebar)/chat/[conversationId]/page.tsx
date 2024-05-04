@@ -186,13 +186,15 @@ const ConversationIdPage = ({
 					toast({
 						title: "Message cancelled",
 						description: "The request was aborted.",
+						className: "warning-toast",
 					});
 				} else {
 					logger.error("onRecordingComplete failed", error);
 					toast({
 						title: "Uh oh! Something went wrong.",
 						description: "There was a problem with your request.",
-						variant: "destructive",
+						// variant: "destructive",
+						className: "error-toast",
 					});
 				}
 				if (isPlaying) {

@@ -4,7 +4,7 @@ import { useUser } from "@clerk/nextjs";
 import { IPreferences } from "@/lib/database/models/preferences.model";
 
 const usePreferences = () => {
-	const logger = useLogger({ label: "usePreferences", color: "#00ffb3" });
+	const logger = useLogger({ label: "usePreferences", color: "#709dff" });
 
 	const { user } = useUser();
 
@@ -43,7 +43,8 @@ const usePreferences = () => {
 		},
 		onSuccess: (data) => {
 			// Invalidate and refetch
-			queryClient.invalidateQueries({ queryKey: ["preferences"] });
+			logger.log("created preferences - invalidating cache and refetching");
+			queryClient.invalidateQueries({ queryKey: ["preferences", user?.id] });
 		},
 	});
 
@@ -53,7 +54,7 @@ const usePreferences = () => {
 
 	const updatePreferencesMutation = useMutation({
 		mutationFn: async (preferences: IPreferences) => {
-			logger.log("updating preferences", preferences);
+			logger.log("updating preferences", JSON.stringify(preferences));
 			const response = await fetch(`/api/preferences`, {
 				method: "PUT",
 				headers: {
@@ -69,12 +70,12 @@ const usePreferences = () => {
 		},
 		onError: (err: Error) => {
 			logger.error("Error updating preferences:", err);
-			throw err;
+			return err;
 		},
 		onSuccess: (data: IPreferences) => {
-			logger.log("updated preferences - refetching");
+			logger.log("updated preferences - invalidating cache and refetching");
 			// Invalidate and refetch
-			queryClient.invalidateQueries({ queryKey: ["preferences"] });
+			queryClient.invalidateQueries({ queryKey: ["preferences", user?.id] });
 		},
 	});
 
