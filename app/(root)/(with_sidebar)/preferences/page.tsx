@@ -230,6 +230,7 @@ const PERSONALITY_TRAITS = [
 	{ value: "Passionate", icon: "🔥" },
 	{ value: "Patient", icon: "⏳" },
 	{ value: "Practical", icon: "🔨" },
+	{ value: "Religious", icon: "🙏" },
 	{ value: "Romantic", icon: "❤️" },
 	{ value: "Sociable", icon: "🍹" },
 	{ value: "Spiritual", icon: "✨" },
@@ -259,7 +260,7 @@ const preferencesFormSchema = z.object({
 		.max(15, "You can only select up to 15 interests"),
 	user_personality_traits: z
 		.array(z.string())
-		.max(5, "You can only select up to 5 personality traits"),
+		.max(6, "You can only select up to 6 personality traits"),
 });
 
 const PreferencesPage = () => {
