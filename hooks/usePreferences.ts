@@ -16,7 +16,7 @@ const usePreferences = () => {
 		queryFn: async () => {
 			const response = await fetch("/api/preferences");
 			const data = await response.json();
-			logger.log("fetched preferences", JSON.stringify(data));
+			logger.log("fetched preferences", data);
 			return data;
 		},
 	});
@@ -53,7 +53,7 @@ const usePreferences = () => {
 
 	const updatePreferencesMutation = useMutation({
 		mutationFn: async (preferences: IPreferences) => {
-			logger.log("updating preferences", JSON.stringify(preferences));
+			logger.log("updating preferences", preferences);
 			const response = await fetch(`/api/preferences`, {
 				method: "PUT",
 				headers: {
@@ -64,7 +64,6 @@ const usePreferences = () => {
 			if (!response.ok) {
 				throw new Error("Network response was not ok");
 			}
-
 			return response.json();
 		},
 		onError: (err: Error) => {

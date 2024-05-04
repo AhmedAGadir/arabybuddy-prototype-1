@@ -44,6 +44,7 @@ import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/components/ui/use-toast";
 import ConfirmationDialog from "@/components/shared/ConfirmationDialog";
 import { ToastAction } from "@radix-ui/react-toast";
+import { Badge } from "@/components/ui/badge";
 
 const FormSection = ({
 	title,
@@ -78,6 +79,8 @@ const FormSection = ({
 // 	voice_similarity_boost: number;
 // 	voice_style: number;
 // 	voice_use_speaker_boost: boolean;
+//  user_interests: string[];
+//  user_personality_traits: string[];
 // }
 
 // export const DEFAULT_USER_PREFERENCES: Omit<IPreferences, "clerkId"> = {
@@ -90,7 +93,147 @@ const FormSection = ({
 // 	voice_similarity_boost: 0.75,
 // 	voice_style: 0,
 // 	voice_use_speaker_boost: true,
+//  user_interests: [],
+//  user_personality_traits: [],
 // };
+
+const INTERESTS = {
+	["Activity & Wellness"]: [
+		{ value: "Basketball", icon: "🏀" },
+		{ value: "Bird Watching", icon: "🦆" },
+		{ value: "Boxing", icon: "🥊" },
+		{ value: "Calisthenics", icon: "🤸" },
+		{ value: "Camping", icon: "🏕️" },
+		{ value: "Cycling", icon: "🚴" },
+		{ value: "Football", icon: "⚽" },
+		{ value: "Gardening", icon: "🌱" },
+		{ value: "Hiking", icon: "🥾" },
+		{ value: "Martial Arts", icon: "🥋" },
+		{ value: "Pilates", icon: "🤸" },
+		{ value: "Rock Climbing", icon: "🧗" },
+		{ value: "Running", icon: "🏃" },
+		{ value: "Skiing", icon: "⛷️" },
+		{ value: "Soccer", icon: "🏐" },
+		{ value: "Swimming", icon: "🏊" },
+		{ value: "Tennis", icon: "🎾" },
+		{ value: "Yoga", icon: "🧘" },
+	],
+	["Arts & Culture"]: [
+		{ value: "Anime", icon: "🎌" },
+		{ value: "Board Games", icon: "🎲" },
+		{ value: "Cinema", icon: "🎬" },
+		{ value: "Classical Music", icon: "🎻" },
+		{ value: "Dance", icon: "💃" },
+		{ value: "Design", icon: "🎨" },
+		{ value: "DIY", icon: "🛠️" },
+		{ value: "Language Learning", icon: "🗣️" },
+		{ value: "Literature", icon: "📚" },
+		{ value: "Museums", icon: "🏛" },
+		{ value: "Opera", icon: "🎶" },
+		{ value: "Painting", icon: "🎨" },
+		{ value: "Photography", icon: "📷" },
+		{ value: "Sculpture", icon: "🗿" },
+		{ value: "Theater", icon: "🎭" },
+		{ value: "TV Shows", icon: "📺" },
+	],
+	["Education & Technology"]: [
+		{ value: "Animation", icon: "🎞️" },
+		{ value: "Blogging", icon: "✍️" },
+		{ value: "Coding", icon: "💻" },
+		{ value: "Content Creation", icon: "🎥" },
+		{ value: "Educational Workshops", icon: "🏫" },
+		{ value: "Entrepreneurship", icon: "🚀" },
+		{ value: "Live Streaming", icon: "🎙️" },
+		{ value: "Online Learning", icon: "🌐" },
+		{ value: "Video Games", icon: "🎮" },
+	],
+	["Community & Social"]: [
+		{ value: "Animal Welfare", icon: "🐾" },
+		{ value: "Charity Work", icon: "❤️" },
+		{ value: "Community Service", icon: "🏘️" },
+		{ value: "Environmentalism", icon: "🌍" },
+		{ value: "Event Planning", icon: "🎉" },
+		{ value: "Fundraising", icon: "💸" },
+		{ value: "Politics", icon: "🏛️" },
+		{ value: "Public Speaking", icon: "🎙️" },
+		{ value: "Social Activism", icon: "✊" },
+		{ value: "Volunteering", icon: "🤲" },
+	],
+	["Lifestyle"]: [
+		{ value: "Beauty & Makeup", icon: "💄" },
+		{ value: "Cooking", icon: "🍳" },
+		{ value: "Fashion", icon: "👗" },
+		{ value: "Foodie", icon: "🍽" },
+		{ value: "Home Decor", icon: "🏠" },
+		{ value: "Pet Care", icon: "🐕" },
+		{ value: "Thrifting", icon: "👗" },
+		{ value: "Travel", icon: "✈️" },
+		{ value: "Wellness", icon: "🧘" },
+	],
+	["Spirituality & Religion"]: [
+		{ value: "Buddhism", icon: "☸️" },
+		{ value: "Christianity", icon: "✝️" },
+		{ value: "Hinduism", icon: "🕉️" },
+		{ value: "Islam", icon: "☪️" },
+		{ value: "Judaism", icon: "✡️" },
+		{ value: "Meditation", icon: "🧘" },
+		{ value: "Philosophy", icon: "🔍" },
+		{ value: "Spiritual Studies", icon: "📿" },
+	],
+};
+
+const PERSONALITY_TRAITS = [
+	{ value: "Adventurous", icon: "🚀" },
+	{ value: "Animal Lover", icon: "🐶" },
+	{ value: "Bookworm", icon: "📖" },
+	{ value: "Calm", icon: "🌊" },
+	{ value: "Carefree", icon: "🍃" },
+	{ value: "Cheerful", icon: "😄" },
+	{ value: "Competitive", icon: "🏆" },
+	{ value: "Conservative", icon: "🔒" },
+	{ value: "Creative", icon: "🌈" },
+	{ value: "Driven", icon: "🚗" },
+	{ value: "Entrepreneurial", icon: "💼" },
+	{ value: "Empathetic", icon: "💞" },
+	{ value: "ENFJ", icon: "🎤" },
+	{ value: "ENFP", icon: "🎨" },
+	{ value: "ENTJ", icon: "👔" },
+	{ value: "ENTP", icon: "💡" },
+	{ value: "ESFJ", icon: "👩‍👧‍👦" },
+	{ value: "ESFP", icon: "🕺" },
+	{ value: "ESTJ", icon: "🏢" },
+	{ value: "ESTP", icon: "🏂" },
+	{ value: "Extroverted", icon: "🤝" },
+	{ value: "Family-oriented", icon: "👨‍👩‍👧" },
+	{ value: "Fashionable", icon: "👗" },
+	{ value: "Generous", icon: "🎁" },
+	{ value: "Humorous", icon: "😂" },
+	{ value: "Imaginative", icon: "💭" },
+	{ value: "Independent", icon: "🏝️" },
+	{ value: "INFJ", icon: "🌟" },
+	{ value: "INFP", icon: "🌼" },
+	{ value: "INTJ", icon: "🧠" },
+	{ value: "INTP", icon: "🔍" },
+	{ value: "Introverted", icon: "🏠" },
+	{ value: "ISFJ", icon: "💖" },
+	{ value: "ISFP", icon: "🎸" },
+	{ value: "ISTJ", icon: "📚" },
+	{ value: "ISTP", icon: "🔧" },
+	{ value: "Liberal", icon: "🕊️" },
+	{ value: "Logical", icon: "🖥️" },
+	{ value: "Loyal", icon: "🐾" },
+	{ value: "Nerdy", icon: "🤓" },
+	{ value: "Night Owl", icon: "🦉" },
+	{ value: "Optimistic", icon: "☀️" },
+	{ value: "Organized", icon: "🗂️" },
+	{ value: "Outdoorsy", icon: "🌲" },
+	{ value: "Passionate", icon: "🔥" },
+	{ value: "Patient", icon: "⏳" },
+	{ value: "Practical", icon: "🔨" },
+	{ value: "Romantic", icon: "❤️" },
+	{ value: "Sociable", icon: "🍹" },
+	{ value: "Spiritual", icon: "✨" },
+];
 
 const preferencesFormSchema = z.object({
 	arabic_dialect: z.enum(ARABIC_DIALECTS),
@@ -111,6 +254,12 @@ const preferencesFormSchema = z.object({
 		message: "Values over 50% may lead to instability",
 	}),
 	voice_use_speaker_boost: z.boolean(),
+	user_interests: z
+		.array(z.string())
+		.max(15, "You can only select up to 15 interests"),
+	user_personality_traits: z
+		.array(z.string())
+		.max(5, "You can only select up to 5 personality traits"),
 });
 
 const PreferencesPage = () => {
@@ -165,6 +314,11 @@ const PreferencesPage = () => {
 				voice_use_speaker_boost:
 					preferences.voice_use_speaker_boost ??
 					DEFAULT_USER_PREFERENCES.voice_use_speaker_boost,
+				user_interests:
+					preferences.user_interests ?? DEFAULT_USER_PREFERENCES.user_interests,
+				user_personality_traits:
+					preferences.user_personality_traits ??
+					DEFAULT_USER_PREFERENCES.user_personality_traits,
 			});
 		}
 	}, [isPending, error, preferences, form]);
@@ -199,21 +353,19 @@ const PreferencesPage = () => {
 	}, [preferences, user, error, isPending]);
 
 	// *** for debugging purposes ***
-	// // Watch all inputs in the form
-	// const formState = form.watch();
+	// Watch all inputs in the form
+	const formState = form.watch();
 
-	// useEffect(() => {
-	// 	// Log the form state whenever it changes
-	// 	logger.log("Form state:", formState);
-	// 	logger.log("Form errors:", form.formState.errors);
-	// 	logger.log("stability", form.getFieldState("voice_stability"));
-	// }, [formState]);
+	useEffect(() => {
+		// Log the form state whenever it changes
+		logger.log("Form state:", formState);
+	}, [formState]);
 
 	const formSubmitHandler = async (
 		values: z.infer<typeof preferencesFormSchema>
 	) => {
 		try {
-			logger.log("submitting form", JSON.stringify(values));
+			logger.log("submitting form", values);
 
 			await updatePreferences({
 				...preferences,
@@ -451,7 +603,7 @@ const PreferencesPage = () => {
 					</FormSection>
 
 					<FormSection
-						title="Interaction Style"
+						title="Assistant Interaction Style"
 						description="Customize how your assistant interacts with you by setting your
 								assistant profile, response style, and detail level."
 					>
@@ -462,7 +614,7 @@ const PreferencesPage = () => {
 								render={({ field }) => (
 									<FormItem>
 										<FormLabel className="block text-sm font-medium leading-6 text-gray-900">
-											Profile
+											Assistant Profile
 										</FormLabel>
 										<Select
 											onValueChange={field.onChange}
@@ -770,7 +922,7 @@ const PreferencesPage = () => {
 					</FormSection>
 
 					<FormSection
-						title="Voice Customization"
+						title="Assistant Voice Customization"
 						description="Fine-tune the technical aspects of your assistant's voice to suit your auditory preferences."
 					>
 						<div className="sm:col-span-6">
@@ -900,6 +1052,121 @@ const PreferencesPage = () => {
 												defaultChecked={field.value}
 												onCheckedChange={field.onChange}
 											/>
+											<FormMessage />
+										</FormItem>
+									);
+								}}
+							/>
+						</div>
+					</FormSection>
+
+					<FormSection
+						title="Interests and Personality"
+						description="Share your interests and personality traits to enhance your assistant's ability to provide personalized and relevant interactions."
+					>
+						<div className="sm:col-span-6">
+							<FormField
+								control={form.control}
+								name="user_interests"
+								render={({ field }) => {
+									return (
+										<FormItem>
+											<div>
+												<FormLabel className="block text-md font-medium leading-6 text-gray-900">
+													Interests
+												</FormLabel>
+												<div className="mt-2 grid grid-cols-1 gap-6 lg:grid-cols-2">
+													{Object.entries(INTERESTS).map(
+														([category, interests]) => (
+															<div key={category}>
+																<FormLabel className="block text-sm font-medium leading-6 text-gray-900 mb-2">
+																	{category}
+																</FormLabel>
+																<div className="flex flex-wrap gap-2">
+																	{interests.map((interest) => (
+																		<Badge
+																			key={interest.value}
+																			variant={
+																				(field.value ?? []).includes(
+																					interest.value
+																				)
+																					? "default"
+																					: "secondary"
+																			}
+																			onClick={() => {
+																				const index = field.value.indexOf(
+																					interest.value
+																				);
+																				if (index === -1) {
+																					field.onChange([
+																						...field.value,
+																						interest.value,
+																					]);
+																				} else {
+																					field.onChange([
+																						...field.value.slice(0, index),
+																						...field.value.slice(index + 1),
+																					]);
+																				}
+																				form.trigger(field.name);
+																			}}
+																		>
+																			{interest.icon} {interest.value}
+																		</Badge>
+																	))}
+																</div>
+															</div>
+														)
+													)}
+												</div>
+											</div>
+
+											<FormMessage />
+										</FormItem>
+									);
+								}}
+							/>
+						</div>
+
+						<div className="sm:col-span-6">
+							<FormField
+								control={form.control}
+								name="user_personality_traits"
+								render={({ field }) => {
+									return (
+										<FormItem>
+											<div>
+												<FormLabel className="block text-md font-medium leading-6 text-gray-900">
+													Personality Traits
+												</FormLabel>
+												<div className="mt-2 flex flex-wrap gap-2">
+													{PERSONALITY_TRAITS.map((trait) => (
+														<Badge
+															key={trait.value}
+															variant={
+																(field.value ?? []).includes(trait.value)
+																	? "default"
+																	: "secondary"
+															}
+															onClick={() => {
+																const index = field.value.indexOf(trait.value);
+																if (index === -1) {
+																	field.onChange([...field.value, trait.value]);
+																} else {
+																	field.onChange([
+																		...field.value.slice(0, index),
+																		...field.value.slice(index + 1),
+																	]);
+																}
+																form.trigger(field.name);
+															}}
+														>
+															{trait.icon} {trait.value}
+														</Badge>
+													))}
+												</div>
+											</div>
+
 											<FormMessage />
 										</FormItem>
 									);

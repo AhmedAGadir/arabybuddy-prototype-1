@@ -108,9 +108,7 @@ const useRecording = () => {
 				stopRecording
 			);
 		} catch (error) {
-			logger.log(
-				`Failed to start recording: ${JSON.stringify((error as any).message)}`
-			);
+			logger.log(`Failed to start recording: ${(error as any).message}`);
 		}
 	}, [detectSilence, logger, startSound, stopRecording]);
 

@@ -7,25 +7,51 @@ const useLogger = ({
 	color?: string;
 	toggle?: boolean;
 }) => {
-	const log = (message: any, message2?: any) => {
-		const messageToPrint = message2 ? `${message} ${message2}` : message;
+	const log = (...args: any[]) => {
 		if (toggle) {
 			if (color) {
-				console.log(`%c[${label}]: ${messageToPrint}`, `color: ${color}`);
+				// Separate string and non-string arguments
+				const stringArgs = args.filter((arg) => typeof arg === "string");
+				const nonStringArgs = args.filter((arg) => typeof arg !== "string");
+
+				// Combine string arguments into a single string
+				const styledMessage = stringArgs.join(" ");
+
+				// Apply color to the combined string and log non-string arguments separately
+				console.log(
+					`%c[${label}]: ${styledMessage}`,
+					`color: ${color}`,
+					...nonStringArgs
+				);
 				return;
 			}
-			console.log(`[${label}]: ${message}`);
+			console.log(`[${label}]:`, ...args);
 		}
 	};
 
-	const warn = (message: any, message2?: any) => {
-		const messageToPrint = message2 ? `${message} ${message2}` : message;
+	const warn = (...args: any[]) => {
 		if (toggle) {
-			console.warn(`[${label}]: ${messageToPrint}`);
+			if (color) {
+				// Separate string and non-string arguments
+				const stringArgs = args.filter((arg) => typeof arg === "string");
+				const nonStringArgs = args.filter((arg) => typeof arg !== "string");
+
+				// Combine string arguments into a single string
+				const styledMessage = stringArgs.join(" ");
+
+				// Apply color to the combined string and log non-string arguments separately
+				console.warn(
+					`%c[${label}]: ${styledMessage}`,
+					`color: ${color}`,
+					...nonStringArgs
+				);
+				return;
+			}
+			console.warn(`[${label}]:`, ...args);
 		}
 	};
 
-	const error = (...params: any) => {
+	const error = (...params: any[]) => {
 		console.error(...params);
 	};
 

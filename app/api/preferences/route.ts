@@ -66,15 +66,18 @@ export async function PUT(req: Request) {
 
 		await connectToDatabase();
 
-		console.log("updating user preferences - userId", userId);
+		console.log("updating user preferences - userId", userId, preferences);
 
 		const updatedPreferences = await Preferences.findOneAndUpdate(
 			{ clerkId: userId },
-			preferences,
+			{ $set: preferences }, // Use $set here to update the fields in the preferences object
 			{
 				new: true,
+				strict: false, // keep this because I may continue to modify the schema
 			}
 		);
+
+		console.log("updatedPreferences", updatedPreferences);
 
 		return Response.json(updatedPreferences, { status: 200 });
 	} catch (error) {

@@ -24,7 +24,7 @@ const useChatService = () => {
 					}
 				);
 
-				logger.log("updatedMessages", JSON.stringify(updatedMessages));
+				logger.log("updatedMessages", updatedMessages);
 
 				return { messages: updatedMessages };
 			} catch (error) {
