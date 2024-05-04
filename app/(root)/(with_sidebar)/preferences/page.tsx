@@ -3,17 +3,13 @@
 import { useLogger } from "@/hooks/useLogger";
 import { usePreferences } from "@/hooks/usePreferences";
 import {
-	createPreferences,
-	getPreferencesById,
-} from "@/lib/actions/preferences.actions";
-import {
 	DEFAULT_USER_PREFERENCES,
 	IPreferences,
 } from "@/lib/database/models/preferences.model";
 import { useUser } from "@clerk/nextjs";
 import { zodResolver } from "@hookform/resolvers/zod";
 import React, { useEffect, useMemo, useState } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import {
 	Form,
 	FormControl,
@@ -30,7 +26,6 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 
-import { PhotoIcon, UserCircleIcon } from "@heroicons/react/24/solid";
 import { z } from "zod";
 import { ARABIC_DIALECTS } from "@/types/languagesTypes";
 import {
@@ -62,12 +57,9 @@ const FormSection = ({
 	<div className="grid grid-cols-1 px-6 gap-x-8 gap-y-10 border-b border-gray-900/10 pb-12 md:grid-cols-3">
 		<div>
 			<h2 className="text-base font-semibold leading-7 text-gray-900">
-				Interaction Style
+				{title}
 			</h2>
-			<p className="mt-1 text-sm leading-6 text-gray-600">
-				Customize how your assistant interacts with you by setting your
-				assistant profile, response style, and detail level.
-			</p>
+			<p className="mt-1 text-sm leading-6 text-gray-600">{description}</p>
 		</div>
 		<div className="grid max-w-2xl grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6 md:col-span-2">
 			{children}
