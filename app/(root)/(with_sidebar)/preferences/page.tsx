@@ -122,15 +122,30 @@ const PreferencesPage = () => {
 		if (!isPending && !error && preferences) {
 			// Update form default values
 			form.reset({
-				arabic_dialect: preferences.arabic_dialect,
-				assistant_language_level: preferences.assistant_language_level,
-				assistant_gender: preferences.assistant_gender,
-				assistant_tone: preferences.assistant_tone,
-				assistant_detail_level: preferences.assistant_detail_level,
-				voice_stability: preferences.voice_stability,
-				voice_similarity_boost: preferences.voice_similarity_boost,
-				voice_style: preferences.voice_style,
-				voice_use_speaker_boost: preferences.voice_use_speaker_boost,
+				arabic_dialect:
+					preferences.arabic_dialect ?? DEFAULT_USER_PREFERENCES.arabic_dialect,
+				assistant_language_level:
+					preferences.assistant_language_level ??
+					DEFAULT_USER_PREFERENCES.assistant_language_level,
+				assistant_gender:
+					preferences.assistant_gender ??
+					DEFAULT_USER_PREFERENCES.assistant_gender,
+				assistant_tone:
+					preferences.assistant_tone ?? DEFAULT_USER_PREFERENCES.assistant_tone,
+				assistant_detail_level:
+					preferences.assistant_detail_level ??
+					DEFAULT_USER_PREFERENCES.assistant_detail_level,
+				voice_stability:
+					preferences.voice_stability ??
+					DEFAULT_USER_PREFERENCES.voice_stability,
+				voice_similarity_boost:
+					preferences.voice_similarity_boost ??
+					DEFAULT_USER_PREFERENCES.voice_similarity_boost,
+				voice_style:
+					preferences.voice_style ?? DEFAULT_USER_PREFERENCES.voice_style,
+				voice_use_speaker_boost:
+					preferences.voice_use_speaker_boost ??
+					DEFAULT_USER_PREFERENCES.voice_use_speaker_boost,
 			});
 		}
 	}, [isPending, error, preferences, form]);
@@ -227,7 +242,7 @@ const PreferencesPage = () => {
 					key as keyof typeof preferences
 				]
 		);
-	}, [form.formState, preferences]);
+	}, [form, preferences]);
 
 	console.log(
 		"formStateEqualToDefaultPreferences",

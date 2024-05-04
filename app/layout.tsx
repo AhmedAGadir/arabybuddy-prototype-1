@@ -22,10 +22,7 @@ export default function RootLayout({
 }>) {
 	return (
 		<ClerkProvider appearance={{ variables: { colorPrimary: "#38B6FF" } }}>
-			<html
-				lang="en"
-				className="h-full bg-gray-100 bg-gradient-to-r from-cyan-500 to-blue-500"
-			>
+			<html lang="en" className="h-full bg-gray-100">
 				<head>
 					{
 						// MOBILE CONSOLE DEVTOOLS
