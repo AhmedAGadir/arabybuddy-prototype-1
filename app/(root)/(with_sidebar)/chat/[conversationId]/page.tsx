@@ -64,16 +64,6 @@ const statusEnum = {
 
 export type Status = (typeof statusEnum)[keyof typeof statusEnum];
 
-const instructions: {
-	[key in Status]: string[];
-} = {
-	// idle: "Press ⬇️ the blue blob to start recording",
-	IDLE: ["Click the blob to start recording"],
-	RECORDING: ["Click again to stop recording", "Say something in Arabic..."],
-	PLAYING: [""],
-	PROCESSING: [""],
-};
-
 const taskEnum = {
 	SPEECH_TO_TEXT: "SPEECH_TO_TEXT",
 	ASSISTANT: "ASSISTANT",
@@ -257,6 +247,19 @@ const ConversationIdPage = ({
 	const isDoingTextToSpeech = activeTask === taskEnum.TEXT_TO_SPEECH;
 
 	const instruction = useMemo(() => {
+		const instructions: {
+			[key in Status]: string[];
+		} = {
+			// idle: "Press ⬇️ the blue blob to start recording",
+			IDLE: ["Click the blob to start recording"],
+			RECORDING: [
+				"Click again to stop recording",
+				"Say something in Arabic...",
+			],
+			PLAYING: [""],
+			PROCESSING: [""],
+		};
+
 		const statusInstructions = instructions[STATUS];
 		const randomIndex = Math.floor(Math.random() * statusInstructions.length);
 		return statusInstructions[randomIndex];
@@ -491,7 +494,9 @@ const ConversationIdPage = ({
 				"w-full flex flex-col items-center justify-between max-w-3xl mx-auto px-4"
 			)}
 		>
-			<div className="w-screen absolute top-0 left-0">{progressBarContent}</div>
+			<div className="w-screen absolute top-0 left-0 z-30">
+				{progressBarContent}
+			</div>
 			<div className="flex-1 min-h-0 basis-0 overflow-y-hidden flex flex-col justify-center items-center">
 				{/* chat bubble and pagination wrapper */}
 				<div className="flex flex-col justify-center items-center w-full h-full">
@@ -567,8 +572,8 @@ const ConversationIdPage = ({
 					{!isChatEmpty && !showLoadingMessage && paginationContent}
 				</div>
 			</div>
-			<div className="w-fit ">
-				<div className={cn("w-max")}>
+			<div className="w-full md:w-fit">
+				<div className="w-full md:w-fit h-16  mx-auto flex items-center justify-center">
 					{STATUS === statusEnum.PROCESSING && (
 						<Button
 							onClick={abortProcessingBtnHandler}
@@ -592,7 +597,7 @@ const ConversationIdPage = ({
 					)}
 					{instructionContent}
 				</div>
-				<div className="text-center w-fit m-auto pb-4">
+				<div className="text-center w-fit m-auto pb-4 ">
 					<Microphone
 						onClick={toggleRecording}
 						mode={STATUS}

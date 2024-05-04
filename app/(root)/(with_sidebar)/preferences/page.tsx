@@ -467,8 +467,56 @@ const PreferencesPage = () => {
 						description="Customize how your assistant interacts with you by setting your
 								assistant profile, response style, and detail level."
 					>
-						<div className="sm:col-span-6">
+						<div className="sm:col-span-4">
 							<FormField
+								control={form.control}
+								name="assistant_gender"
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel className="block text-sm font-medium leading-6 text-gray-900">
+											Profile
+										</FormLabel>
+										<Select
+											onValueChange={field.onChange}
+											{...field}
+											key={field.value}
+										>
+											<FormControl>
+												<SelectTrigger className="focus:ring-indigo-600">
+													<SelectValue placeholder="Select Profile" />
+												</SelectTrigger>
+											</FormControl>
+											<SelectContent>
+												{[
+													{
+														id: "young_male",
+														title: "Young / Man",
+													},
+													{
+														id: "young_female",
+														title: "Young / Woman",
+													},
+													{
+														id: "old_male",
+														title: "Old / Man",
+													},
+													{
+														id: "old_female",
+														title: "Old / Woman",
+													},
+												].map(({ id, title }) => (
+													<SelectItem value={id} key={id}>
+														{title}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
+
+							{/* <FormField
 								control={form.control}
 								name="assistant_gender"
 								render={({ field }) => (
@@ -565,7 +613,7 @@ const PreferencesPage = () => {
 										</RadioGroup>
 									</FormItem>
 								)}
-							/>
+							/> */}
 						</div>
 
 						<div className="sm:col-span-6">
