@@ -127,8 +127,6 @@ const PreferencesPage = () => {
 		updatePreferences,
 	} = usePreferences();
 
-	// TODO: useToast, handle errors, loading states, saving state etc.
-
 	// TODO: implement confirmation dialog before navigating away from unsaved changes
 
 	const { user } = useUser();
@@ -189,24 +187,26 @@ const PreferencesPage = () => {
 		}
 	}, [isPending, error, refetch]);
 
-	// useEffect(() => {
-	// 	if (!error && !isPending && !preferences && user?.id) {
-	// 		createPreferences({
-	// 			clerkId: user.id,
-	// 			...DEFAULT_USER_PREFERENCES,
-	// 		});
-	// 	}
-	// 	// eslint-disable-next-line react-hooks/exhaustive-deps
-	// }, [preferences, user, error, isPending]);
+	// TODO: remove after everyone's migrated
+	useEffect(() => {
+		if (!error && !isPending && !preferences && user?.id) {
+			createPreferences({
+				clerkId: user.id,
+				...DEFAULT_USER_PREFERENCES,
+			});
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [preferences, user, error, isPending]);
 
+	// *** for debugging purposes ***
 	// // Watch all inputs in the form
 	// const formState = form.watch();
 
 	// useEffect(() => {
 	// 	// Log the form state whenever it changes
-	// 	console.log("Form state:", formState);
-	// 	console.log("Form errors:", form.formState.errors);
-	// 	console.log("stability", form.getFieldState("voice_stability"));
+	// 	logger.log("Form state:", formState);
+	// 	logger.log("Form errors:", form.formState.errors);
+	// 	logger.log("stability", form.getFieldState("voice_stability"));
 	// }, [formState]);
 
 	const formSubmitHandler = async (
@@ -247,10 +247,6 @@ const PreferencesPage = () => {
 
 	const onResetToDefaultConfirmed = async () => {
 		try {
-			console.log("resetting to default", {
-				...preferences,
-				...DEFAULT_USER_PREFERENCES,
-			});
 			await updatePreferences({
 				...preferences,
 				...DEFAULT_USER_PREFERENCES,
@@ -285,7 +281,7 @@ const PreferencesPage = () => {
 
 	if (isPending) {
 		return (
-			<div className="flex-1 flex items-center justify-center min-h-svh ">
+			<div className="flex-1 flex items-center justify-center min-h-screen min-h-svh ">
 				<SkewLoader
 					color="black"
 					loading
@@ -954,7 +950,7 @@ const PreferencesPage = () => {
 	);
 
 	return (
-		<div className="lg:h-svh lg:overflow-y-scroll w-full py-6 bg-white ">
+		<div className="lg:h-screen lg:h-svh lg:overflow-y-scroll w-full py-6 bg-white ">
 			{formContent}
 			<ConfirmationDialog
 				description="Are you sure you want to reset your preferences to default?"

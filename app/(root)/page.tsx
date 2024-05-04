@@ -44,7 +44,7 @@ export default function Home() {
 
 	return (
 		<div className="bg-gradient bg-cover bg-center">
-			<div className="md:container md:mx-auto min-h-svh relative flex flex-col justify-between ">
+			<div className="md:container md:mx-auto min-h-screen min-h-svh relative flex flex-col justify-between ">
 				<main className="flex-1 flex flex-col items-center max-w-5xl mx-auto px-4">
 					<div className="py-3 flex justify-end w-full">
 						<SignedOut>

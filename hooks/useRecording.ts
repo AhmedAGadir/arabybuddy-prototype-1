@@ -6,10 +6,7 @@ import { useLogger } from "./useLogger";
 
 // this version of useRecording IS compatible with iOS
 // however it asks for microphone permission every time the user starts recording
-const useRecording = (
-	onRecordingComplete: (blob: Blob) => Promise<void>,
-	options: { autoRestartRecording: boolean }
-) => {
+const useRecording = () => {
 	const logger = useLogger({
 		label: "useRecording",
 		color: "#75bfff",
@@ -43,52 +40,40 @@ const useRecording = (
 	}, []);
 
 	const stopRecording = useCallback(
-		({ force = false }: { force?: boolean } = {}) => {
+		async ({ force = false }: { force?: boolean } = {}) => {
 			if (!isRecordingRef.current) {
 				logger.warn("Recording is not in progress");
-				return;
+				return { audioBlob: null };
 			}
 
 			if (force) {
-				logger.log("Stopping audio recording");
+				logger.log("Force stopped recording audio recording");
 				stopRecordingCleanup();
-				return;
+				recorderRef.current?.stop();
+				stopSilenceDetection();
+				setIsRecording(false);
+				return { audioBlob: null };
 			}
 
 			stopSound?.play();
 			recorderRef.current?.stop();
-			recorderRef.current?.exportWAV(async (blob: Blob) => {
-				logger.log(`Recording stopped - blob ${blob}`);
 
-				stopSilenceDetection();
-				setIsRecording(false);
-
-				try {
-					await onRecordingComplete(blob);
-				} catch (error) {
-					if (isRecording) {
-						stopRecording({ force: true });
-					}
-				}
-
-				// clean up
-				stopRecordingCleanup();
-
-				if (options.autoRestartRecording) {
-					logger.log("Auto-restarting recording");
-					// startRecording();
-				}
+			const responseBlobPromise = new Promise<Blob>((resolve) => {
+				recorderRef.current?.exportWAV((blob: Blob) => {
+					resolve(blob);
+				});
 			});
+
+			const audioBlob = await responseBlobPromise;
+
+			stopSilenceDetection();
+			setIsRecording(false);
+			// clean up
+			stopRecordingCleanup();
+			logger.log(`Recording stopped - blob ${audioBlob}`);
+			return { audioBlob };
 		},
-		[
-			isRecording,
-			logger,
-			onRecordingComplete,
-			options.autoRestartRecording,
-			stopRecordingCleanup,
-			stopSilenceDetection,
-			stopSound,
-		]
+		[isRecording, logger, stopRecordingCleanup, stopSilenceDetection, stopSound]
 	);
 
 	const startRecording = useCallback(async () => {

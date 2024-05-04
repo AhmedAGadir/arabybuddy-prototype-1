@@ -54,6 +54,7 @@ import SkewLoader from "react-spinners/SkewLoader";
 import { ToastAction } from "@radix-ui/react-toast";
 import { IMessage } from "@/lib/database/models/message.model";
 import { useUser } from "@clerk/nextjs";
+// import { XCircleIcon } from "@heroicons/react/20/solid";
 
 const statusEnum = {
 	IDLE: "IDLE",
@@ -82,8 +83,6 @@ const ConversationIdPage = ({
 
 	const { toast, dismiss } = useToast();
 
-	const { arabicDialect } = useContext(DialectContext);
-
 	const { user } = useUser();
 
 	const {
@@ -97,18 +96,7 @@ const ConversationIdPage = ({
 		conversationId,
 	});
 
-	const [displayedChatMessageInd, setDisplayedChatMessageInd] =
-		useState<number>(0);
-
-	useEffect(() => {
-		setDisplayedChatMessageInd(messages.length - 1);
-	}, [messages]);
-
 	const [timeStamp, setTimeStamp] = useState<Date | null>();
-
-	const isChatEmpty = _.isEmpty(messages);
-
-	const displayedChatMessage = messages[displayedChatMessageInd];
 
 	const [activeTask, setActiveTask] = useState<Task | null>(null);
 	// only to be used in onRecordingComplete since it has a closure over the activeTask state
@@ -130,17 +118,57 @@ const ConversationIdPage = ({
 	const { playAudio, isPlaying, initAudioElement, stopPlaying } =
 		useAudioPlayer();
 
+	const { isRecording, startRecording, stopRecording, amplitude } =
+		useRecording();
+
 	const [showLoadingMessage, setShowLoadingMessage] = useState(false);
+
+	const toggleRecording = async () => {
+		setShowInstruction(false);
+		if (isRecording) {
+			const { audioBlob } = await stopRecording();
+			if (audioBlob) {
+				const { success } = await onRecordingComplete(audioBlob);
+				if (success) {
+					// TODO: disabling this for now, the UI is confusing
+					// restart recording
+					// startRecording();
+				}
+			}
+			return;
+		}
+
+		if (!isRecording) {
+			initAudioElement();
+			setTimeStamp(new Date());
+			startRecording();
+			return;
+		}
+	};
 
 	const onRecordingComplete = useCallback(
 		async (audioBlob: Blob) => {
 			try {
+				// sanitize audio blob - it cant be larger than 9.216 MB
+				if (audioBlob.size > 9216000) {
+					throw new Error("Audio is too long");
+				}
+
 				// 1. transcribe the user audio
+				setProgressBarValue(1);
 				setActiveTask(taskEnum.SPEECH_TO_TEXT);
 				const { transcription } = await speechToText(audioBlob);
+
+				// sanitize transcription, no input should be empty
+
 				setProgressBarValue(25);
-				// update database with user message
-				await createMessage({ role: "user", content: transcription });
+				// copy current messages before updating the db
+				const messagesCopy = messages.map(({ role, content }) => ({
+					role,
+					content,
+				}));
+				// update database with user message in the background
+				createMessage({ role: "user", content: transcription });
 
 				// show loading message
 				setShowLoadingMessage(true);
@@ -152,9 +180,10 @@ const ConversationIdPage = ({
 						role: "user",
 						content: transcription,
 					},
-					messages.map((m) => ({ role: m.role, content: m.content }))
+					messagesCopy
 				);
-				await createMessage(_.last(updatedMessages) as IMessage);
+				// update database with assistant message in the background
+				createMessage(_.last(updatedMessages) as IMessage);
 
 				// 3. convert the assistants response to audio
 				setProgressBarValue(75);
@@ -171,12 +200,15 @@ const ConversationIdPage = ({
 				await playAudio(base64Audio);
 				setProgressBarValue(0);
 				setTimeStamp(null);
+
+				return { success: true };
 			} catch (error) {
 				if ((error as any).name === "AbortError") {
 					toast({
 						title: "Message cancelled",
 						description: "The request was aborted.",
 						className: "warning-toast",
+						duration: 10000,
 					});
 				} else {
 					logger.error("onRecordingComplete failed", error);
@@ -185,6 +217,7 @@ const ConversationIdPage = ({
 						description: "There was a problem with your request.",
 						// variant: "destructive",
 						className: "error-toast",
+						duration: 10000,
 					});
 				}
 				if (isPlaying) {
@@ -198,13 +231,9 @@ const ConversationIdPage = ({
 
 				setShowLoadingMessage(false);
 
-				setTimeout(() => {
-					dismiss();
-					setTimeStamp(null);
-				}, 10000);
+				setTimeStamp(null);
 
-				// propagate the error so that the recording can be stopped
-				throw error;
+				return { success: false };
 			}
 		},
 		[
@@ -223,9 +252,6 @@ const ConversationIdPage = ({
 			timeStamp,
 		]
 	);
-
-	const { isRecording, startRecording, stopRecording, amplitude } =
-		useRecording(onRecordingComplete, { autoRestartRecording: false });
 
 	const [showInstruction, setShowInstruction] = useState(false);
 
@@ -265,21 +291,6 @@ const ConversationIdPage = ({
 		return statusInstructions[randomIndex];
 	}, [STATUS]);
 
-	const toggleRecording = () => {
-		setShowInstruction(false);
-		if (isRecording) {
-			stopRecording();
-			return;
-		}
-
-		if (!isRecording) {
-			initAudioElement();
-			setTimeStamp(new Date());
-			startRecording();
-			return;
-		}
-	};
-
 	const abortProcessingBtnHandler = useCallback(() => {
 		if (STATUS !== statusEnum.PROCESSING) return;
 		switch (activeTask) {
@@ -302,6 +313,17 @@ const ConversationIdPage = ({
 		abortTextToSpeechRequest,
 		activeTask,
 	]);
+
+	const [displayedChatMessageInd, setDisplayedChatMessageInd] =
+		useState<number>(0);
+
+	useEffect(() => {
+		setDisplayedChatMessageInd(messages.length - 1);
+	}, [messages]);
+
+	const isChatEmpty = _.isEmpty(messages);
+
+	const displayedChatMessage = messages[displayedChatMessageInd];
 
 	// const [completedTyping, setCompletedTyping] = useState(false);
 	// const [skipTyping, setSkipTyping] = useState(false);
@@ -472,7 +494,7 @@ const ConversationIdPage = ({
 
 	if (isPending) {
 		return (
-			<div className="flex-1 flex items-center justify-center min-h-svh ">
+			<div className="flex-1 flex items-center justify-center min-h-screen min-h-svh ">
 				<SkewLoader
 					color="black"
 					loading
@@ -573,7 +595,7 @@ const ConversationIdPage = ({
 				</div>
 			</div>
 			<div className="w-full md:w-fit">
-				<div className="w-full md:w-fit h-16  mx-auto flex items-center justify-center">
+				<div className="w-full md:w-fit h-16  mx-auto flex items-center justify-center z-10">
 					{STATUS === statusEnum.PROCESSING && (
 						<Button
 							onClick={abortProcessingBtnHandler}
@@ -595,6 +617,20 @@ const ConversationIdPage = ({
 							Stop Playing
 						</Button>
 					)}
+					{/* {isRecording && (
+						// <Button variant="link">
+						// 	<XCircleIcon className="text-red-500 w-16 h-16" />
+						// </Button>
+						<Button
+							onClick={() => stopRecording({ force: true })}
+							// variant="default"
+							variant="outline"
+							size="lg"
+							className="w-full md:w-fit"
+						>
+							Stop Recording
+						</Button>
+					)} */}
 					{instructionContent}
 				</div>
 				<div className="text-center w-fit m-auto pb-4 ">
