@@ -365,23 +365,22 @@ const ConversationIdPage = ({
 	// };
 
 	useEffect(() => {
-		if (error) {
+		if (!isPending && error) {
 			toast({
 				title: "Error loading messages",
-				description:
-					"There was a problem loading this conversation's messages.",
-				variant: "destructive",
+				description: "An error occurred while this conversation's messages.",
 				action: (
 					<ToastAction altText="Try again">
-						<Button variant="secondary" onClick={() => refetch()}>
+						<Button variant="outline" onClick={() => refetch()}>
 							Try again
 						</Button>
 					</ToastAction>
 				),
+				className: "error-toast",
+				duration: Infinity,
 			});
 		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [error]);
+	}, [isPending, error, refetch]);
 
 	const chatMenuItems = useMemo(() => {
 		return [
@@ -469,15 +468,21 @@ const ConversationIdPage = ({
 	const isMobile = device === "mobile";
 
 	if (isPending) {
-		return <></>;
+		return (
+			<div className="flex-1 flex items-center justify-center min-h-svh ">
+				<SkewLoader
+					color="black"
+					loading
+					size={20}
+					aria-label="Loading Spinner"
+					data-testid="loader"
+				/>
+			</div>
+		);
 	}
 
 	if (error) {
-		return (
-			<div className="flex-1 flex items-center justify-center min-h-svh">
-				<span>Error loading messages</span>
-			</div>
-		);
+		return null;
 	}
 
 	return (

@@ -3,16 +3,19 @@
 import { IConversation } from "@/lib/database/models/conversation.model";
 import { useUser } from "@clerk/nextjs";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useLogger } from "./useLogger";
 
 const useConversations = () => {
+	const logger = useLogger({ label: "useConversations", color: "#55ff37" });
 	const { user } = useUser();
 
 	const queryClient = useQueryClient();
 
-	const { isPending, error, data } = useQuery({
+	const { isPending, error, data, refetch } = useQuery({
 		queryKey: ["conversations", user?.id],
 		refetchOnWindowFocus: true,
 		queryFn: async () => {
+			logger.log("fetching conversations");
 			const response = await fetch("/api/conversations");
 			const data = await response.json();
 			return data;
@@ -21,6 +24,7 @@ const useConversations = () => {
 
 	const createConversationMutation = useMutation({
 		mutationFn: async () => {
+			logger.log("creating conversation");
 			const response = await fetch(`/api/conversations`, {
 				method: "POST",
 				headers: {
@@ -33,12 +37,15 @@ const useConversations = () => {
 			return response.json();
 		},
 		onError: (err) => {
-			console.error("Error creating conversation:", err);
+			logger.error("Error creating conversation:", err);
 			throw err;
 		},
 		onSuccess: (data) => {
 			// Invalidate and refetch
-			queryClient.invalidateQueries({ queryKey: ["conversations"] });
+			logger.log("created conversation - invalidating cache and refetching");
+			queryClient.invalidateQueries({
+				queryKey: ["conversations", user?.id],
+			});
 		},
 		// TODO: cancel outgoing fetches when creating a conversation
 	});
@@ -49,6 +56,7 @@ const useConversations = () => {
 
 	const deleteConversationMutation = useMutation({
 		mutationFn: async (conversationId: string) => {
+			logger.log("deleting conversation", conversationId);
 			const response = await fetch(`/api/conversations/${conversationId}`, {
 				method: "DELETE",
 			});
@@ -76,6 +84,7 @@ const useConversations = () => {
 			return { previousConversations };
 		},
 		onError: (err, variables, context) => {
+			logger.error("Error deleting conversation:", err);
 			// Rollback on error
 			queryClient.setQueryData(
 				["conversations"],
@@ -84,7 +93,8 @@ const useConversations = () => {
 		},
 		onSettled: () => {
 			// Invalidate and refetch
-			queryClient.invalidateQueries({ queryKey: ["conversations"] });
+			logger.log("deleted conversation - invalidating cache and refetching");
+			queryClient.invalidateQueries({ queryKey: ["conversations", user?.id] });
 		},
 	});
 
@@ -98,6 +108,7 @@ const useConversations = () => {
 		isPending,
 		error,
 		conversations,
+		refetch,
 		createConversation,
 		deleteConversation,
 	};

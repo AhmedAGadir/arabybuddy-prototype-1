@@ -10,7 +10,7 @@ const usePreferences = () => {
 
 	const queryClient = useQueryClient();
 
-	const { isPending, error, data } = useQuery({
+	const { isPending, error, data, refetch } = useQuery({
 		queryKey: ["preferences", user?.id],
 		refetchOnWindowFocus: true,
 		queryFn: async () => {
@@ -19,7 +19,6 @@ const usePreferences = () => {
 			logger.log("fetched preferences", JSON.stringify(data));
 			return data;
 		},
-		retry: false,
 	});
 
 	const createPreferencesMutation = useMutation({
@@ -89,6 +88,7 @@ const usePreferences = () => {
 		isPending,
 		error,
 		preferences,
+		refetch,
 		createPreferences,
 		updatePreferences,
 	};

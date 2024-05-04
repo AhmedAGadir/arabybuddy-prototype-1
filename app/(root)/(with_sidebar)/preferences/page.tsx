@@ -48,6 +48,32 @@ import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/components/ui/use-toast";
 import ConfirmationDialog from "@/components/shared/ConfirmationDialog";
+import { ToastAction } from "@radix-ui/react-toast";
+
+const FormSection = ({
+	title,
+	description,
+	children,
+}: {
+	title: string;
+	description: string;
+	children: React.ReactNode;
+}) => (
+	<div className="grid grid-cols-1 px-6 gap-x-8 gap-y-10 border-b border-gray-900/10 pb-12 md:grid-cols-3">
+		<div>
+			<h2 className="text-base font-semibold leading-7 text-gray-900">
+				Interaction Style
+			</h2>
+			<p className="mt-1 text-sm leading-6 text-gray-600">
+				Customize how your assistant interacts with you by setting your
+				assistant profile, response style, and detail level.
+			</p>
+		</div>
+		<div className="grid max-w-2xl grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6 md:col-span-2">
+			{children}
+		</div>
+	</div>
+);
 
 // export interface IPreferences {
 // 	clerkId: string;
@@ -104,23 +130,26 @@ const PreferencesPage = () => {
 		isPending,
 		error,
 		preferences,
+		refetch,
 		createPreferences,
 		updatePreferences,
 	} = usePreferences();
 
 	// TODO: useToast, handle errors, loading states, saving state etc.
 
+	// TODO: implement confirmation dialog before navigating away from unsaved changes
+
 	const { user } = useUser();
 
-	const { toast, dismiss } = useToast();
+	const { toast } = useToast();
 
 	const form = useForm<z.infer<typeof preferencesFormSchema>>({
 		resolver: zodResolver(preferencesFormSchema),
 	});
 
 	useEffect(() => {
+		// Update form values after preferences are loaded
 		if (!isPending && !error && preferences) {
-			// Update form default values
 			form.reset({
 				arabic_dialect:
 					preferences.arabic_dialect ?? DEFAULT_USER_PREFERENCES.arabic_dialect,
@@ -149,6 +178,34 @@ const PreferencesPage = () => {
 			});
 		}
 	}, [isPending, error, preferences, form]);
+
+	useEffect(() => {
+		if (!isPending && error) {
+			toast({
+				title: "Error loading preferences",
+				description: "An error occurred while loading your preferences",
+				action: (
+					<ToastAction altText="Try again">
+						<Button variant="outline" onClick={() => refetch()}>
+							Try again
+						</Button>
+					</ToastAction>
+				),
+				className: "error-toast",
+				duration: Infinity,
+			});
+		}
+	}, [isPending, error, refetch]);
+
+	// useEffect(() => {
+	// 	if (!error && !isPending && !preferences && user?.id) {
+	// 		createPreferences({
+	// 			clerkId: user.id,
+	// 			...DEFAULT_USER_PREFERENCES,
+	// 		});
+	// 	}
+	// 	// eslint-disable-next-line react-hooks/exhaustive-deps
+	// }, [preferences, user, error, isPending]);
 
 	// // Watch all inputs in the form
 	// const formState = form.watch();
@@ -222,16 +279,6 @@ const PreferencesPage = () => {
 		setResetToDefaultDialogOpen(false);
 	};
 
-	// useEffect(() => {
-	// 	if (!error && !isPending && !preferences && user?.id) {
-	// 		createPreferences({
-	// 			clerkId: user.id,
-	// 			...DEFAULT_USER_PREFERENCES,
-	// 		});
-	// 	}
-	// 	// eslint-disable-next-line react-hooks/exhaustive-deps
-	// }, [preferences, user, error, isPending]);
-
 	const formStateEqualToDefaultPreferences = useMemo(() => {
 		if (!preferences) return false;
 		const formValues = form.getValues();
@@ -243,11 +290,6 @@ const PreferencesPage = () => {
 				]
 		);
 	}, [form, preferences]);
-
-	console.log(
-		"formStateEqualToDefaultPreferences",
-		formStateEqualToDefaultPreferences
-	);
 
 	if (isPending) {
 		return (
@@ -263,7 +305,9 @@ const PreferencesPage = () => {
 		);
 	}
 
-	if (error) return <div>Error loading preferences: {error.message}</div>;
+	if (error) {
+		return null;
+	}
 
 	const formContent = (
 		<Form {...form}>
@@ -277,172 +321,52 @@ const PreferencesPage = () => {
 				)}
 				{/* form */}
 				<div className="space-y-12">
-					<div className="grid grid-cols-1 px-6 gap-x-8 gap-y-10 border-b border-gray-900/10 pb-12 md:grid-cols-3">
-						<div>
-							<h2 className="text-base font-semibold leading-7 text-gray-900">
-								Dialect & Proficiency
-							</h2>
-							<p className="mt-1 text-sm leading-6 text-gray-600">
-								Select your preferred Arabic dialect and define your proficiency
-								level for tailored communication with your assistant.
-							</p>
+					<FormSection
+						title="Dialect & Proficiency"
+						description="Select your preferred Arabic dialect and define your proficiency
+								level for tailored communication with your assistant."
+					>
+						<div className="sm:col-span-4">
+							<FormField
+								control={form.control}
+								name="arabic_dialect"
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel className="block text-sm font-medium leading-6 text-gray-900">
+											Arabic Dialect
+										</FormLabel>
+										<Select
+											onValueChange={field.onChange}
+											// value={field.value}
+											// defaultValue={field.value}
+											{...field}
+											key={field.value}
+										>
+											<FormControl>
+												<SelectTrigger className="focus:ring-indigo-600">
+													<SelectValue placeholder="Select Dialect" />
+												</SelectTrigger>
+											</FormControl>
+											<SelectContent>
+												{ARABIC_DIALECTS.map((dialect) => (
+													<SelectItem value={dialect} key={dialect}>
+														{dialect}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
 						</div>
 
-						<div className="grid max-w-2xl grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6 md:col-span-2">
-							<div className="sm:col-span-4">
-								<FormField
-									control={form.control}
-									name="arabic_dialect"
-									render={({ field }) => (
-										<FormItem>
-											<FormLabel className="block text-sm font-medium leading-6 text-gray-900">
-												Arabic Dialect
-											</FormLabel>
-											<Select
-												onValueChange={field.onChange}
-												// value={field.value}
-												// defaultValue={field.value}
-												{...field}
-												key={field.value}
-											>
-												<FormControl>
-													<SelectTrigger className="focus:ring-indigo-600">
-														<SelectValue placeholder="Select Dialect" />
-													</SelectTrigger>
-												</FormControl>
-												<SelectContent>
-													{ARABIC_DIALECTS.map((dialect) => (
-														<SelectItem value={dialect} key={dialect}>
-															{dialect}
-														</SelectItem>
-													))}
-												</SelectContent>
-											</Select>
-											<FormMessage />
-										</FormItem>
-									)}
-								/>
-							</div>
-
-							<div className="sm:col-span-6">
-								<FormField
-									control={form.control}
-									name="assistant_language_level"
-									render={({ field }) => {
-										return (
-											<FormItem className="space-y-3">
-												<RadioGroup
-													value={field.value}
-													onChange={field.onChange}
-													defaultValue={field.value}
-												>
-													<RadioGroup.Label className="block text-sm font-medium leading-6 text-gray-900">
-														Language Level
-													</RadioGroup.Label>
-
-													<div
-														// className="mt-4 grid grid-cols-1 gap-y-6 sm:grid-cols-3 sm:gap-x-4"
-														className="mt-2 flex flex-col md:flex-row gap-2"
-													>
-														{[
-															{
-																id: "beginner",
-																title: "Beginner",
-																description:
-																	"You are just starting to learn the dialect",
-															},
-															{
-																id: "intermediate",
-																title: "Intermediate",
-																description:
-																	"You have some experience with the dialect",
-															},
-															{
-																id: "native",
-																title: "Native",
-																description:
-																	"You are a native speaker of the dialect",
-															},
-														].map((languageLevel) => (
-															<RadioGroup.Option
-																key={languageLevel.id}
-																value={languageLevel.id}
-																className={({ active }) =>
-																	cn(
-																		active
-																			? "border-indigo-600 ring-2 ring-indigo-600"
-																			: "border-gray-300",
-																		"relative flex cursor-pointer rounded-lg border bg-white p-4 shadow-sm focus:outline-none"
-																	)
-																}
-															>
-																{({ checked, active }) => (
-																	<>
-																		<span className="flex flex-1">
-																			<span className="flex flex-col">
-																				<RadioGroup.Label
-																					as="span"
-																					className="block text-sm font-medium text-gray-900"
-																				>
-																					{languageLevel.title}
-																				</RadioGroup.Label>
-																				<RadioGroup.Description
-																					as="span"
-																					className="mt-1 flex items-center text-sm text-gray-500"
-																				>
-																					{languageLevel.description}
-																				</RadioGroup.Description>
-																			</span>
-																		</span>
-																		<CheckCircleIcon
-																			className={cn(
-																				!checked ? "invisible" : "",
-																				"h-5 w-5 text-indigo-600"
-																			)}
-																			aria-hidden="true"
-																		/>
-																		<span
-																			className={cn(
-																				active ? "border" : "border-2",
-																				checked
-																					? "border-indigo-600"
-																					: "border-transparent",
-																				"pointer-events-none absolute -inset-px rounded-lg"
-																			)}
-																			aria-hidden="true"
-																		/>
-																	</>
-																)}
-															</RadioGroup.Option>
-														))}
-													</div>
-												</RadioGroup>
-												<FormMessage />
-											</FormItem>
-										);
-									}}
-								/>
-							</div>
-						</div>
-					</div>
-
-					<div className="grid grid-cols-1 px-6 gap-x-8 gap-y-10 border-b border-gray-900/10 pb-12 md:grid-cols-3">
-						<div>
-							<h2 className="text-base font-semibold leading-7 text-gray-900">
-								Interaction Style
-							</h2>
-							<p className="mt-1 text-sm leading-6 text-gray-600">
-								Customize how your assistant interacts with you by setting your
-								assistant profile, response style, and detail level.
-							</p>
-						</div>
-
-						<div className="grid max-w-2xl grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6 md:col-span-2">
-							<div className="sm:col-span-6">
-								<FormField
-									control={form.control}
-									name="assistant_gender"
-									render={({ field }) => (
+						<div className="sm:col-span-6">
+							<FormField
+								control={form.control}
+								name="assistant_language_level"
+								render={({ field }) => {
+									return (
 										<FormItem className="space-y-3">
 											<RadioGroup
 												value={field.value}
@@ -450,39 +374,36 @@ const PreferencesPage = () => {
 												defaultValue={field.value}
 											>
 												<RadioGroup.Label className="block text-sm font-medium leading-6 text-gray-900">
-													Profile
+													Language Level
 												</RadioGroup.Label>
 
-												<div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-2">
+												<div
+													// className="mt-4 grid grid-cols-1 gap-y-6 sm:grid-cols-3 sm:gap-x-4"
+													className="mt-2 flex flex-col md:flex-row gap-2"
+												>
 													{[
 														{
-															id: "young_male",
-															title: "Young - Man",
+															id: "beginner",
+															title: "Beginner",
 															description:
-																"Your assistant will personify a young man.",
+																"You are just starting to learn the dialect",
 														},
 														{
-															id: "young_female",
-															title: "Young - Woman",
+															id: "intermediate",
+															title: "Intermediate",
 															description:
-																"Your assistant will personify a young woman.",
+																"You have some experience with the dialect",
 														},
 														{
-															id: "old_male",
-															title: "Old - Man",
+															id: "native",
+															title: "Native",
 															description:
-																"Your assistant will personify an older man.",
+																"You are a native speaker of the dialect",
 														},
-														{
-															id: "old_female",
-															title: "Old - Woman",
-															description:
-																"Your assistant will personify an older woman.",
-														},
-													].map((gender) => (
+													].map((languageLevel) => (
 														<RadioGroup.Option
-															key={gender.id}
-															value={gender.id}
+															key={languageLevel.id}
+															value={languageLevel.id}
 															className={({ active }) =>
 																cn(
 																	active
@@ -500,13 +421,13 @@ const PreferencesPage = () => {
 																				as="span"
 																				className="block text-sm font-medium text-gray-900"
 																			>
-																				{gender.title}
+																				{languageLevel.title}
 																			</RadioGroup.Label>
 																			<RadioGroup.Description
 																				as="span"
 																				className="mt-1 flex items-center text-sm text-gray-500"
 																			>
-																				{gender.description}
+																				{languageLevel.description}
 																			</RadioGroup.Description>
 																		</span>
 																	</span>
@@ -532,187 +453,127 @@ const PreferencesPage = () => {
 														</RadioGroup.Option>
 													))}
 												</div>
-												<FormMessage />
 											</RadioGroup>
+											<FormMessage />
 										</FormItem>
-									)}
-								/>
-							</div>
+									);
+								}}
+							/>
+						</div>
+					</FormSection>
 
-							{/* <div className="sm:col-span-6">
-								<FormField
-									control={form.control}
-									name="assistant_gender"
-									render={({ field }) => {
-										return (
-											<FormItem className="space-y-3">
-												<RadioGroup
-													value={field.value}
-													onChange={field.onChange}
-													defaultValue={field.value}
-												>
-													<RadioGroup.Label className="block text-sm font-medium leading-6 text-gray-900">
-														Character Profile
-													</RadioGroup.Label>
+					<FormSection
+						title="Interaction Style"
+						description="Customize how your assistant interacts with you by setting your
+								assistant profile, response style, and detail level."
+					>
+						<div className="sm:col-span-6">
+							<FormField
+								control={form.control}
+								name="assistant_gender"
+								render={({ field }) => (
+									<FormItem className="space-y-3">
+										<RadioGroup
+											value={field.value}
+											onChange={field.onChange}
+											defaultValue={field.value}
+										>
+											<RadioGroup.Label className="block text-sm font-medium leading-6 text-gray-900">
+												Profile
+											</RadioGroup.Label>
 
-													<div
-														// className="mt-4 grid grid-cols-1 gap-y-6 sm:grid-cols-3 sm:gap-x-4"
-														className="mt-2 flex flex-col md:flex-row gap-2"
+											<div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-2">
+												{[
+													{
+														id: "young_male",
+														title: "Young - Man",
+														description:
+															"Your assistant will personify a young man.",
+													},
+													{
+														id: "young_female",
+														title: "Young - Woman",
+														description:
+															"Your assistant will personify a young woman.",
+													},
+													{
+														id: "old_male",
+														title: "Old - Man",
+														description:
+															"Your assistant will personify an older man.",
+													},
+													{
+														id: "old_female",
+														title: "Old - Woman",
+														description:
+															"Your assistant will personify an older woman.",
+													},
+												].map((gender) => (
+													<RadioGroup.Option
+														key={gender.id}
+														value={gender.id}
+														className={({ active }) =>
+															cn(
+																active
+																	? "border-indigo-600 ring-2 ring-indigo-600"
+																	: "border-gray-300",
+																"relative flex cursor-pointer rounded-lg border bg-white p-4 shadow-sm focus:outline-none"
+															)
+														}
 													>
-														{[
-															{
-																id: "young_male",
-																title: "Young - Man",
-																available: true,
-															},
-															{
-																id: "young_female",
-																title: "Young - Woman",
-																available: true,
-															},
-															{
-																id: "old_male",
-																title: "Old - Man",
-																available: true,
-															},
-															{
-																id: "old_female",
-																title: "Old - Woman",
-																available: true,
-															},
-														].map((gender) => (
-															<RadioGroup.Option
-																key={gender.id}
-																value={gender.id}
-																className={({ active, checked }) =>
-																	cn(
-																		gender.available
-																			? "cursor-pointer focus:outline-none"
-																			: "cursor-not-allowed opacity-25",
-																		active
-																			? "ring-2 ring-indigo-600 ring-offset-2"
-																			: "",
+														{({ checked, active }) => (
+															<>
+																<span className="flex flex-1">
+																	<span className="flex flex-col">
+																		<RadioGroup.Label
+																			as="span"
+																			className="block text-sm font-medium text-gray-900"
+																		>
+																			{gender.title}
+																		</RadioGroup.Label>
+																		<RadioGroup.Description
+																			as="span"
+																			className="mt-1 flex items-center text-sm text-gray-500"
+																		>
+																			{gender.description}
+																		</RadioGroup.Description>
+																	</span>
+																</span>
+																<CheckCircleIcon
+																	className={cn(
+																		!checked ? "invisible" : "",
+																		"h-5 w-5 text-indigo-600"
+																	)}
+																	aria-hidden="true"
+																/>
+																<span
+																	className={cn(
+																		active ? "border" : "border-2",
 																		checked
-																			? "bg-indigo-600 text-white hover:bg-indigo-500"
-																			: "ring-1 ring-inset ring-gray-300 bg-white text-gray-900 hover:bg-gray-50",
-																		"flex items-center justify-center rounded-md py-3 px-3 text-sm font-semibold sm:flex-1"
-																	)
-																}
-																disabled={!gender.available}
-															>
-																<RadioGroup.Label as="span">
-																	{gender.title}
-																</RadioGroup.Label>
-															</RadioGroup.Option>
-														))}
-													</div>
-												</RadioGroup>
-												<FormMessage />
-											</FormItem>
-										);
-									}}
-								/>
-							</div>  */}
+																			? "border-indigo-600"
+																			: "border-transparent",
+																		"pointer-events-none absolute -inset-px rounded-lg"
+																	)}
+																	aria-hidden="true"
+																/>
+															</>
+														)}
+													</RadioGroup.Option>
+												))}
+											</div>
+											<FormMessage />
+										</RadioGroup>
+									</FormItem>
+								)}
+							/>
+						</div>
 
-							<div className="sm:col-span-6">
-								<FormField
-									control={form.control}
-									name="assistant_tone"
-									render={({ field }) => {
-										return (
-											<FormItem className="space-y-3">
-												<RadioGroup
-													value={field.value}
-													onChange={field.onChange}
-													defaultValue={field.value}
-												>
-													<RadioGroup.Label className="block text-sm font-medium leading-6 text-gray-900">
-														Interaction Tone
-													</RadioGroup.Label>
-
-													<div
-														// className="mt-4 grid grid-cols-1 gap-y-6 sm:grid-cols-3 sm:gap-x-4"
-														className="mt-2 flex flex-col md:flex-row gap-2"
-													>
-														{[
-															{
-																id: "casual",
-																title: "Casual",
-																description:
-																	"Your assistant will speak to you in a casual manner",
-															},
-															{
-																id: "professional",
-																title: "Professional",
-																description:
-																	"Your assistant will speak to you in a professional manner",
-															},
-														].map((tone) => (
-															<RadioGroup.Option
-																key={tone.id}
-																value={tone.id}
-																className={({ active }) =>
-																	cn(
-																		active
-																			? "border-indigo-600 ring-2 ring-indigo-600"
-																			: "border-gray-300",
-																		"relative flex cursor-pointer rounded-lg border bg-white p-4 shadow-sm focus:outline-none"
-																	)
-																}
-															>
-																{({ checked, active }) => (
-																	<>
-																		<span className="flex flex-1">
-																			<span className="flex flex-col">
-																				<RadioGroup.Label
-																					as="span"
-																					className="block text-sm font-medium text-gray-900"
-																				>
-																					{tone.title}
-																				</RadioGroup.Label>
-																				<RadioGroup.Description
-																					as="span"
-																					className="mt-1 flex items-center text-sm text-gray-500"
-																				>
-																					{tone.description}
-																				</RadioGroup.Description>
-																			</span>
-																		</span>
-																		<CheckCircleIcon
-																			className={cn(
-																				!checked ? "invisible" : "",
-																				"h-5 w-5 text-indigo-600"
-																			)}
-																			aria-hidden="true"
-																		/>
-																		<span
-																			className={cn(
-																				active ? "border" : "border-2",
-																				checked
-																					? "border-indigo-600"
-																					: "border-transparent",
-																				"pointer-events-none absolute -inset-px rounded-lg"
-																			)}
-																			aria-hidden="true"
-																		/>
-																	</>
-																)}
-															</RadioGroup.Option>
-														))}
-													</div>
-												</RadioGroup>
-												<FormMessage />
-											</FormItem>
-										);
-									}}
-								/>
-							</div>
-
-							{/* <div className="sm:col-span-6">
-								<FormField
-									control={form.control}
-									name="assistant_detail_level"
-									render={({ field }) => (
+						<div className="sm:col-span-6">
+							<FormField
+								control={form.control}
+								name="assistant_tone"
+								render={({ field }) => {
+									return (
 										<FormItem className="space-y-3">
 											<RadioGroup
 												value={field.value}
@@ -720,308 +581,296 @@ const PreferencesPage = () => {
 												defaultValue={field.value}
 											>
 												<RadioGroup.Label className="block text-sm font-medium leading-6 text-gray-900">
-													Response Detail
+													Response Style
 												</RadioGroup.Label>
 
-												<div className="mt-2 flex flex-col md:flex-row gap-2">
+												<div
+													// className="mt-4 grid grid-cols-1 gap-y-6 sm:grid-cols-3 sm:gap-x-4"
+													className="mt-2 flex flex-col md:flex-row gap-2"
+												>
+													{[
+														{
+															id: "casual",
+															title: "Casual",
+															description:
+																"Your assistant will speak to you in a casual manner",
+														},
+														{
+															id: "professional",
+															title: "Professional",
+															description:
+																"Your assistant will speak to you in a professional manner",
+														},
+													].map((tone) => (
+														<RadioGroup.Option
+															key={tone.id}
+															value={tone.id}
+															className={({ active }) =>
+																cn(
+																	active
+																		? "border-indigo-600 ring-2 ring-indigo-600"
+																		: "border-gray-300",
+																	"relative flex cursor-pointer rounded-lg border bg-white p-4 shadow-sm focus:outline-none"
+																)
+															}
+														>
+															{({ checked, active }) => (
+																<>
+																	<span className="flex flex-1">
+																		<span className="flex flex-col">
+																			<RadioGroup.Label
+																				as="span"
+																				className="block text-sm font-medium text-gray-900"
+																			>
+																				{tone.title}
+																			</RadioGroup.Label>
+																			<RadioGroup.Description
+																				as="span"
+																				className="mt-1 flex items-center text-sm text-gray-500"
+																			>
+																				{tone.description}
+																			</RadioGroup.Description>
+																		</span>
+																	</span>
+																	<CheckCircleIcon
+																		className={cn(
+																			!checked ? "invisible" : "",
+																			"h-5 w-5 text-indigo-600"
+																		)}
+																		aria-hidden="true"
+																	/>
+																	<span
+																		className={cn(
+																			active ? "border" : "border-2",
+																			checked
+																				? "border-indigo-600"
+																				: "border-transparent",
+																			"pointer-events-none absolute -inset-px rounded-lg"
+																		)}
+																		aria-hidden="true"
+																	/>
+																</>
+															)}
+														</RadioGroup.Option>
+													))}
+												</div>
+											</RadioGroup>
+											<FormMessage />
+										</FormItem>
+									);
+								}}
+							/>
+						</div>
+
+						<div className="sm:col-span-6">
+							<FormField
+								control={form.control}
+								name="assistant_detail_level"
+								render={({ field }) => {
+									return (
+										<FormItem className="space-y-3">
+											<RadioGroup
+												value={field.value}
+												onChange={field.onChange}
+												defaultValue={field.value}
+											>
+												<RadioGroup.Label className="block text-sm font-medium leading-6 text-gray-900">
+													Detail Level
+												</RadioGroup.Label>
+
+												<div
+													// className="mt-4 grid grid-cols-1 gap-y-6 sm:grid-cols-3 sm:gap-x-4"
+													className="mt-2 flex flex-col md:flex-row gap-2"
+												>
 													{[
 														{
 															id: "low",
 															title: "Low",
-															description:
-																"Your assistant will provide minimal detail",
+															available: true,
 														},
 														{
 															id: "medium",
 															title: "Medium",
-															description:
-																"Your assistant will provide moderate detail",
+															available: true,
 														},
 														{
 															id: "high",
 															title: "High",
-															description:
-																"Your assistant will provide maximum detail",
+															available: true,
 														},
 													].map((detail) => (
 														<RadioGroup.Option
 															key={detail.id}
 															value={detail.id}
-															className={({ active }) =>
+															className={({ active, checked }) =>
 																cn(
+																	detail.available
+																		? "cursor-pointer focus:outline-none"
+																		: "cursor-not-allowed opacity-25",
 																	active
-																		? "border-indigo-600 ring-2 ring-indigo-600"
-																		: "border-gray-300",
-																	"relative flex cursor-pointer rounded-lg border bg-white p-4 shadow-sm focus:outline-none"
+																		? "ring-2 ring-indigo-600 ring-offset-2"
+																		: "",
+																	checked
+																		? "bg-indigo-600 text-white hover:bg-indigo-500"
+																		: "ring-1 ring-inset ring-gray-300 bg-white text-gray-900 hover:bg-gray-50",
+																	"flex items-center justify-center rounded-md py-3 px-3 text-sm font-semibold sm:flex-1"
 																)
 															}
+															disabled={!detail.available}
 														>
-															{({ checked, active }) => (
-																<>
-																	<span className="flex flex-1">
-																		<span className="flex flex-col">
-																			<RadioGroup.Label
-																				as="span"
-																				className="block text-sm font-medium text-gray-900"
-																			>
-																				{detail.title}
-																			</RadioGroup.Label>
-																			<RadioGroup.Description
-																				as="span"
-																				className="mt-1 flex items-center text-sm text-gray-500"
-																			>
-																				{detail.description}
-																			</RadioGroup.Description>
-																		</span>
-																	</span>
-																	<CheckCircleIcon
-																		className={cn(
-																			!checked ? "invisible" : "",
-																			"h-5 w-5 text-indigo-600"
-																		)}
-																		aria-hidden="true"
-																	/>
-																	<span
-																		className={cn(
-																			active ? "border" : "border-2",
-																			checked
-																				? "border-indigo-600"
-																				: "border-transparent",
-																			"pointer-events-none absolute -inset-px rounded-lg"
-																		)}
-																		aria-hidden="true"
-																	/>
-																</>
-															)}
+															<RadioGroup.Label as="span">
+																{detail.title}
+															</RadioGroup.Label>
 														</RadioGroup.Option>
 													))}
 												</div>
 											</RadioGroup>
 											<FormMessage />
 										</FormItem>
-									)}
-								/>
-							</div>  */}
-
-							<div className="sm:col-span-6">
-								<FormField
-									control={form.control}
-									name="assistant_detail_level"
-									render={({ field }) => {
-										return (
-											<FormItem className="space-y-3">
-												<RadioGroup
-													value={field.value}
-													onChange={field.onChange}
-													defaultValue={field.value}
-												>
-													<RadioGroup.Label className="block text-sm font-medium leading-6 text-gray-900">
-														Response Detail
-													</RadioGroup.Label>
-
-													<div
-														// className="mt-4 grid grid-cols-1 gap-y-6 sm:grid-cols-3 sm:gap-x-4"
-														className="mt-2 flex flex-col md:flex-row gap-2"
-													>
-														{[
-															{
-																id: "low",
-																title: "Low",
-																available: true,
-															},
-															{
-																id: "medium",
-																title: "Medium",
-																available: true,
-															},
-															{
-																id: "high",
-																title: "High",
-																available: true,
-															},
-														].map((detail) => (
-															<RadioGroup.Option
-																key={detail.id}
-																value={detail.id}
-																className={({ active, checked }) =>
-																	cn(
-																		detail.available
-																			? "cursor-pointer focus:outline-none"
-																			: "cursor-not-allowed opacity-25",
-																		active
-																			? "ring-2 ring-indigo-600 ring-offset-2"
-																			: "",
-																		checked
-																			? "bg-indigo-600 text-white hover:bg-indigo-500"
-																			: "ring-1 ring-inset ring-gray-300 bg-white text-gray-900 hover:bg-gray-50",
-																		"flex items-center justify-center rounded-md py-3 px-3 text-sm font-semibold sm:flex-1"
-																	)
-																}
-																disabled={!detail.available}
-															>
-																<RadioGroup.Label as="span">
-																	{detail.title}
-																</RadioGroup.Label>
-															</RadioGroup.Option>
-														))}
-													</div>
-												</RadioGroup>
-												<FormMessage />
-											</FormItem>
-										);
-									}}
-								/>
-							</div>
+									);
+								}}
+							/>
 						</div>
-					</div>
+					</FormSection>
 
-					<div className="grid grid-cols-1 px-6 gap-x-8 gap-y-10 border-b border-gray-900/10 pb-12 md:grid-cols-3">
-						<div>
-							<h2 className="text-base font-semibold leading-7 text-gray-900">
-								Voice Customization
-							</h2>
-							<p className="mt-1 text-sm leading-6 text-gray-600">
-								Fine-tune the technical aspects of your assistant&apos;s voice
-								to suit your auditory preferences.
-							</p>
-						</div>
-
-						<div className="max-w-2xl space-y-10 md:col-span-2">
-							<div className="sm:col-span-6">
-								<FormField
-									control={form.control}
-									name="voice_stability"
-									render={({ field }) => {
-										return (
-											<FormItem className="space-y-3">
-												<FormLabel className="block text-sm font-medium leading-6 text-gray-900">
-													Stability
-												</FormLabel>
-												<div>
-													<div className="flex justify-between pb-2">
-														<span className="text-sm text-gray-500">
-															More variable
-														</span>
-														<span className="text-sm text-gray-500">
-															More stable
-														</span>
-													</div>
-													<Slider
-														min={0}
-														max={100}
-														step={1}
-														value={[field.value * 100]}
-														onValueChange={(value) => {
-															form.trigger(field.name);
-															field.onChange(value[0] / 100);
-														}}
-														defaultValue={[field.value]}
-													/>
+					<FormSection
+						title="Voice Customization"
+						description="Fine-tune the technical aspects of your assistant's voice to suit your auditory preferences."
+					>
+						<div className="sm:col-span-6">
+							<FormField
+								control={form.control}
+								name="voice_stability"
+								render={({ field }) => {
+									return (
+										<FormItem className="space-y-3">
+											<FormLabel className="block text-sm font-medium leading-6 text-gray-900">
+												Stability
+											</FormLabel>
+											<div>
+												<div className="flex justify-between pb-2">
+													<span className="text-sm text-gray-500">
+														More variable
+													</span>
+													<span className="text-sm text-gray-500">
+														More stable
+													</span>
 												</div>
-												<FormMessage />
-											</FormItem>
-										);
-									}}
-								/>
-							</div>
-
-							<div className="sm:col-span-6">
-								<FormField
-									control={form.control}
-									name="voice_similarity_boost"
-									render={({ field }) => {
-										return (
-											<FormItem className="space-y-3">
-												<FormLabel className="block text-sm font-medium leading-6 text-gray-900">
-													Similarity
-												</FormLabel>
-												<div>
-													<div className="flex justify-between pb-2">
-														<span className="text-sm text-gray-500">Low</span>
-														<span className="text-sm text-gray-500">High</span>
-													</div>
-													<Slider
-														min={0}
-														max={100}
-														step={1}
-														value={[field.value * 100]}
-														onValueChange={(value) => {
-															form.trigger(field.name);
-															field.onChange(value[0] / 100);
-														}}
-														defaultValue={[field.value]}
-													/>
-												</div>
-												<FormMessage />
-											</FormItem>
-										);
-									}}
-								/>
-							</div>
-
-							<div className="sm:col-span-6">
-								<FormField
-									control={form.control}
-									name="voice_style"
-									render={({ field }) => {
-										return (
-											<FormItem className="space-y-3">
-												<FormLabel className="block text-sm font-medium leading-6 text-gray-900">
-													Style Exaggeration
-												</FormLabel>
-												<div>
-													<div className="flex justify-between pb-2">
-														<span className="text-sm text-gray-500">None</span>
-														<span className="text-sm text-gray-500">
-															Exaggerated
-														</span>
-													</div>
-													<Slider
-														min={0}
-														max={100}
-														step={1}
-														value={[field.value * 100]}
-														onValueChange={(value) => {
-															form.trigger(field.name);
-															field.onChange(value[0] / 100);
-														}}
-														defaultValue={[field.value]}
-													/>
-												</div>
-												<FormMessage />
-											</FormItem>
-										);
-									}}
-								/>
-							</div>
-
-							<div className="sm:col-span-6">
-								<FormField
-									control={form.control}
-									name="voice_use_speaker_boost"
-									render={({ field }) => {
-										return (
-											<FormItem className="space-y-3 relative">
-												<Label
-													htmlFor="voice_use_speaker_boost"
-													className="block text-sm font-medium leading-6 text-gray-900"
-												>
-													Speaker Boost
-												</Label>
-												<Switch
-													id="voice_use_speaker_boost"
-													checked={field.value}
-													defaultChecked={field.value}
-													onCheckedChange={field.onChange}
+												<Slider
+													min={0}
+													max={100}
+													step={1}
+													value={[field.value * 100]}
+													onValueChange={(value) => {
+														form.trigger(field.name);
+														field.onChange(value[0] / 100);
+													}}
+													defaultValue={[field.value]}
 												/>
-												<FormMessage />
-											</FormItem>
-										);
-									}}
-								/>
-							</div>
+											</div>
+											<FormMessage />
+										</FormItem>
+									);
+								}}
+							/>
 						</div>
-					</div>
+
+						<div className="sm:col-span-6">
+							<FormField
+								control={form.control}
+								name="voice_similarity_boost"
+								render={({ field }) => {
+									return (
+										<FormItem className="space-y-3">
+											<FormLabel className="block text-sm font-medium leading-6 text-gray-900">
+												Similarity
+											</FormLabel>
+											<div>
+												<div className="flex justify-between pb-2">
+													<span className="text-sm text-gray-500">Low</span>
+													<span className="text-sm text-gray-500">High</span>
+												</div>
+												<Slider
+													min={0}
+													max={100}
+													step={1}
+													value={[field.value * 100]}
+													onValueChange={(value) => {
+														form.trigger(field.name);
+														field.onChange(value[0] / 100);
+													}}
+													defaultValue={[field.value]}
+												/>
+											</div>
+											<FormMessage />
+										</FormItem>
+									);
+								}}
+							/>
+						</div>
+
+						<div className="sm:col-span-6">
+							<FormField
+								control={form.control}
+								name="voice_style"
+								render={({ field }) => {
+									return (
+										<FormItem className="space-y-3">
+											<FormLabel className="block text-sm font-medium leading-6 text-gray-900">
+												Style Exaggeration
+											</FormLabel>
+											<div>
+												<div className="flex justify-between pb-2">
+													<span className="text-sm text-gray-500">None</span>
+													<span className="text-sm text-gray-500">
+														Exaggerated
+													</span>
+												</div>
+												<Slider
+													min={0}
+													max={100}
+													step={1}
+													value={[field.value * 100]}
+													onValueChange={(value) => {
+														form.trigger(field.name);
+														field.onChange(value[0] / 100);
+													}}
+													defaultValue={[field.value]}
+												/>
+											</div>
+											<FormMessage />
+										</FormItem>
+									);
+								}}
+							/>
+						</div>
+
+						<div className="sm:col-span-6">
+							<FormField
+								control={form.control}
+								name="voice_use_speaker_boost"
+								render={({ field }) => {
+									return (
+										<FormItem className="space-y-3 relative">
+											<Label
+												htmlFor="voice_use_speaker_boost"
+												className="block text-sm font-medium leading-6 text-gray-900"
+											>
+												Speaker Boost
+											</Label>
+											<Switch
+												id="voice_use_speaker_boost"
+												checked={field.value}
+												defaultChecked={field.value}
+												onCheckedChange={field.onChange}
+											/>
+											<FormMessage />
+										</FormItem>
+									);
+								}}
+							/>
+						</div>
+					</FormSection>
 				</div>
 
 				<div className="mt-6 flex flex-col-reverse md:flex-row items-center justify-end gap-x-6 gap-y-4 px-6">
@@ -1050,7 +899,8 @@ const PreferencesPage = () => {
 					<Button
 						type="submit"
 						size="lg"
-						className="w-full md:w-fit rounded-md bg-indigo-600  text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+						// TODO: standardize button styles and sizes - make a tailwind utility class
+						className="w-full md:w-fit rounded-md bg-indigo-600 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
 						disabled={form.formState.isSubmitting || !form.formState.isDirty}
 					>
 						{!form.formState.isSubmitting && <span>Save</span>}

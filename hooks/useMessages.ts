@@ -77,7 +77,9 @@ const useMessages = ({ conversationId }: { conversationId: string }) => {
 		// Always refetch after error or success:
 		onSettled: () => {
 			logger.log("message created, invalidating cache now");
-			queryClient.invalidateQueries({ queryKey: ["messages"] });
+			queryClient.invalidateQueries({
+				queryKey: ["messages", user?.id, conversationId],
+			});
 		},
 	});
 
@@ -108,7 +110,9 @@ const useMessages = ({ conversationId }: { conversationId: string }) => {
 		},
 		onSettled: () => {
 			logger.log("messages deleted, invalidating cache now");
-			queryClient.invalidateQueries({ queryKey: ["messages"] });
+			queryClient.invalidateQueries({
+				queryKey: ["messages", user?.id, conversationId],
+			});
 		},
 	});
 

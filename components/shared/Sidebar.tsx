@@ -18,8 +18,10 @@ import Link from "next/link";
 import { Button } from "../ui/button";
 import { useConversations } from "@/hooks/useConversations";
 import SkewLoader from "react-spinners/SkewLoader";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import ConfirmationDialog from "./ConfirmationDialog";
+import { useToast } from "../ui/use-toast";
+import { ToastAction } from "@radix-ui/react-toast";
 
 const accountNavigation = [
 	{
@@ -44,13 +46,34 @@ export default function Sidebar({
 
 	const router = useRouter();
 
+	const { toast } = useToast();
+
 	const {
 		isPending,
 		error,
 		conversations,
+		refetch,
 		deleteConversation,
 		createConversation,
 	} = useConversations();
+
+	useEffect(() => {
+		if (!isPending && error) {
+			toast({
+				title: "Error loading conversations",
+				description: "An error occurred while loading your conversations",
+				action: (
+					<ToastAction altText="Try again">
+						<Button variant="outline" onClick={() => refetch()}>
+							Try again
+						</Button>
+					</ToastAction>
+				),
+				className: "error-toast",
+				duration: Infinity,
+			});
+		}
+	}, [isPending, error]);
 
 	const newChatHandler = useCallback(async () => {
 		const data = await createConversation();
@@ -120,7 +143,6 @@ export default function Sidebar({
 									/>
 								</div>
 							)}
-							{error && <span>Error loading conversations</span>}
 							{!isPending &&
 								!error &&
 								conversations.map(({ _id, lastMessage, label }) => {
