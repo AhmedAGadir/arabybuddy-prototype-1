@@ -8,6 +8,9 @@ const useLogger = ({
 	toggle?: boolean;
 }) => {
 	const log = (...args: any[]) => {
+		if (!process.env.NEXT_PUBLIC_ENABLE_LOGGING) {
+			return;
+		}
 		if (toggle) {
 			if (color) {
 				// Separate string and non-string arguments
@@ -30,6 +33,9 @@ const useLogger = ({
 	};
 
 	const warn = (...args: any[]) => {
+		if (!process.env.NEXT_PUBLIC_ENABLE_LOGGING) {
+			return;
+		}
 		if (toggle) {
 			if (color) {
 				// Separate string and non-string arguments
@@ -52,6 +58,9 @@ const useLogger = ({
 	};
 
 	const error = (...params: any[]) => {
+		if (!process.env.NEXT_PUBLIC_ENABLE_LOGGING) {
+			return;
+		}
 		console.error(...params);
 	};
 

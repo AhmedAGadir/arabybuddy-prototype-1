@@ -24,6 +24,12 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import { cairo } from "@/lib/fonts";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "../ui/tooltip";
 
 const MessageCard = ({
 	name,
@@ -112,9 +118,40 @@ const MessageCard = ({
 		</DropdownMenu>
 	);
 
+	const chatMenuItemsContent = chatMenuItems && (
+		<div>
+			{chatMenuItems.map((item, ind) => {
+				if (item === "separator") return <span key={ind + "-separator"} />;
+				return (
+					<TooltipProvider key={item.label} delayDuration={0}>
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<Button
+									size="icon"
+									variant="ghost"
+									className="hover:bg-slate-100"
+									onClick={item.onClick}
+									disabled={chatMenuDisabled}
+								>
+									{
+										<item.icon className="text-slate-500 dark:text-slate-400 w-6 h-6" />
+									}
+								</Button>
+							</TooltipTrigger>
+							<TooltipContent>
+								<span>{item.label}</span>
+							</TooltipContent>
+						</Tooltip>
+					</TooltipProvider>
+				);
+			})}
+		</div>
+	);
+
 	const topBarContent = (
 		<div className={cn("flex justify-between")}>
-			<div className="relative right-2 mr-4">{dropDownMenu}</div>
+			<div className="relative right-2 mr-4 lg:hidden">{dropDownMenu}</div>
+			<div className="space-x-2 hidden lg:block">{chatMenuItemsContent}</div>
 
 			<div className="flex items-center gap-2">
 				{name && (

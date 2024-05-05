@@ -107,6 +107,44 @@ const useConversations = () => {
 		return await deleteConversationMutation.mutateAsync(conversationId);
 	};
 
+	const updateConversationMutation = useMutation({
+		mutationFn: async (
+			conversation: Pick<IConversation, "_id"> & Partial<IConversation>
+		) => {
+			logger.log("updating conversation...", conversation);
+			const response = await fetch(`/api/conversations/${conversation._id}`, {
+				method: "PUT",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({ conversation }),
+			});
+			if (!response.ok) {
+				throw new Error("Network response was not ok");
+			}
+			const data = await response.json();
+			logger.log("conversation updated", data);
+			return data;
+		},
+		onError: (err, variables, context) => {
+			logger.error("Error updating conversation:", err);
+			return err;
+		},
+		onSettled: () => {
+			// Invalidate and refetch
+			logger.log(
+				"updating conversation - invalidating cache and refetching..."
+			);
+			queryClient.invalidateQueries({ queryKey: ["conversations", user?.id] });
+		},
+	});
+
+	const updateConversation = async (
+		updatedConversation: Pick<IConversation, "_id"> & Partial<IConversation>
+	) => {
+		return await updateConversationMutation.mutateAsync(updatedConversation);
+	};
+
 	const conversations = data?.conversations as IConversation[];
 
 	return {
@@ -116,6 +154,7 @@ const useConversations = () => {
 		refetch,
 		createConversation,
 		deleteConversation,
+		updateConversation,
 	};
 };
 

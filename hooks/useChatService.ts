@@ -55,13 +55,24 @@ const useChatService = () => {
 
 				logger.log("updatedMessages", updatedMessages);
 
-				return { messages: updatedMessages };
+				return { messages: updatedMessages as IMessage[] };
 			} catch (error) {
 				logger.error("Failed to add chat message", error);
 				throw error;
 			}
 		},
-		[logger, makeServerlessRequest]
+		[
+			logger,
+			makeServerlessRequest,
+			preferences.arabic_dialect,
+			preferences.assistant_detail_level,
+			preferences.assistant_language_level,
+			preferences.assistant_tone,
+			preferences.user_interests,
+			preferences.user_personality_traits,
+			user?.fullName,
+			user?.username,
+		]
 	);
 
 	return { makeChatCompletion, abortMakeChatCompletion };

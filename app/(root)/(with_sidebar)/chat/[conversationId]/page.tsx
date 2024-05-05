@@ -54,6 +54,8 @@ import SkewLoader from "react-spinners/SkewLoader";
 import { ToastAction } from "@radix-ui/react-toast";
 import { IMessage } from "@/lib/database/models/message.model";
 import { useUser } from "@clerk/nextjs";
+import { useConversations } from "@/hooks/useConversations";
+import SupportHoverCard from "@/components/shared/SupportHoverCard";
 // import { XCircleIcon } from "@heroicons/react/20/solid";
 
 const statusEnum = {
@@ -95,6 +97,8 @@ const ConversationIdPage = ({
 	} = useMessages({
 		conversationId,
 	});
+
+	const { updateConversation } = useConversations();
 
 	const [timeStamp, setTimeStamp] = useState<Date | null>();
 
@@ -149,7 +153,7 @@ const ConversationIdPage = ({
 				setActiveTask(taskEnum.SPEECH_TO_TEXT);
 				const { transcription } = await speechToText(audioBlob);
 
-				// sanitize transcription, no input should be empty
+				// TODO: sanitize transcription, no input should be empty
 
 				setProgressBarValue(25);
 				// copy current messages before updating the db
@@ -159,9 +163,8 @@ const ConversationIdPage = ({
 				}));
 				// update database with user message in the background
 				createMessage({ role: "user", content: transcription });
-
-				// show loading message
-				setShowLoadingMessage(true);
+				// update latest conversation so sidebar gets updated
+				updateConversation({ _id: conversationId, lastMessage: transcription });
 
 				// // 2. add user transcription to chat completion
 				setActiveTask(taskEnum.ASSISTANT);
@@ -172,15 +175,22 @@ const ConversationIdPage = ({
 					},
 					messagesCopy
 				);
+				const completionMessage = _.last(updatedMessages) as IMessage;
 				// update database with assistant message in the background
-				createMessage(_.last(updatedMessages) as IMessage);
+				createMessage(completionMessage);
+				// update latest conversation so sidebar gets updated
+				updateConversation({
+					_id: conversationId,
+					lastMessage: completionMessage.content,
+				});
+
+				// show loading message
+				setShowLoadingMessage(true);
 
 				// 3. convert the assistants response to audio
 				setProgressBarValue(75);
 				setActiveTask(taskEnum.TEXT_TO_SPEECH);
-				const { base64Audio } = await textToSpeech(
-					(_.last(updatedMessages) as IMessage).content
-				);
+				const { base64Audio } = await textToSpeech(completionMessage.content);
 
 				// 4. play assistants response and update message database
 				setProgressBarValue(100);
@@ -227,18 +237,20 @@ const ConversationIdPage = ({
 			}
 		},
 		[
-			makeChatCompletion,
-			createMessage,
-			isPlaying,
-			logger,
 			speechToText,
-			stopPlaying,
-			toast,
-			deleteAllMessagesAfterTimeStamp,
 			messages,
-			playAudio,
+			createMessage,
+			updateConversation,
+			conversationId,
+			makeChatCompletion,
 			textToSpeech,
+			playAudio,
+			isPlaying,
+			deleteAllMessagesAfterTimeStamp,
 			timeStamp,
+			toast,
+			logger,
+			stopPlaying,
 		]
 	);
 
@@ -279,7 +291,6 @@ const ConversationIdPage = ({
 		}
 	}, [
 		displayedMessage,
-		error,
 		logger,
 		initAudioElement,
 		playAudio,
@@ -468,15 +479,10 @@ const ConversationIdPage = ({
 			{ label: "Replay", icon: PlayIcon, onClick: replayDisplayedMessage },
 			{ label: "Translate", icon: TranslateIcon, onClick: () => {} },
 			{ label: "Rephrase", icon: MagicWandIcon, onClick: () => {} },
-			"separator" as "separator",
+			// "separator" as "separator",
 			{
-				label: "Dictionary (Bilingual)",
+				label: "Dictionary",
 				icon: BookOpenIcon,
-				onClick: () => {},
-			},
-			{
-				label: "Dictionary (Monolingual)",
-				icon: BookOpenSolidIcon,
 				onClick: () => {},
 			},
 		];
@@ -633,14 +639,16 @@ const ConversationIdPage = ({
 									content={
 										<span
 											className={
-												cn()
+												cn(
+													"text-slate-900"
+													//  isPlaying && "text-indigo-500"
+												)
 												// "font-bold",
 												// "text-xl md:text-3xl text-transparent bg-clip-text leading-loose text-slate-900",
 												// "text-xl leading-loose text-slate-900",
 												// cairo.className
 												// isPlaying &&
 												// 	"bg-gradient-to-r to-araby-purple from-araby-purple"
-												// "text-slate-900",
 												// activeTask === taskEnum.TEXT_TO_SPEECH &&
 												// 	"text-gray-300"
 											}
@@ -654,7 +662,7 @@ const ConversationIdPage = ({
 						{!isChatEmpty && !showLoadingMessage && paginationContent}
 					</div>
 				</div>
-				<div className=" w-full px-4">
+				<div className="relative w-full px-4 ">
 					<div className="h-12 mx-auto z-10 text-center ">
 						{STATUS === statusEnum.PROCESSING && (
 							<Button
@@ -705,6 +713,7 @@ const ConversationIdPage = ({
 							amplitude={amplitude}
 						/>
 					</div>
+					<SupportHoverCard className="absolute bottom-0 right-0" />
 				</div>
 			</div>
 		</div>

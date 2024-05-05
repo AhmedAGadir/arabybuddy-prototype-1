@@ -1,5 +1,6 @@
 ## immediate
 
+- [ ] set up email support forwarding - did the same thing for azza school
 - [ ] bar of conversation topics
 - [ ] mascot with 5-6 different expressions
 - [ ] pagespeed insights - google performance before launch

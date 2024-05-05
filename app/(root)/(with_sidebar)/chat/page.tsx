@@ -1,5 +1,6 @@
 "use client";
 
+import SupportHoverCard from "@/components/shared/SupportHoverCard";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { useConversations } from "@/hooks/useConversations";
@@ -51,7 +52,7 @@ const ChatPage = () => {
 	};
 
 	return (
-		<div className="text-center flex-1 flex items-center justify-center">
+		<div className="text-center flex-1 flex items-center justify-center relative">
 			<div>
 				<PencilSquareIcon
 					className="mx-auto h-12 w-12 text-gray-400"
@@ -101,6 +102,7 @@ const ChatPage = () => {
 					</Button>
 				</div>
 			</div>
+			<SupportHoverCard className="absolute bottom-0 right-0" />
 		</div>
 	);
 };

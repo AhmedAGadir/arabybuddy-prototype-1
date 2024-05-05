@@ -70,16 +70,6 @@ export async function POST(
 
 		console.log("new message created", newMessage);
 
-		// update last message in conversation
-
-		await Conversation.findOneAndUpdate(
-			{ _id: conversationId },
-			{ $set: { lastMessage: content } },
-			{ new: true }
-		);
-
-		console.log("updated lastMessage in conversation, id:", conversationId);
-
 		return Response.json(
 			{
 				message: newMessage,
