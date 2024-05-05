@@ -546,7 +546,7 @@ const ConversationIdPage = ({
 
 	if (isPending) {
 		return (
-			<div className="flex-1 flex items-center justify-center">
+			<div className="flex-1 flex items-center justify-center background-texture">
 				<SkewLoader
 					color="black"
 					loading
@@ -565,7 +565,7 @@ const ConversationIdPage = ({
 	const isChatEmpty = _.isEmpty(messages);
 
 	return (
-		<div className={cn("w-full background-pattern")}>
+		<div className={cn("w-full background-texture")}>
 			<div className="w-screen absolute top-0 left-0 z-30">
 				{progressBarContent}
 			</div>
