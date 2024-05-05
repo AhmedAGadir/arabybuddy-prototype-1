@@ -570,7 +570,6 @@ const ConversationIdPage = ({
 											: "User avatar"
 									}
 									// glow={isPlaying}
-									glow
 									chatMenuItems={chatMenuItems}
 									chatMenuDisabled={STATUS !== statusEnum.IDLE}
 									reverse

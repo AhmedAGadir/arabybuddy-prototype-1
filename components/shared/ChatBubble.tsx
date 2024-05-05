@@ -103,7 +103,7 @@ const ChatBubble = ({
 
 	const topBarContent = (
 		<div className={cn("flex justify-between")}>
-			<div className="relative right-4 mr-4">{dropDownMenu}</div>
+			<div className="relative right-2 mr-4">{dropDownMenu}</div>
 
 			<div className="flex items-center gap-2">
 				{name && (
@@ -138,7 +138,7 @@ const ChatBubble = ({
 			<CardContent className="bg-opacity-50 overflow-y-scroll">
 				<p
 					className={cn(
-						"text-xl md:text-3xl lg:text-3xl font-normal py-2.5 text-slate-900 dark:text-white min-w-[130px]"
+						"text-xl md:text-3xl lg:text-3xl font-normal text-slate-900 dark:text-white min-w-[130px] lg:min-w-[250px]"
 					)}
 					style={{ direction: rtl ? "rtl" : "ltr" }}
 				>
