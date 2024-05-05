@@ -18,14 +18,14 @@ const useChatService = () => {
 
 	const makeChatCompletion = useCallback(
 		async (
-			latestChatMessage: Pick<IMessage, "role" | "content">,
-			messages: Pick<IMessage, "role" | "content">[]
+			latestMessage: Pick<IMessage, "role" | "content">,
+			messageHistory: Pick<IMessage, "role" | "content">[]
 		) => {
 			try {
 				const params = {
-					messages,
-					latestChatMessage,
-					userName: user?.username ?? user?.firstName,
+					messageHistory,
+					latestMessage,
+					username: user?.username ?? user?.fullName,
 					preferences: {
 						arabic_dialect:
 							preferences.arabic_dialect ??

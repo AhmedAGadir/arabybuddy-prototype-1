@@ -511,113 +511,114 @@ const ConversationIdPage = ({
 	}
 
 	return (
-		<div
-			className={cn(
-				"w-full flex flex-col items-center justify-between max-w-3xl mx-auto px-4"
-			)}
-		>
+		<div className={cn("w-full background-pattern")}>
 			<div className="w-screen absolute top-0 left-0 z-30">
 				{progressBarContent}
 			</div>
-			<div className="flex-1 min-h-0 basis-0 overflow-y-hidden flex flex-col justify-center items-center">
-				{/* chat bubble and pagination wrapper */}
-				<div className="flex flex-col justify-center items-center w-full h-full">
-					<div className="min-h-0 w-full md:w-auto max-w-3xl mx-auto mt-8">
-						{showLoadingMessage && (
-							<ChatBubble
-								className="h-full"
-								name="ArabyBuddy"
-								avatarSrc="/assets/arabybuddy.svg"
-								avatarAlt="ArabyBuddy avatar"
-								chatMenuDisabled
-								reverse
-								rtl
-								content={
-									<span className={cn("text-xl leading-loose text-slate-900")}>
-										<PulseLoader
-											// color="#5E17EB"
-											color="black"
-											loading
-											cssOverride={{
-												display: "block",
-												margin: "0",
-												width: 250,
-											}}
-											size={6}
-											aria-label="Loading Spinner"
-											data-testid="loader"
-										/>
-									</span>
-								}
-							/>
-						)}
-						{!isChatEmpty && !showLoadingMessage && (
-							<ChatBubble
-								className="h-full"
-								name={
-									displayedChatMessage?.role === "assistant"
-										? "ArabyBuddy"
-										: "You"
-								}
-								avatarSrc={
-									displayedChatMessage?.role === "assistant"
-										? "/assets/arabybuddy.svg"
-										: user?.imageUrl ?? "/assets/user.svg"
-								}
-								avatarAlt={
-									displayedChatMessage?.role === "assistant"
-										? "ArabyBuddy avatar"
-										: "User avatar"
-								}
-								glow={isPlaying}
-								chatMenuItems={chatMenuItems}
-								chatMenuDisabled={STATUS !== statusEnum.IDLE}
-								reverse
-								rtl
-								content={
-									<span
-										className={cn(
-											// "font-bold",
-											// "text-xl md:text-3xl text-transparent bg-clip-text leading-loose text-slate-900",
-											"text-xl leading-loose text-slate-900 overflow-y-scroll",
-											cairo.className
-											// isPlaying &&
-											// 	"bg-gradient-to-r to-araby-purple from-araby-purple"
-										)}
-									>
-										{displayedChatMessage?.content}
-									</span>
-								}
-							/>
-						)}
+			{/* wrapper */}
+			<div className="max-w-3xl h-full flex flex-col items-center justify-between mx-auto px-4">
+				<div className="flex-1 min-h-0 basis-0 overflow-y-hidden flex flex-col justify-center items-center">
+					{/* chat bubble and pagination wrapper */}
+					<div className="flex flex-col justify-center items-center w-full h-full">
+						<div className="min-h-0 w-full md:w-auto max-w-3xl mx-auto mt-8">
+							{showLoadingMessage && (
+								<ChatBubble
+									className="h-full bg-white"
+									name="ArabyBuddy"
+									avatarSrc="/assets/arabybuddy.svg"
+									avatarAlt="ArabyBuddy avatar"
+									chatMenuDisabled
+									reverse
+									rtl
+									content={
+										<span
+											className={cn("text-xl leading-loose text-slate-900")}
+										>
+											<PulseLoader
+												// color="#5E17EB"
+												color="black"
+												loading
+												cssOverride={{
+													display: "block",
+													margin: "0",
+													width: 250,
+												}}
+												size={6}
+												aria-label="Loading Spinner"
+												data-testid="loader"
+											/>
+										</span>
+									}
+								/>
+							)}
+							{!isChatEmpty && !showLoadingMessage && (
+								<ChatBubble
+									className="h-full bg-white"
+									name={
+										displayedChatMessage?.role === "assistant"
+											? "ArabyBuddy"
+											: "You"
+									}
+									avatarSrc={
+										displayedChatMessage?.role === "assistant"
+											? "/assets/arabybuddy.svg"
+											: user?.imageUrl ?? "/assets/user.svg"
+									}
+									avatarAlt={
+										displayedChatMessage?.role === "assistant"
+											? "ArabyBuddy avatar"
+											: "User avatar"
+									}
+									// glow={isPlaying}
+									glow
+									chatMenuItems={chatMenuItems}
+									chatMenuDisabled={STATUS !== statusEnum.IDLE}
+									reverse
+									rtl
+									content={
+										<span
+											className={cn(
+												// "font-bold",
+												// "text-xl md:text-3xl text-transparent bg-clip-text leading-loose text-slate-900",
+												"text-xl leading-loose text-slate-900",
+												cairo.className
+												// isPlaying &&
+												// 	"bg-gradient-to-r to-araby-purple from-araby-purple"
+											)}
+										>
+											{displayedChatMessage?.content}
+										</span>
+									}
+								/>
+							)}
+						</div>
+						{!isChatEmpty && !showLoadingMessage && paginationContent}
 					</div>
-					{!isChatEmpty && !showLoadingMessage && paginationContent}
 				</div>
-			</div>
-			<div className="w-full md:w-fit">
-				<div className="w-full md:w-fit h-16  mx-auto flex items-center justify-center z-10">
-					{STATUS === statusEnum.PROCESSING && (
-						<Button
-							onClick={abortProcessingBtnHandler}
-							variant="outline"
-							size="lg"
-							className="w-full md:w-fit"
-						>
-							Cancel
-						</Button>
-					)}
-					{STATUS === statusEnum.PLAYING && (
-						<Button
-							onClick={stopPlayingBtnHandler}
-							// variant="default"
-							variant="outline"
-							size="lg"
-							className="w-full md:w-fit"
-						>
-							Stop Playing
-						</Button>
-					)}
-					{/* {isRecording && (
+				<div className="w-full md:w-fit">
+					<div className="w-full md:w-fit h-16  mx-auto flex items-center justify-center z-10">
+						{STATUS === statusEnum.PROCESSING && (
+							<Button
+								onClick={abortProcessingBtnHandler}
+								variant="outline"
+								size="lg"
+								className="w-full md:w-fit"
+							>
+								Cancel
+							</Button>
+						)}
+						{STATUS === statusEnum.PLAYING && (
+							<Button
+								onClick={stopPlayingBtnHandler}
+								// variant="default"
+								variant="outline"
+								size="lg"
+								className="w-full md:w-fit"
+							>
+								Stop Playing
+							</Button>
+						)}
+						{/* {isRecording && (
 						// <Button variant="link">
 						// 	<XCircleIcon className="text-red-500 w-16 h-16" />
 						// </Button>
@@ -631,17 +632,19 @@ const ConversationIdPage = ({
 							Stop Recording
 						</Button>
 					)} */}
-					{instructionContent}
-				</div>
-				<div className="text-center w-fit m-auto pb-4 ">
-					<Microphone
-						onClick={toggleRecording}
-						mode={STATUS}
-						disabled={
-							STATUS === statusEnum.PROCESSING || STATUS === statusEnum.PLAYING
-						}
-						amplitude={amplitude}
-					/>
+						{instructionContent}
+					</div>
+					<div className="text-center w-fit m-auto pb-4 ">
+						<Microphone
+							onClick={toggleRecording}
+							mode={STATUS}
+							disabled={
+								STATUS === statusEnum.PROCESSING ||
+								STATUS === statusEnum.PLAYING
+							}
+							amplitude={amplitude}
+						/>
+					</div>
 				</div>
 			</div>
 		</div>

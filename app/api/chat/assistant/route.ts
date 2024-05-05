@@ -1,4 +1,5 @@
 import { IMessage } from "@/lib/database/models/message.model";
+import { IPreferences } from "@/lib/database/models/preferences.model";
 import { auth } from "@clerk/nextjs/server";
 import OpenAI from "openai";
 import { TextContentBlock } from "openai/resources/beta/threads/messages/messages.mjs";
@@ -19,12 +20,15 @@ export async function POST(req: Request, res: Response) {
 			throw new Error("User not authenticated");
 		}
 
-		const { messages, latestChatMessage } = await req.json();
+		const { messageHistory, latestMessage, username, preferences } =
+			await req.json();
 
-		const { updatedMessages } = await openAIAddChatMessageAndAwaitResponse(
-			messages,
-			latestChatMessage
-		);
+		const { updatedMessages } = await openAIAddChatMessageAndAwaitResponse({
+			messageHistory,
+			latestMessage,
+			username,
+			preferences,
+		});
 
 		return Response.json(
 			{
@@ -38,28 +42,77 @@ export async function POST(req: Request, res: Response) {
 	}
 }
 
-const openAIAddChatMessageAndAwaitResponse = async (
-	messages: Pick<IMessage, "role" | "content">[],
-	latestChatMessage: Pick<IMessage, "role" | "content">
-) => {
+function createAssistantInstructions(
+	username: string | undefined,
+	preferences: {
+		arabic_dialect: IPreferences["arabic_dialect"];
+		assistant_language_level: IPreferences["assistant_language_level"];
+		assistant_tone: IPreferences["assistant_tone"];
+		assistant_detail_level: IPreferences["assistant_detail_level"];
+		user_interests: IPreferences["user_interests"];
+		user_personality_traits: IPreferences["user_personality_traits"];
+	}
+) {
+	let instructions = "You are 'ArabyBuddy', a friendly Arabic language tutor. ";
+
+	if (username) {
+		instructions += `You are here to converse with ${username}. make sure you include their name in your initial greeting.`;
+	}
+
+	instructions += `Offer engaging topics of conversation based on the user's interests and personality traits. Speak in ${preferences.arabic_dialect} dialect and at a ${preferences.assistant_language_level} language level. Your responses should be ${preferences.assistant_tone} and provide ${preferences.assistant_detail_level} level of detail. `;
+
+	if (preferences.user_interests.length > 0) {
+		instructions += `Consider the user's interests such as ${preferences.user_interests.join(
+			", "
+		)} when choosing topics. `;
+	}
+
+	if (preferences.user_personality_traits.length > 0) {
+		instructions += `Adapt your interaction style to match personality traits like ${preferences.user_personality_traits.join(
+			", "
+		)}.`;
+	}
+
+	return instructions;
+}
+
+const openAIAddChatMessageAndAwaitResponse = async ({
+	messageHistory,
+	latestMessage,
+	username,
+	preferences,
+}: {
+	messageHistory: Pick<IMessage, "role" | "content">[];
+	latestMessage: Pick<IMessage, "role" | "content">;
+	username: string | undefined;
+	preferences: {
+		arabic_dialect: IPreferences["arabic_dialect"];
+		assistant_language_level: IPreferences["assistant_language_level"];
+		assistant_tone: IPreferences["assistant_tone"];
+		assistant_detail_level: IPreferences["assistant_detail_level"];
+		user_interests: IPreferences["user_interests"];
+		user_personality_traits: IPreferences["user_personality_traits"];
+	};
+}) => {
 	// create the assistant
-	console.log("Creating assistant");
+	const instructions = createAssistantInstructions(username, preferences);
+	console.log("Creating assistant - instructions", instructions);
+
 	const assistant = await openai.beta.assistants.create({
 		name: "ArabyBuddy",
-		instructions:
-			"You are a friendly Arabic language tutor who the user is here to conversate with. Your name is 'ArabyBuddy' and you offer nice topics of conversation",
+		instructions,
 		model: "gpt-4-turbo-preview",
 	});
 
-	console.log("Adding message history to thread", messages);
+	console.log("Adding message history to thread", messageHistory);
 	// create the thread and pass all previous messages
 	const thread = await openai.beta.threads.create({
-		messages,
+		messages: messageHistory,
 	});
 
-	console.log("adding latest chat message to thread", latestChatMessage);
+	console.log("adding latest chat message to thread", latestMessage);
 	// add transcription to thread
-	await openai.beta.threads.messages.create(thread.id, latestChatMessage);
+	await openai.beta.threads.messages.create(thread.id, latestMessage);
 
 	console.log("polling....");
 	// run the thread with the assistant

@@ -15,6 +15,15 @@ import {
 import { Button } from "../ui/button";
 import { EllipsisVerticalIcon } from "@heroicons/react/24/outline";
 
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardFooter,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
+
 const ChatBubble = ({
 	name,
 	avatarSrc,
@@ -93,24 +102,16 @@ const ChatBubble = ({
 	);
 
 	const topBarContent = (
-		<div
-			className={cn(
-				"flex items-center space-x-2 gap-2",
-				reverse && "justify-end space-x-reverse"
-			)}
-		>
-			{name && (
-				<span className="text-lg font-medium md:font-semibold text-slate-900 dark:text-white">
-					{name}
-				</span>
-			)}
-			{time && (
-				<span className="text-sm font-normal text-slate-500 dark:text-slate-400">
-					{time}
-				</span>
-			)}
-			{/* {isMobile && ( */}
-			{true && (
+		<div className={cn("flex justify-between")}>
+			<div className="relative right-4 mr-4">{dropDownMenu}</div>
+
+			<div className="flex items-center gap-2">
+				{name && (
+					<span className="text-lg font-medium md:font-semibold text-slate-900 dark:text-white">
+						{name}
+					</span>
+				)}
+
 				<Image
 					className="w-10 h-10 rounded-full"
 					width={12}
@@ -119,14 +120,32 @@ const ChatBubble = ({
 					alt={avatarAlt}
 					unoptimized
 				/>
-			)}
+			</div>
 		</div>
 	);
 
-	const statusContent = status && (
-		<span className="text-sm font-normal text-slate-500 dark:text-slate-400">
-			Delivered
-		</span>
+	return (
+		<Card
+			className={cn(
+				"flex-1 flex flex-col",
+				isMobile && "width-full",
+				// glow &&
+				// 	"bg-[radial-gradient(circle_farthest-side_at_0_100%,#38B6FF,transparent),radial-gradient(circle_farthest-side_at_100%_0,#5E17EB,transparent),radial-gradient(circle_farthest-side_at_100%_100%,#ffc414,transparent),radial-gradient(circle_farthest-side_at_0_0,#1ca0fb,#141316)]",
+				className
+			)}
+		>
+			<CardHeader>{topBarContent}</CardHeader>
+			<CardContent className="bg-opacity-50 overflow-y-scroll">
+				<p
+					className={cn(
+						"text-xl md:text-3xl lg:text-3xl font-normal py-2.5 text-slate-900 dark:text-white min-w-[130px]"
+					)}
+					style={{ direction: rtl ? "rtl" : "ltr" }}
+				>
+					{content}
+				</p>
+			</CardContent>
+		</Card>
 	);
 
 	return (
@@ -165,7 +184,6 @@ const ChatBubble = ({
 					>
 						{content}
 					</p>
-					{statusContent}
 				</div>
 				<div className="absolute top-3 left-2">{dropDownMenu}</div>
 			</div>
