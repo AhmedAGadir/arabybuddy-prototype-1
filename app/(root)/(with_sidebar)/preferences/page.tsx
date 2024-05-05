@@ -68,35 +68,6 @@ const FormSection = ({
 	</div>
 );
 
-// export interface IPreferences {
-// 	clerkId: string;
-// 	arabic_dialect: ArabicDialect;
-// 	assistant_language_level: "beginner" | "intermediate" | "native";
-// 	assistant_gender: "young_male" | "young_female" | "old_male" | "old_female";
-// 	assistant_tone: "casual" | "professional";
-// 	assistant_detail_level: "low" | "medium" | "high";
-// 	voice_stability: number;
-// 	voice_similarity_boost: number;
-// 	voice_style: number;
-// 	voice_use_speaker_boost: boolean;
-//  user_interests: string[];
-//  user_personality_traits: string[];
-// }
-
-// export const DEFAULT_USER_PREFERENCES: Omit<IPreferences, "clerkId"> = {
-// 	arabic_dialect: "Modern Standard Arabic",
-// 	assistant_language_level: "intermediate",
-// 	assistant_gender: "young_male",
-// 	assistant_tone: "casual",
-// 	assistant_detail_level: "medium",
-// 	voice_stability: 0.5,
-// 	voice_similarity_boost: 0.75,
-// 	voice_style: 0,
-// 	voice_use_speaker_boost: true,
-//  user_interests: [],
-//  user_personality_traits: [],
-// };
-
 const INTERESTS = {
 	["Activity & Wellness"]: [
 		{ value: "Basketball", icon: "🏀" },
@@ -631,19 +602,19 @@ const PreferencesPage = () => {
 												{[
 													{
 														id: "young_male",
-														title: "Young / Man",
+														title: "Youthful / Man",
 													},
 													{
 														id: "young_female",
-														title: "Young / Woman",
+														title: "Youthful / Woman",
 													},
 													{
 														id: "old_male",
-														title: "Old / Man",
+														title: "Middle-aged / Man",
 													},
 													{
 														id: "old_female",
-														title: "Old / Woman",
+														title: "Middle-aged / Woman",
 													},
 												].map(({ id, title }) => (
 													<SelectItem value={id} key={id}>

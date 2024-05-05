@@ -1,5 +1,7 @@
 ## immediate
 
+= [ ] pagespeed insights - google performance before launch
+
 - [ ] https://stackoverflow.com/questions/78030722/how-to-resolve-task-timed-out-after-10-01-seconds-in-a-next-js-application-dep
 - [ ] https://vercel.com/changelog/serverless-functions-can-now-run-up-to-5-minutes
 - [ ] auto start recording toggle

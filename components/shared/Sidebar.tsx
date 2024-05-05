@@ -3,7 +3,6 @@
 import { cn } from "@/lib/utils";
 import { SignOutButton, UserButton, useUser } from "@clerk/nextjs";
 import Image from "next/image";
-import _ from "lodash";
 
 import {
 	AdjustmentsHorizontalIcon,
@@ -158,11 +157,6 @@ export default function Sidebar({
 													"group flex justify-between gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold"
 												)}
 											>
-												<span className="truncate" style={{ direction: "rtl" }}>
-													{_.truncate(label ?? lastMessage ?? "Untitled", {
-														length: 40,
-													})}
-												</span>
 												{/* TODO: implement editable conversation labels */}
 												<span
 													onClick={(e) => openDeleteConversationDialog(e, _id)}
@@ -174,6 +168,10 @@ export default function Sidebar({
 														)}
 														aria-hidden="true"
 													/>
+												</span>
+
+												<span className="truncate" style={{ direction: "rtl" }}>
+													{label ?? lastMessage ?? "Untitled"}
 												</span>
 											</Link>
 										</li>

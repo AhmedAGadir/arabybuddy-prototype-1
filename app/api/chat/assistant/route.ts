@@ -1,4 +1,5 @@
 import { IMessage } from "@/lib/database/models/message.model";
+import { auth } from "@clerk/nextjs/server";
 import OpenAI from "openai";
 import { TextContentBlock } from "openai/resources/beta/threads/messages/messages.mjs";
 
@@ -12,6 +13,12 @@ const openai = new OpenAI({
 
 export async function POST(req: Request, res: Response) {
 	try {
+		const { userId } = auth();
+
+		if (!userId) {
+			throw new Error("User not authenticated");
+		}
+
 		const { messages, latestChatMessage } = await req.json();
 
 		const { updatedMessages } = await openAIAddChatMessageAndAwaitResponse(

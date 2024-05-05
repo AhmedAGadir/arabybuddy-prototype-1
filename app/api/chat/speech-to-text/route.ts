@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 import { tmpdir } from "os";
 import OpenAI from "openai";
+import { auth } from "@clerk/nextjs/server";
 
 // remember API calls wont work if the account balance is 0
 const openai = new OpenAI({
@@ -11,6 +12,12 @@ const openai = new OpenAI({
 
 export async function POST(req: Request, res: Response) {
 	try {
+		const { userId } = auth();
+
+		if (!userId) {
+			throw new Error("User not authenticated");
+		}
+
 		const {
 			audio: { base64Audio, type },
 		} = await req.json();
