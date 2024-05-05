@@ -21,11 +21,12 @@ const useMessages = ({ conversationId }: { conversationId: string }) => {
 		queryKey: ["messages", user?.id, conversationId],
 		refetchOnWindowFocus: true,
 		queryFn: async () => {
-			logger.log("fetching messages for conversationId", conversationId);
+			logger.log("fetching messages...");
 			const response = await fetch(
 				`/api/conversations/${conversationId}/messages`
 			);
 			const data = await response.json();
+			logger.log("messages fetched", data.messages);
 			return data.messages;
 		},
 	});
@@ -35,7 +36,7 @@ const useMessages = ({ conversationId }: { conversationId: string }) => {
 			content,
 			role,
 		}: Pick<IMessage, "role" | "content">) => {
-			logger.log("creating message for conversationId", conversationId);
+			logger.log("creating message...");
 			const response = await fetch(
 				`/api/conversations/${conversationId}/messages`,
 				{
@@ -49,7 +50,9 @@ const useMessages = ({ conversationId }: { conversationId: string }) => {
 			if (!response.ok) {
 				throw new Error("Network response was not ok");
 			}
-			return response.json();
+			const data = await response.json();
+			logger.log("messaged created", data);
+			return data;
 		},
 		// // When mutate is called:
 		// onMutate: async ({ content, role }: Pick<IMessage, "role" | "content">) => {
@@ -76,7 +79,7 @@ const useMessages = ({ conversationId }: { conversationId: string }) => {
 		// },
 		// Always refetch after error or success:
 		onSettled: () => {
-			logger.log("message created, invalidating cache now");
+			logger.log("message created, invalidating cache....");
 			queryClient.invalidateQueries({
 				queryKey: ["messages", user?.id, conversationId],
 			});
@@ -106,10 +109,12 @@ const useMessages = ({ conversationId }: { conversationId: string }) => {
 			if (!response.ok) {
 				throw new Error("Network response was not ok");
 			}
-			return response.json();
+			const data = await response.json();
+			logger.log("deleted messages", data);
+			return data;
 		},
 		onSettled: () => {
-			logger.log("messages deleted, invalidating cache now");
+			logger.log("messages deleted, invalidating cache...");
 			queryClient.invalidateQueries({
 				queryKey: ["messages", user?.id, conversationId],
 			});

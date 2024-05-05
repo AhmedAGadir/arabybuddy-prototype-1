@@ -23,8 +23,9 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
+import { cairo } from "@/lib/fonts";
 
-const ChatBubble = ({
+const MessageCard = ({
 	name,
 	avatarSrc,
 	avatarAlt,
@@ -36,6 +37,7 @@ const ChatBubble = ({
 	rtl = true,
 	reverse = false,
 	glow = false,
+	showLoadingOverlay = false,
 	className,
 }: {
 	name?: string;
@@ -56,6 +58,7 @@ const ChatBubble = ({
 	rtl?: boolean;
 	reverse?: boolean;
 	glow?: boolean;
+	showLoadingOverlay?: boolean;
 	className?: string;
 }) => {
 	const { device } = useMediaQuery();
@@ -91,9 +94,17 @@ const ChatBubble = ({
 					if (item === "separator")
 						return <DropdownMenuSeparator key={ind + "-separator"} />;
 					return (
-						<DropdownMenuItem key={item.label} onClick={item.onClick}>
-							<span className="mr-2">{<item.icon className="w-5 h-5" />}</span>{" "}
-							{item.label}
+						<DropdownMenuItem
+							key={item.label}
+							onClick={item.onClick}
+							className="cursor-pointer"
+						>
+							<div className="flex w-full hover:text-indigo-600">
+								<span className="mr-2">
+									{<item.icon className="w-5 h-5" />}
+								</span>
+								{item.label}
+							</div>
 						</DropdownMenuItem>
 					);
 				})}
@@ -127,8 +138,9 @@ const ChatBubble = ({
 	return (
 		<Card
 			className={cn(
-				"flex-1 flex flex-col",
-				isMobile && "width-full",
+				"relative flex-1 flex flex-col shadow-xl",
+				// isMobile && "w-full",
+				// glow && "shadow-lg",
 				// glow &&
 				// 	"bg-[radial-gradient(circle_farthest-side_at_0_100%,#38B6FF,transparent),radial-gradient(circle_farthest-side_at_100%_0,#5E17EB,transparent),radial-gradient(circle_farthest-side_at_100%_100%,#ffc414,transparent),radial-gradient(circle_farthest-side_at_0_0,#1ca0fb,#141316)]",
 				className
@@ -138,12 +150,16 @@ const ChatBubble = ({
 			<CardContent className="bg-opacity-50 overflow-y-scroll">
 				<p
 					className={cn(
-						"text-xl md:text-3xl lg:text-3xl font-normal text-slate-900 dark:text-white min-w-[130px] lg:min-w-[250px]"
+						"text-xl font-normal leading-loose  dark:text-white min-w-[130px] lg:min-w-[250px]",
+						cairo.className
 					)}
 					style={{ direction: rtl ? "rtl" : "ltr" }}
 				>
 					{content}
 				</p>
+				{showLoadingOverlay && (
+					<div className="absolute inset-0 w-full h-full bg-white bg-opacity-60 flex items-center justify-center"></div>
+				)}
 			</CardContent>
 		</Card>
 	);
@@ -191,4 +207,4 @@ const ChatBubble = ({
 	);
 };
 
-export default ChatBubble;
+export default MessageCard;

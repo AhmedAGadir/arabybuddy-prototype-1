@@ -98,11 +98,11 @@ const INTERESTS = {
 		{ value: "Design", icon: "🎨" },
 		{ value: "DIY", icon: "🛠️" },
 		{ value: "Language Learning", icon: "🗣️" },
-		{ value: "Literature", icon: "📚" },
 		{ value: "Museums", icon: "🏛" },
 		{ value: "Opera", icon: "🎶" },
 		{ value: "Painting", icon: "🎨" },
 		{ value: "Photography", icon: "📷" },
+		{ value: "Reading", icon: "📚" },
 		{ value: "Sculpture", icon: "🗿" },
 		{ value: "Theater", icon: "🎭" },
 		{ value: "TV Shows", icon: "📺" },
@@ -311,7 +311,7 @@ const PreferencesPage = () => {
 				duration: Infinity,
 			});
 		}
-	}, [isPending, error, refetch]);
+	}, [isPending, error, refetch, toast]);
 
 	// TODO: remove after everyone's migrated
 	useEffect(() => {
@@ -331,7 +331,7 @@ const PreferencesPage = () => {
 	useEffect(() => {
 		// Log the form state whenever it changes
 		logger.log("Form state:", formState);
-	}, [formState]);
+	}, [formState, logger]);
 
 	const formSubmitHandler = async (
 		values: z.infer<typeof preferencesFormSchema>

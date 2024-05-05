@@ -19,17 +19,18 @@ const useAudioService = () => {
 		async (audioBlob: Blob) => {
 			try {
 				const base64Audio = await blobToBase64(audioBlob);
+				const params = {
+					audio: {
+						base64Audio,
+						type: audioBlob.type.split("/")[1],
+						// TODO: add dialect support for transcription
+					},
+				};
 
-				logger.log("making request to: /api/chat/speech-to-text...");
+				logger.log("making request to: /api/chat/speech-to-text...", params);
 				const { transcription } = await makeServerlessRequestSpeechToText(
 					"/api/chat/speech-to-text",
-					{
-						audio: {
-							base64Audio,
-							type: audioBlob.type.split("/")[1],
-							// TODO: add dialect support for transcription
-						},
-					}
+					{ ...params }
 				);
 
 				logger.log("transcription", transcription);

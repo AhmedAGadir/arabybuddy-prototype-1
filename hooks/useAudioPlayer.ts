@@ -98,7 +98,16 @@ const useAudioPlayer = () => {
 		setIsPlaying(false);
 	};
 
-	return { playAudio, isPlaying, initAudioElement, stopPlaying, pausePlaying };
+	const audioElementInitialized = audioRef.current !== undefined;
+
+	return {
+		playAudio,
+		isPlaying,
+		initAudioElement,
+		audioElementInitialized,
+		stopPlaying,
+		pausePlaying,
+	};
 };
 
 export { useAudioPlayer };

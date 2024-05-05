@@ -15,16 +15,17 @@ const useConversations = () => {
 		queryKey: ["conversations", user?.id],
 		refetchOnWindowFocus: true,
 		queryFn: async () => {
-			logger.log("fetching conversations");
+			logger.log("fetching conversations...");
 			const response = await fetch("/api/conversations");
 			const data = await response.json();
+			logger.log("fetched conversations", data);
 			return data;
 		},
 	});
 
 	const createConversationMutation = useMutation({
 		mutationFn: async () => {
-			logger.log("creating conversation");
+			logger.log("creating conversation...");
 			const response = await fetch(`/api/conversations`, {
 				method: "POST",
 				headers: {
@@ -34,7 +35,9 @@ const useConversations = () => {
 			if (!response.ok) {
 				throw new Error("Network response was not ok");
 			}
-			return response.json();
+			const data = await response.json();
+			logger.log("conversation created", data);
+			return data;
 		},
 		onError: (err) => {
 			logger.error("Error creating conversation:", err);
@@ -42,7 +45,7 @@ const useConversations = () => {
 		},
 		onSuccess: (data) => {
 			// Invalidate and refetch
-			logger.log("created conversation - invalidating cache and refetching");
+			logger.log("created conversation - invalidating cache and refetching...");
 			queryClient.invalidateQueries({
 				queryKey: ["conversations", user?.id],
 			});
@@ -56,14 +59,16 @@ const useConversations = () => {
 
 	const deleteConversationMutation = useMutation({
 		mutationFn: async (conversationId: string) => {
-			logger.log("deleting conversation", conversationId);
+			logger.log("deleting conversation...", conversationId);
 			const response = await fetch(`/api/conversations/${conversationId}`, {
 				method: "DELETE",
 			});
 			if (!response.ok) {
 				throw new Error("Network response was not ok");
 			}
-			return response.json();
+			const data = await response.json();
+			logger.log("conversation deleted", data);
+			return data;
 		},
 		onMutate: async (conversationId: string) => {
 			// Cancel any outgoing refetches
@@ -93,7 +98,7 @@ const useConversations = () => {
 		},
 		onSettled: () => {
 			// Invalidate and refetch
-			logger.log("deleted conversation - invalidating cache and refetching");
+			logger.log("deleted conversation - invalidating cache and refetching...");
 			queryClient.invalidateQueries({ queryKey: ["conversations", user?.id] });
 		},
 	});

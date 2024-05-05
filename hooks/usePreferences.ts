@@ -14,6 +14,7 @@ const usePreferences = () => {
 		queryKey: ["preferences", user?.id],
 		refetchOnWindowFocus: true,
 		queryFn: async () => {
+			logger.log("fetching preferences...");
 			const response = await fetch("/api/preferences");
 			const data = await response.json();
 			logger.log("fetched preferences", data);
@@ -23,7 +24,7 @@ const usePreferences = () => {
 
 	const createPreferencesMutation = useMutation({
 		mutationFn: async (preferences: IPreferences) => {
-			logger.log("creating preferences", preferences);
+			logger.log("creating preferences...", preferences);
 			const response = await fetch(`/api/preferences`, {
 				method: "POST",
 				headers: {
@@ -34,7 +35,9 @@ const usePreferences = () => {
 			if (!response.ok) {
 				throw new Error("Network response was not ok");
 			}
-			return response.json();
+			const data = await response.json();
+			logger.log("preferences created", data);
+			return data;
 		},
 		onError: (err) => {
 			logger.error("Error creating preferences:", err);
@@ -42,7 +45,7 @@ const usePreferences = () => {
 		},
 		onSuccess: (data) => {
 			// Invalidate and refetch
-			logger.log("created preferences - invalidating cache and refetching");
+			logger.log("created preferences - invalidating cache and refetching...");
 			queryClient.invalidateQueries({ queryKey: ["preferences", user?.id] });
 		},
 	});
@@ -53,7 +56,7 @@ const usePreferences = () => {
 
 	const updatePreferencesMutation = useMutation({
 		mutationFn: async (preferences: IPreferences) => {
-			logger.log("updating preferences", preferences);
+			logger.log("updating preferences...", preferences);
 			const response = await fetch(`/api/preferences`, {
 				method: "PUT",
 				headers: {
@@ -64,14 +67,16 @@ const usePreferences = () => {
 			if (!response.ok) {
 				throw new Error("Network response was not ok");
 			}
-			return response.json();
+			const data = await response.json();
+			logger.log("preferences updated", data);
+			return data;
 		},
 		onError: (err: Error) => {
 			logger.error("Error updating preferences:", err);
 			return err;
 		},
 		onSuccess: (data: IPreferences) => {
-			logger.log("updated preferences - invalidating cache and refetching");
+			logger.log("updated preferences - invalidating cache and refetching...");
 			// Invalidate and refetch
 			queryClient.invalidateQueries({ queryKey: ["preferences", user?.id] });
 		},

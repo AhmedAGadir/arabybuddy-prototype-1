@@ -19,7 +19,7 @@ import { Transition } from "@headlessui/react";
 import Microphone from "@/components/shared/Microphone";
 import { useRecording } from "@/hooks/useRecording";
 
-import ChatBubble from "@/components/shared/ChatBubble";
+import MessageCard from "@/components/shared/MessageCard";
 import { cn } from "@/lib/utils";
 import { cairo, roboto } from "@/lib/fonts";
 import { BackgroundGradient } from "@/components/ui/background-gradient";
@@ -115,36 +115,26 @@ const ConversationIdPage = ({
 		abortTextToSpeechRequest,
 	} = useAudioService();
 
-	const { playAudio, isPlaying, initAudioElement, stopPlaying } =
-		useAudioPlayer();
+	const {
+		playAudio,
+		isPlaying,
+		initAudioElement,
+		audioElementInitialized,
+		stopPlaying,
+	} = useAudioPlayer();
 
 	const { isRecording, startRecording, stopRecording, amplitude } =
 		useRecording();
 
+	const [displayedMessageInd, setDisplayedMessageInd] = useState<number>(0);
+
+	useEffect(() => {
+		setDisplayedMessageInd(messages.length - 1);
+	}, [messages]);
+
+	const displayedMessage = messages[displayedMessageInd];
+
 	const [showLoadingMessage, setShowLoadingMessage] = useState(false);
-
-	const toggleRecording = async () => {
-		setShowInstruction(false);
-		if (isRecording) {
-			const { audioBlob } = await stopRecording();
-			if (audioBlob) {
-				const { success } = await onRecordingComplete(audioBlob);
-				if (success) {
-					// TODO: disabling this for now, the UI is confusing
-					// restart recording
-					// startRecording();
-				}
-			}
-			return;
-		}
-
-		if (!isRecording) {
-			initAudioElement();
-			setTimeStamp(new Date());
-			startRecording();
-			return;
-		}
-	};
 
 	const onRecordingComplete = useCallback(
 		async (audioBlob: Blob) => {
@@ -239,7 +229,6 @@ const ConversationIdPage = ({
 		[
 			makeChatCompletion,
 			createMessage,
-			dismiss,
 			isPlaying,
 			logger,
 			speechToText,
@@ -252,6 +241,84 @@ const ConversationIdPage = ({
 			timeStamp,
 		]
 	);
+
+	const replayDisplayedMessage = useCallback(async () => {
+		try {
+			setProgressBarValue(25);
+			setActiveTask(taskEnum.TEXT_TO_SPEECH);
+			const { base64Audio } = await textToSpeech(displayedMessage.content);
+
+			setProgressBarValue(100);
+			setActiveTask(null);
+
+			if (!audioElementInitialized) {
+				initAudioElement();
+			}
+			await playAudio(base64Audio);
+			setProgressBarValue(0);
+		} catch (error) {
+			if ((error as any).name === "AbortError") {
+				toast({
+					title: "Message cancelled",
+					description: "The request was aborted.",
+					className: "warning-toast",
+					duration: 10000,
+				});
+			} else {
+				logger.error("replayDisplayedMessage", error);
+				toast({
+					title: "Uh oh! Something went wrong.",
+					description: "There was a problem replaying this message",
+					className: "error-toast",
+					duration: 10000,
+				});
+			}
+
+			setActiveTask(null);
+			setProgressBarValue(0);
+		}
+	}, [
+		displayedMessage,
+		error,
+		logger,
+		initAudioElement,
+		playAudio,
+		textToSpeech,
+		toast,
+		audioElementInitialized,
+	]);
+
+	const toggleRecording = useCallback(async () => {
+		setShowInstruction(false);
+		if (isRecording) {
+			const { audioBlob } = await stopRecording();
+			if (audioBlob) {
+				const { success } = await onRecordingComplete(audioBlob);
+				if (success) {
+					// TODO: disabling this for now, the UI is confusing
+					// restart recording
+					// startRecording();
+				}
+			}
+			return;
+		}
+
+		if (!isRecording) {
+			if (!audioElementInitialized) {
+				initAudioElement();
+			}
+			setTimeStamp(new Date());
+			startRecording();
+			return;
+		}
+	}, [
+		audioElementInitialized,
+		initAudioElement,
+		isRecording,
+		onRecordingComplete,
+		startRecording,
+		stopRecording,
+	]);
 
 	const [showInstruction, setShowInstruction] = useState(false);
 
@@ -313,17 +380,6 @@ const ConversationIdPage = ({
 		abortTextToSpeechRequest,
 		activeTask,
 	]);
-
-	const [displayedChatMessageInd, setDisplayedChatMessageInd] =
-		useState<number>(0);
-
-	useEffect(() => {
-		setDisplayedChatMessageInd(messages.length - 1);
-	}, [messages]);
-
-	const isChatEmpty = _.isEmpty(messages);
-
-	const displayedChatMessage = messages[displayedChatMessageInd];
 
 	// const [completedTyping, setCompletedTyping] = useState(false);
 	// const [skipTyping, setSkipTyping] = useState(false);
@@ -405,11 +461,11 @@ const ConversationIdPage = ({
 				duration: Infinity,
 			});
 		}
-	}, [isPending, error, refetch]);
+	}, [isPending, error, refetch, toast]);
 
 	const chatMenuItems = useMemo(() => {
 		return [
-			{ label: "Replay", icon: PlayIcon, onClick: () => {} },
+			{ label: "Replay", icon: PlayIcon, onClick: replayDisplayedMessage },
 			{ label: "Translate", icon: TranslateIcon, onClick: () => {} },
 			{ label: "Rephrase", icon: MagicWandIcon, onClick: () => {} },
 			"separator" as "separator",
@@ -424,20 +480,18 @@ const ConversationIdPage = ({
 				onClick: () => {},
 			},
 		];
-	}, []);
+	}, [replayDisplayedMessage]);
 
-	const paginationPrevDisabled = isPlaying || displayedChatMessageInd === 0;
+	const paginationPrevDisabled = isPlaying || displayedMessageInd === 0;
 	const paginationNextDisabled =
-		isPlaying || displayedChatMessageInd === messages.length - 1;
+		isPlaying || displayedMessageInd === messages.length - 1;
 
 	const paginationContent = (
 		<Pagination className="mt-3">
 			<PaginationContent>
 				<PaginationItem>
 					<PaginationPrevious
-						onClick={() =>
-							setDisplayedChatMessageInd(displayedChatMessageInd - 1)
-						}
+						onClick={() => setDisplayedMessageInd(displayedMessageInd - 1)}
 						className={cn(
 							paginationPrevDisabled &&
 								"pointer-events-none opacity-25 hover:bg-transparent"
@@ -446,9 +500,7 @@ const ConversationIdPage = ({
 				</PaginationItem>
 				<PaginationItem>
 					<PaginationNext
-						onClick={() =>
-							setDisplayedChatMessageInd(displayedChatMessageInd + 1)
-						}
+						onClick={() => setDisplayedMessageInd(displayedMessageInd + 1)}
 						className={cn(
 							paginationNextDisabled &&
 								"pointer-events-none opacity-25 hover:bg-transparent"
@@ -482,9 +534,9 @@ const ConversationIdPage = ({
 
 	const progressBarContent = (
 		<Progress
-			className="rounded-none h-1 md:h-2"
+			className="rounded-none h-1"
 			// innerClassName="bg-gradient-to-r to-araby-purple from-araby-purple"
-			innerClassName="bg-gray-300"
+			innerClassName="bg-araby-blue"
 			value={progressBarValueRef.current}
 		/>
 	);
@@ -494,7 +546,7 @@ const ConversationIdPage = ({
 
 	if (isPending) {
 		return (
-			<div className="flex-1 flex items-center justify-center min-h-screen min-h-svh ">
+			<div className="flex-1 flex items-center justify-center">
 				<SkewLoader
 					color="black"
 					loading
@@ -510,19 +562,21 @@ const ConversationIdPage = ({
 		return null;
 	}
 
+	const isChatEmpty = _.isEmpty(messages);
+
 	return (
 		<div className={cn("w-full background-pattern")}>
 			<div className="w-screen absolute top-0 left-0 z-30">
 				{progressBarContent}
 			</div>
 			{/* wrapper */}
-			<div className="max-w-3xl h-full flex flex-col items-center justify-between mx-auto px-4">
-				<div className="flex-1 min-h-0 basis-0 overflow-y-hidden flex flex-col justify-center items-center">
+			<div className="h-full flex flex-col items-center justify-between mx-auto">
+				<div className="flex-1 min-h-0 basis-0 overflow-y-hidden flex flex-col justify-center items-center px-4 w-full ">
 					{/* chat bubble and pagination wrapper */}
-					<div className="flex flex-col justify-center items-center w-full h-full">
-						<div className="min-h-0 w-full md:w-auto max-w-3xl mx-auto mt-8">
+					<div className="flex flex-col justify-center items-center w-full h-full ">
+						<div className={cn("min-h-0 w-full max-w-2xl mx-auto mt-4 ")}>
 							{showLoadingMessage && (
-								<ChatBubble
+								<MessageCard
 									className="h-full bg-white"
 									name="ArabyBuddy"
 									avatarSrc="/assets/arabybuddy.svg"
@@ -552,40 +606,46 @@ const ConversationIdPage = ({
 								/>
 							)}
 							{!isChatEmpty && !showLoadingMessage && (
-								<ChatBubble
+								<MessageCard
 									className="h-full bg-white"
 									name={
-										displayedChatMessage?.role === "assistant"
+										displayedMessage?.role === "assistant"
 											? "ArabyBuddy"
 											: "You"
 									}
 									avatarSrc={
-										displayedChatMessage?.role === "assistant"
+										displayedMessage?.role === "assistant"
 											? "/assets/arabybuddy.svg"
 											: user?.imageUrl ?? "/assets/user.svg"
 									}
 									avatarAlt={
-										displayedChatMessage?.role === "assistant"
+										displayedMessage?.role === "assistant"
 											? "ArabyBuddy avatar"
 											: "User avatar"
 									}
-									// glow={isPlaying}
+									glow={isPlaying}
 									chatMenuItems={chatMenuItems}
 									chatMenuDisabled={STATUS !== statusEnum.IDLE}
+									// showLoadingOverlay={activeTask === taskEnum.TEXT_TO_SPEECH}
+									showLoadingOverlay={STATUS === statusEnum.PROCESSING}
 									reverse
 									rtl
 									content={
 										<span
-											className={cn(
+											className={
+												cn()
 												// "font-bold",
 												// "text-xl md:text-3xl text-transparent bg-clip-text leading-loose text-slate-900",
-												"text-xl leading-loose text-slate-900",
-												cairo.className
+												// "text-xl leading-loose text-slate-900",
+												// cairo.className
 												// isPlaying &&
 												// 	"bg-gradient-to-r to-araby-purple from-araby-purple"
-											)}
+												// "text-slate-900",
+												// activeTask === taskEnum.TEXT_TO_SPEECH &&
+												// 	"text-gray-300"
+											}
 										>
-											{displayedChatMessage?.content}
+											{displayedMessage?.content}
 										</span>
 									}
 								/>
@@ -594,12 +654,13 @@ const ConversationIdPage = ({
 						{!isChatEmpty && !showLoadingMessage && paginationContent}
 					</div>
 				</div>
-				<div className="w-full md:w-fit">
-					<div className="w-full md:w-fit h-16  mx-auto flex items-center justify-center z-10">
+				<div className=" w-full px-4">
+					<div className="h-12 mx-auto z-10 text-center ">
 						{STATUS === statusEnum.PROCESSING && (
 							<Button
 								onClick={abortProcessingBtnHandler}
-								variant="outline"
+								// variant="outline"
+								variant="destructive"
 								size="lg"
 								className="w-full md:w-fit"
 							>
@@ -609,8 +670,8 @@ const ConversationIdPage = ({
 						{STATUS === statusEnum.PLAYING && (
 							<Button
 								onClick={stopPlayingBtnHandler}
-								// variant="default"
-								variant="outline"
+								variant="default"
+								// variant="outline"
 								size="lg"
 								className="w-full md:w-fit"
 							>
@@ -631,8 +692,8 @@ const ConversationIdPage = ({
 							Stop Recording
 						</Button>
 					)} */}
-						{instructionContent}
 					</div>
+					<div className="h-14 ">{instructionContent}</div>
 					<div className="text-center w-fit m-auto pb-4 ">
 						<Microphone
 							onClick={toggleRecording}

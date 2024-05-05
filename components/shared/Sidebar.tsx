@@ -72,7 +72,7 @@ export default function Sidebar({
 				duration: Infinity,
 			});
 		}
-	}, [isPending, error]);
+	}, [isPending, error, refetch, toast]);
 
 	const newChatHandler = useCallback(async () => {
 		const data = await createConversation();

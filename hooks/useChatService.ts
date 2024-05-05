@@ -47,7 +47,7 @@ const useChatService = () => {
 							DEFAULT_USER_PREFERENCES.user_personality_traits,
 					},
 				};
-				logger.log("making request to: /api/chat/assistant...");
+				logger.log("making request to: /api/chat/assistant...", params);
 				const { messages: updatedMessages } = await makeServerlessRequest(
 					"/api/chat/assistant",
 					{ ...params }

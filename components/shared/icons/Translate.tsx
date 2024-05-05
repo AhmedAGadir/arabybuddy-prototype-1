@@ -12,6 +12,7 @@ const Translate = (props: any) => {
 			// stroke="currentColor"
 			className="w-6 h-6"
 			{...props}
+			fill="currentColor"
 		>
 			<path
 				d="M194.531 0h-27.203l-19.953-59.281H55.281L35.188 0H8.578l75.39-216.11h35.173zM99.484-189.953L62.375-80.563h77.766l-36.97-109.39zm0 0"
