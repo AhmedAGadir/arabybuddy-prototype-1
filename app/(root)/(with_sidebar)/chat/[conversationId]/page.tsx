@@ -25,6 +25,7 @@ import {
 	ChevronLeftIcon,
 	ChevronRightIcon,
 	EllipsisVerticalIcon,
+	SpeakerWaveIcon,
 } from "@heroicons/react/24/outline";
 
 import { useToast } from "@/components/ui/use-toast";
@@ -36,6 +37,7 @@ import MessageCard from "@/components/shared/MessageCard";
 
 import PulseLoader from "react-spinners/PulseLoader";
 import SkewLoader from "react-spinners/SkewLoader";
+import ScaleLoader from "react-spinners/ScaleLoader";
 import { ToastAction } from "@radix-ui/react-toast";
 
 import { IMessage } from "@/lib/database/models/message.model";
@@ -59,7 +61,7 @@ import {
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-import _ from "lodash";
+import _, { set } from "lodash";
 import { Transition } from "@headlessui/react";
 
 import { cn } from "@/lib/utils";
@@ -84,13 +86,14 @@ const status = {
 
 export type Status = (typeof status)[keyof typeof status];
 
-const taskEnum = {
+const task = {
 	SPEECH_TO_TEXT: "SPEECH_TO_TEXT",
 	ASSISTANT: "ASSISTANT",
 	TEXT_TO_SPEECH: "TEXT_TO_SPEECH",
+	TEXT_TO_SPEECH_REPLAY: "TEXT_TO_SPEECH_REPLAY",
 } as const;
 
-export type Task = (typeof taskEnum)[keyof typeof taskEnum];
+export type Task = (typeof task)[keyof typeof task];
 
 const NewBadge = ({ className }: { className?: string }) => (
 	<span
@@ -126,7 +129,29 @@ const ConversationIdPage = ({
 		conversationId,
 	});
 
-	const { updateConversation } = useConversations();
+	const { updateConversation, deleteConversation } = useConversations();
+
+	// TODO: delete conversation if empty when component unmounts
+	// useEffect(() => {
+	// 	// delete conversation if empty when component unmounts
+	// 	return () => {
+	// 		if (_.isEmpty(messages)) {
+	// 			try {
+	// 				deleteConversation(conversationId);
+	// 			} catch (error) {
+	// 				logger.error("deleteConversation failed", error);
+	// 				toast({
+	// 					title: "Something went wrong.",
+	// 					description: "There was a problem deleting this conversation.",
+	// 					// variant: "destructive",
+	// 					className: "error-toast",
+	// 					duration: 10000,
+	// 				});
+	// 			}
+	// 		}
+	// 	};
+	// 	// eslint-disable-next-line react-hooks/exhaustive-deps
+	// }, []);
 
 	const [timeStamp, setTimeStamp] = useState<Date | null>();
 
@@ -176,9 +201,12 @@ const ConversationIdPage = ({
 					throw new Error("Audio is too long");
 				}
 
+				// show loading message
+				setShowLoadingMessage(true);
+
 				// 1. transcribe the user audio
 				setProgressBarValue(1);
-				setActiveTask(taskEnum.SPEECH_TO_TEXT);
+				setActiveTask(task.SPEECH_TO_TEXT);
 				const { transcription } = await speechToText(audioBlob);
 
 				// TODO: sanitize transcription, no input should be empty
@@ -189,13 +217,14 @@ const ConversationIdPage = ({
 					role,
 					content,
 				}));
-				// update database with user message in the background
-				createMessage({ role: "user", content: transcription });
-				// update latest conversation so sidebar gets updated
-				updateConversation({ _id: conversationId, lastMessage: transcription });
+
+				setShowLoadingMessage(false);
+
+				// update database with user message in the foreground (optimistic update)
+				await createMessage({ role: "user", content: transcription });
 
 				// // 2. add user transcription to chat completion
-				setActiveTask(taskEnum.ASSISTANT);
+				setActiveTask(task.ASSISTANT);
 				const { messages: updatedMessages } = await makeChatCompletion(
 					{
 						role: "user",
@@ -204,28 +233,28 @@ const ConversationIdPage = ({
 					messagesCopy
 				);
 				const completionMessage = _.last(updatedMessages) as IMessage;
-				// update database with assistant message in the background
-				createMessage(completionMessage);
-				// update latest conversation so sidebar gets updated
-				updateConversation({
-					_id: conversationId,
-					lastMessage: completionMessage.content,
-				});
 
 				// show loading message
 				setShowLoadingMessage(true);
 
 				// 3. convert the assistants response to audio
 				setProgressBarValue(75);
-				setActiveTask(taskEnum.TEXT_TO_SPEECH);
+				setActiveTask(task.TEXT_TO_SPEECH);
 				const { base64Audio } = await textToSpeech(completionMessage.content);
 
 				// 4. play assistants response and update message database
 				setProgressBarValue(100);
 				setActiveTask(null);
 				setShowLoadingMessage(false);
-				// setChatHistoryWithTypewriterOnLatestMessage(updatedChatHistory);
+				// update database with user message in the foreground (optimistic update)
+				createMessage(completionMessage);
+				// update latest conversation so sidebar gets updated
 				await playAudio(base64Audio);
+				// update latest conversation in sidebar
+				updateConversation({
+					_id: conversationId,
+					lastMessage: completionMessage.content,
+				});
 				setProgressBarValue(0);
 				setTimeStamp(null);
 
@@ -285,7 +314,7 @@ const ConversationIdPage = ({
 	const replayDisplayedMessage = useCallback(async () => {
 		try {
 			setProgressBarValue(25);
-			setActiveTask(taskEnum.TEXT_TO_SPEECH);
+			setActiveTask(task.TEXT_TO_SPEECH_REPLAY);
 			const { base64Audio } = await textToSpeech(displayedMessage.content);
 
 			setProgressBarValue(100);
@@ -329,6 +358,12 @@ const ConversationIdPage = ({
 
 	const toggleRecording = useCallback(async () => {
 		setShowInstruction(false);
+
+		if (isPlaying) {
+			stopPlaying();
+			return;
+		}
+
 		if (isRecording) {
 			const { audioBlob } = await stopRecording();
 			if (audioBlob) {
@@ -353,9 +388,11 @@ const ConversationIdPage = ({
 	}, [
 		audioElementInitialized,
 		initAudioElement,
+		isPlaying,
 		isRecording,
 		onRecordingComplete,
 		startRecording,
+		stopPlaying,
 		stopRecording,
 	]);
 
@@ -377,9 +414,10 @@ const ConversationIdPage = ({
 	const isProcessing = STATUS === status.PROCESSING;
 	const isIdle = STATUS === status.IDLE;
 
-	const isDoingSpeechToText = activeTask === taskEnum.SPEECH_TO_TEXT;
-	const isDoingAssistant = activeTask === taskEnum.ASSISTANT;
-	const isDoingTextToSpeech = activeTask === taskEnum.TEXT_TO_SPEECH;
+	const isDoingSpeechToText = activeTask === task.SPEECH_TO_TEXT;
+	const isDoingAssistant = activeTask === task.ASSISTANT;
+	const isDoingTextToSpeech = activeTask === task.TEXT_TO_SPEECH;
+	const isDoingTextToSpeechReplay = activeTask === task.TEXT_TO_SPEECH_REPLAY;
 
 	const instruction = useMemo(() => {
 		const instructions: {
@@ -395,26 +433,34 @@ const ConversationIdPage = ({
 			PLAYING: [""],
 			PROCESSING: [
 				...(isDoingSpeechToText ? ["Transcribing..."] : []),
-				...(isDoingAssistant ? ["Thinking..."] : []),
+				...(isDoingAssistant ? ["Thinking of a response..."] : []),
 				...(isDoingTextToSpeech ? ["Almost there..."] : []),
+				...(isDoingTextToSpeechReplay ? ["Regenerating audio..."] : []),
 			],
 		};
 
 		const statusInstructions = instructions[STATUS];
 		const randomIndex = Math.floor(Math.random() * statusInstructions.length);
 		return statusInstructions[randomIndex];
-	}, [STATUS, isDoingAssistant, isDoingSpeechToText, isDoingTextToSpeech]);
+	}, [
+		STATUS,
+		isDoingAssistant,
+		isDoingSpeechToText,
+		isDoingTextToSpeech,
+		isDoingTextToSpeechReplay,
+	]);
 
 	const abortProcessingBtnHandler = useCallback(() => {
 		if (!isProcessing) return;
 		switch (activeTask) {
-			case taskEnum.SPEECH_TO_TEXT:
+			case task.SPEECH_TO_TEXT:
 				abortSpeechToTextRequest();
 				break;
-			case taskEnum.TEXT_TO_SPEECH:
+			case task.TEXT_TO_SPEECH:
+			case task.TEXT_TO_SPEECH_REPLAY:
 				abortTextToSpeechRequest();
 				break;
-			case taskEnum.ASSISTANT:
+			case task.ASSISTANT:
 				abortMakeChatCompletion();
 				break;
 			default:
@@ -437,60 +483,6 @@ const ConversationIdPage = ({
 		stopPlaying();
 		// setSkipTyping(true);
 	}, [stopPlaying]);
-
-	// const setChatHistoryWithTypewriterOnLatestMessage = async (
-	// 	chatHistory: ChatMessage[]
-	// ) => {
-	// 	const previousChatHistory = chatHistory.slice(0, -1);
-	// 	const latestChatMessage = _.last(chatHistory) as ChatMessage;
-
-	// 	setCompletedTyping(false);
-
-	// 	let i = 0;
-
-	// 	const promise = new Promise<void>((resolve) => {
-	// 		const intervalId = setInterval(() => {
-	// 			if (skipTypingRef.current) {
-	// 				setChatHistory([
-	// 					...previousChatHistory,
-	// 					{
-	// 						...latestChatMessage,
-	// 						content: latestChatMessage.content,
-	// 					},
-	// 				]);
-	// 				setCompletedTyping(true);
-	// 				clearInterval(intervalId);
-	// 				setSkipTyping(false);
-	// 				resolve();
-	// 				return;
-	// 			}
-
-	// 			setChatHistory([
-	// 				...previousChatHistory,
-	// 				{
-	// 					...latestChatMessage,
-	// 					content: latestChatMessage.content.slice(0, i),
-	// 				},
-	// 			]);
-	// 			setDisplayedChatMessageInd(chatHistory.length - 1);
-
-	// 			i++;
-
-	// 			if (i > latestChatMessage.content.length) {
-	// 				clearInterval(intervalId);
-	// 				setCompletedTyping(true);
-
-	// 				setTimeout(() => {
-	// 					// wait a bit before resolving
-	// 					resolve();
-	// 				}, 750);
-	// 			}
-	// 		}, 40);
-	// 	});
-
-	// 	return promise;
-	// 	// return () => clearInterval(intervalId);
-	// };
 
 	useEffect(() => {
 		if (!isPending && error) {
@@ -686,8 +678,98 @@ const ConversationIdPage = ({
 		/>
 	);
 
-	const { device } = useMediaQuery();
-	const isMobile = device === "mobile";
+	const isChatEmpty = _.isEmpty(messages);
+
+	const messageCardDetails = useMemo(() => {
+		let name: string, avatarSrc: string, avatarAlt: string;
+
+		const userDetails = {
+			name: "You",
+			avatarSrc: user?.imageUrl ?? "/assets/user.svg",
+			avatarAlt: "User avatar",
+		};
+
+		const arabyBuddyDetails = {
+			name: "ArabyBuddy",
+			avatarSrc: "/assets/arabybuddy.svg",
+			avatarAlt: "ArabyBuddy avatar",
+		};
+
+		if (showLoadingMessage) {
+			if (isDoingSpeechToText) {
+				name = userDetails.name;
+				avatarSrc = userDetails.avatarSrc;
+				avatarAlt = userDetails.avatarAlt;
+			} else {
+				name = arabyBuddyDetails.name;
+				avatarSrc = arabyBuddyDetails.avatarSrc;
+				avatarAlt = arabyBuddyDetails.avatarAlt;
+			}
+		} else {
+			if (displayedMessage?.role === "assistant") {
+				name = arabyBuddyDetails.name;
+				avatarSrc = arabyBuddyDetails.avatarSrc;
+				avatarAlt = arabyBuddyDetails.avatarAlt;
+			} else {
+				name = userDetails.name;
+				avatarSrc = userDetails.avatarSrc;
+				avatarAlt = userDetails.avatarAlt;
+			}
+		}
+
+		return {
+			name,
+			avatarSrc,
+			avatarAlt,
+		};
+	}, [
+		displayedMessage?.role,
+		isDoingSpeechToText,
+		showLoadingMessage,
+		user?.imageUrl,
+	]);
+
+	const messageCardContent = !isChatEmpty && (
+		<MessageCard
+			className={cn(
+				"h-full bg-white text-slate-900 dark:text-white"
+				// isPlaying &&
+				// 	"text-transparent bg-clip-text bg-gradient-to-r to-indigo-500 from-sky-500 shadow-blue-500/50"
+			)}
+			name={messageCardDetails.name}
+			avatarSrc={messageCardDetails.avatarSrc}
+			avatarAlt={messageCardDetails.avatarAlt}
+			// glow={isPlaying}
+			showLoadingOverlay={isDoingTextToSpeechReplay}
+			menuContent={
+				<SpeakerWaveIcon
+					className={cn(
+						"w-6 h-6 text-slate-400 hidden transition ease-in-out",
+						isPlaying && "block"
+					)}
+				/>
+			}
+			content={
+				showLoadingMessage ? (
+					<PulseLoader
+						color="black"
+						loading
+						cssOverride={{
+							display: "block",
+							margin: "0",
+							width: 250,
+						}}
+						size={6}
+						aria-label="Loading Spinner"
+						data-testid="loader"
+						speedMultiplier={0.75}
+					/>
+				) : (
+					<span>{displayedMessage?.content}</span>
+				)
+			}
+		/>
+	);
 
 	if (isPending) {
 		return (
@@ -707,80 +789,39 @@ const ConversationIdPage = ({
 		return null;
 	}
 
-	const isChatEmpty = _.isEmpty(messages);
-
 	return (
 		<div className={cn("w-full background-texture")}>
 			<div className="w-screen absolute top-0 left-0 z-30">
 				{progressBarContent}
 			</div>
 			{/* wrapper */}
-			<div className="h-full flex flex-col items-center justify-between mx-auto">
-				<div className="hidden md:block mt-6">{panelItemsContent}</div>
-				<div className="flex-1 min-h-0 basis-0 overflow-y-hidden flex flex-col justify-center items-center px-4 w-full ">
+			<div className="h-full flex flex-col items-center justify-between mx-auto gap-4 py-4 md:pt-6">
+				<div className="hidden md:block">{panelItemsContent}</div>
+
+				<div
+					className={cn(
+						"flex-1 min-h-0 basis-0 flex flex-col justify-center items-center px-4 w-full"
+						// "overflow-y-hidden"
+					)}
+				>
 					{/* chat bubble and pagination wrapper */}
 					<div className="flex flex-col justify-center items-center w-full h-full ">
-						<div className={cn("min-h-0 w-full max-w-2xl mx-auto mt-4 ")}>
-							{showLoadingMessage && (
-								<MessageCard
-									className="h-full bg-white"
-									name="ArabyBuddy"
-									avatarSrc="/assets/arabybuddy.svg"
-									avatarAlt="ArabyBuddy avatar"
-									content={
-										<PulseLoader
-											// color="#5E17EB"
-											color="black"
-											loading
-											cssOverride={{
-												display: "block",
-												margin: "0",
-												width: 250,
-											}}
-											size={6}
-											aria-label="Loading Spinner"
-											data-testid="loader"
-										/>
-									}
-								/>
-							)}
-							{!isChatEmpty && !showLoadingMessage && (
-								<MessageCard
-									className="h-full bg-white"
-									name={
-										displayedMessage?.role === "assistant"
-											? "ArabyBuddy"
-											: "You"
-									}
-									avatarSrc={
-										displayedMessage?.role === "assistant"
-											? "/assets/arabybuddy.svg"
-											: user?.imageUrl ?? "/assets/user.svg"
-									}
-									avatarAlt={
-										displayedMessage?.role === "assistant"
-											? "ArabyBuddy avatar"
-											: "User avatar"
-									}
-									glow={isPlaying}
-									showLoadingOverlay={isProcessing}
-									content={<span>{displayedMessage?.content}</span>}
-								/>
-							)}
+						<div className={cn("min-h-0 w-full max-w-2xl mx-auto")}>
+							{messageCardContent}
 						</div>
 					</div>
 				</div>
-				<div className="md:hidden mb-6">{panelItemsContent}</div>
-				<div className="relative w-full px-4 ">
+				<div className="md:hidden my-3">{panelItemsContent}</div>
+				<div className="relative w-full px-4">
 					<div className="h-14 mx-auto z-10 text-center">
 						{instructionContent}
 					</div>
 					{/* <div className="h-14 ">{instructionContent}</div> */}
-					<div className="text-center w-fit m-auto pb-4 ">
+					<div className="text-center w-fit m-auto">
 						<Microphone
 							onClick={toggleRecording}
 							mode={STATUS}
-							disabled={isProcessing || isPlaying}
+							disabled={isProcessing}
 							amplitude={amplitude}
 						/>
 					</div>
