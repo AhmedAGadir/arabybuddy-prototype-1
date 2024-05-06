@@ -15,12 +15,12 @@ import { cn } from "@/lib/utils";
 const SupportHoverCard = ({ className }: { className?: string }) => {
 	return (
 		<HoverCard>
-			<HoverCardTrigger asChild className={cn("p-6", className)}>
+			<HoverCardTrigger asChild className={cn("py-6", className)}>
 				<Button variant="link">
 					<QuestionMarkCircleIcon className="h-7 w-7 text-gray-400" />
 				</Button>
 			</HoverCardTrigger>
-			<HoverCardContent className="w-80">
+			<HoverCardContent className="w-80 mr-4">
 				<div className="flex justify-between space-x-4">
 					<EnvelopeIcon className="h-8 w-8" />
 					<div className="space-y-1 text-left">

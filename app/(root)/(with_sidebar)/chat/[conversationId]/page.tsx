@@ -1,28 +1,62 @@
 "use client";
 
 import React, {
-	useContext,
 	useState,
 	useMemo,
 	useEffect,
 	useRef,
 	useCallback,
 } from "react";
-import DialectContext from "@/context/dialectContext";
+
+import Image from "next/image";
+
 import { useLogger } from "@/hooks/useLogger";
-import _ from "lodash";
 import { useAudioService } from "@/hooks/useAudioService";
 import { useChatService } from "@/hooks/useChatService";
 import { useAudioPlayer } from "@/hooks/useAudioPlayer";
-import { Transition } from "@headlessui/react";
+import { useRecording } from "@/hooks/useRecording";
+import { useMessages } from "@/hooks/useMessages";
+import { useConversations } from "@/hooks/useConversations";
+
+import { Button } from "@/components/ui/button";
+import {
+	Pagination,
+	PaginationContent,
+	PaginationItem,
+	PaginationNext,
+	PaginationPrevious,
+} from "@/components/ui/pagination";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuLabel,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
+import {
+	ArrowPathIcon,
+	EllipsisVerticalIcon,
+} from "@heroicons/react/24/outline";
+
+import { useToast } from "@/components/ui/use-toast";
+
+import { Progress } from "@/components/ui/progress";
 
 import Microphone from "@/components/shared/Microphone";
-import { useRecording } from "@/hooks/useRecording";
-
 import MessageCard from "@/components/shared/MessageCard";
-import { cn } from "@/lib/utils";
-import { cairo, roboto } from "@/lib/fonts";
-import { BackgroundGradient } from "@/components/ui/background-gradient";
+
+import PulseLoader from "react-spinners/PulseLoader";
+import SkewLoader from "react-spinners/SkewLoader";
+import { ToastAction } from "@radix-ui/react-toast";
+
+import { IMessage } from "@/lib/database/models/message.model";
+import { useUser } from "@clerk/nextjs";
+
+import SupportHoverCard from "@/components/shared/SupportHoverCard";
+
+import { useMediaQuery } from "@react-hooks-hub/use-media-query";
 import {
 	BookOpenIcon,
 	BookOpenSolidIcon,
@@ -30,33 +64,24 @@ import {
 	PlayIcon,
 	TranslateIcon,
 } from "@/components/shared/icons";
-import { useMediaQuery } from "@react-hooks-hub/use-media-query";
 
 import {
-	Pagination,
-	PaginationContent,
-	PaginationEllipsis,
-	PaginationItem,
-	PaginationLink,
-	PaginationNext,
-	PaginationNextVertical,
-	PaginationPrevious,
-	PaginationPreviousVertical,
-} from "@/components/ui/pagination";
-import { Button } from "@/components/ui/button";
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 
-import Image from "next/image";
-import { Progress } from "@/components/ui/progress";
-import PulseLoader from "react-spinners/PulseLoader";
-import { useToast } from "@/components/ui/use-toast";
-import { useMessages } from "@/hooks/useMessages";
-import SkewLoader from "react-spinners/SkewLoader";
-import { ToastAction } from "@radix-ui/react-toast";
-import { IMessage } from "@/lib/database/models/message.model";
-import { useUser } from "@clerk/nextjs";
-import { useConversations } from "@/hooks/useConversations";
-import SupportHoverCard from "@/components/shared/SupportHoverCard";
-// import { XCircleIcon } from "@heroicons/react/20/solid";
+import _ from "lodash";
+import { Transition } from "@headlessui/react";
+
+import { cn } from "@/lib/utils";
+import { cairo } from "@/lib/fonts";
+
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Toggle } from "@/components/ui/toggle";
+import { SparklesIcon } from "@heroicons/react/20/solid";
 
 const statusEnum = {
 	IDLE: "IDLE",
@@ -74,6 +99,17 @@ const taskEnum = {
 } as const;
 
 export type Task = (typeof taskEnum)[keyof typeof taskEnum];
+
+const NewBadge = ({ className }: { className?: string }) => (
+	<span
+		className={cn(
+			"inline-flex items-center rounded-md bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20",
+			className
+		)}
+	>
+		New
+	</span>
+);
 
 // try to keep business logic out of this page as its a presentation/view component
 const ConversationIdPage = ({
@@ -474,19 +510,111 @@ const ConversationIdPage = ({
 		}
 	}, [isPending, error, refetch, toast]);
 
-	const chatMenuItems = useMemo(() => {
+	const messageMenuItems = useMemo(() => {
+		if (!displayedMessage) return [];
 		return [
-			{ label: "Replay", icon: PlayIcon, onClick: replayDisplayedMessage },
-			{ label: "Translate", icon: TranslateIcon, onClick: () => {} },
-			{ label: "Rephrase", icon: MagicWandIcon, onClick: () => {} },
-			// "separator" as "separator",
+			{
+				label: "Replay",
+				icon: PlayIcon,
+				onClick: replayDisplayedMessage,
+			},
+			{
+				label: "Translate",
+				icon: TranslateIcon,
+				onClick: () => {},
+			},
+			...(displayedMessage.role === "user"
+				? [
+						{
+							label: "Rephrase",
+							// icon: MagicWandIcon,
+							icon: SparklesIcon,
+							new: true,
+							onClick: () => {},
+						},
+				  ]
+				: [
+						{
+							label: "Regenerate",
+							icon: ArrowPathIcon,
+							onClick: () => {},
+						},
+				  ]),
 			{
 				label: "Dictionary",
 				icon: BookOpenIcon,
 				onClick: () => {},
 			},
 		];
-	}, [replayDisplayedMessage]);
+	}, [replayDisplayedMessage, displayedMessage]);
+
+	const messageMenuDisabled = STATUS !== statusEnum.IDLE;
+
+	const messageMenuItemsPanelContent = (
+		<div className="flex gap-2">
+			{messageMenuItems.map((item) => {
+				return (
+					<TooltipProvider key={item.label} delayDuration={0}>
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<Button
+									size="icon"
+									variant="ghost"
+									className="group relative text-slate-500 dark:text-slate-400 hover:bg-slate-100"
+									onClick={item.onClick}
+									disabled={messageMenuDisabled}
+								>
+									{<item.icon className="w-6 h-6" />}
+								</Button>
+							</TooltipTrigger>
+							<TooltipContent side="bottom" align="start">
+								<span>{item.label}</span>
+								{item.new && <NewBadge className="ml-2" />}
+							</TooltipContent>
+						</Tooltip>
+					</TooltipProvider>
+				);
+			})}
+		</div>
+	);
+
+	const messageMenuItemsDropdownMenuContent = (
+		<DropdownMenu>
+			<DropdownMenuTrigger
+				className={cn(messageMenuDisabled && "pointer-events-none")}
+			>
+				<Button
+					size="icon"
+					variant="ghost"
+					className={cn(
+						"hover:bg-slate-100",
+						messageMenuDisabled && "opacity-50 hover:bg-transparent"
+					)}
+				>
+					<EllipsisVerticalIcon className="text-slate-500 dark:text-slate-400 w-6 h-6" />
+				</Button>
+			</DropdownMenuTrigger>
+			<DropdownMenuContent className="ml-3 md:ml-0">
+				{messageMenuItems.map((item) => {
+					return (
+						<DropdownMenuItem
+							key={item.label}
+							onClick={item.onClick}
+							className="cursor-pointer"
+						>
+							<div className="flex items-center w-full hover:text-indigo-600">
+								<span className="mr-2">
+									{<item.icon className="w-5 h-5 mr-1" />}
+								</span>
+								{item.label}
+								{item.new && <NewBadge className="ml-4" />}
+							</div>
+						</DropdownMenuItem>
+					);
+				})}
+			</DropdownMenuContent>
+		</DropdownMenu>
+	);
 
 	const paginationPrevDisabled = isPlaying || displayedMessageInd === 0;
 	const paginationNextDisabled =
@@ -580,6 +708,13 @@ const ConversationIdPage = ({
 				<div className="flex-1 min-h-0 basis-0 overflow-y-hidden flex flex-col justify-center items-center px-4 w-full ">
 					{/* chat bubble and pagination wrapper */}
 					<div className="flex flex-col justify-center items-center w-full h-full ">
+						{/* <div className="shadow-lg md:hidden mt-4">
+							<Card className="p-2">
+								<CardContent className="flex items-center p-0">
+									{messageMenuItemsPanelContent}
+								</CardContent>
+							</Card>
+						</div> */}
 						<div className={cn("min-h-0 w-full max-w-2xl mx-auto mt-4 ")}>
 							{showLoadingMessage && (
 								<MessageCard
@@ -587,9 +722,6 @@ const ConversationIdPage = ({
 									name="ArabyBuddy"
 									avatarSrc="/assets/arabybuddy.svg"
 									avatarAlt="ArabyBuddy avatar"
-									chatMenuDisabled
-									reverse
-									rtl
 									content={
 										<span
 											className={cn("text-xl leading-loose text-slate-900")}
@@ -630,12 +762,18 @@ const ConversationIdPage = ({
 											: "User avatar"
 									}
 									glow={isPlaying}
-									chatMenuItems={chatMenuItems}
-									chatMenuDisabled={STATUS !== statusEnum.IDLE}
 									// showLoadingOverlay={activeTask === taskEnum.TEXT_TO_SPEECH}
 									showLoadingOverlay={STATUS === statusEnum.PROCESSING}
-									reverse
-									rtl
+									menuContent={
+										<div className="relative">
+											<div className="block sm:hidden">
+												{messageMenuItemsDropdownMenuContent}
+											</div>
+											<div className="hidden sm:block">
+												{messageMenuItemsPanelContent}
+											</div>
+										</div>
+									}
 									content={
 										<span
 											className={

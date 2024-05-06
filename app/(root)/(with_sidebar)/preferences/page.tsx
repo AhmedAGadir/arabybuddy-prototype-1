@@ -32,7 +32,7 @@ import {
 	RadioGroup as RadioGroupRadix,
 	RadioGroupItem as RadioGroupItemRadix,
 } from "@radix-ui/react-radio-group";
-import { Label } from "@radix-ui/react-label";
+import { Label } from "@/components/ui/label";
 import { RadioGroup } from "@headlessui/react";
 import { CheckCircleIcon } from "@heroicons/react/20/solid";
 import { cn } from "@/lib/utils";

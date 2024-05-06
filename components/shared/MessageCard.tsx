@@ -5,17 +5,6 @@ import { BackgroundGradient } from "../ui/background-gradient";
 import { useMediaQuery } from "@react-hooks-hub/use-media-query";
 
 import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuLabel,
-	DropdownMenuSeparator,
-	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Button } from "../ui/button";
-import { EllipsisVerticalIcon } from "@heroicons/react/24/outline";
-
-import {
 	Card,
 	CardContent,
 	CardDescription,
@@ -24,24 +13,13 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import { cairo } from "@/lib/fonts";
-import {
-	Tooltip,
-	TooltipContent,
-	TooltipProvider,
-	TooltipTrigger,
-} from "../ui/tooltip";
 
 const MessageCard = ({
 	name,
 	avatarSrc,
 	avatarAlt,
 	content,
-	chatMenuItems,
-	chatMenuDisabled = false,
-	time,
-	status,
-	rtl = true,
-	reverse = false,
+	menuContent,
 	glow = false,
 	showLoadingOverlay = false,
 	className,
@@ -50,19 +28,7 @@ const MessageCard = ({
 	avatarSrc: string;
 	avatarAlt: string;
 	content: JSX.Element;
-	status?: "delivered" | "read";
-	chatMenuItems?: (
-		| {
-				label: string;
-				icon: (props: any) => React.JSX.Element;
-				onClick: () => void;
-		  }
-		| "separator"
-	)[];
-	chatMenuDisabled?: boolean;
-	time?: string;
-	rtl?: boolean;
-	reverse?: boolean;
+	menuContent?: JSX.Element;
 	glow?: boolean;
 	showLoadingOverlay?: boolean;
 	className?: string;
@@ -70,88 +36,11 @@ const MessageCard = ({
 	const { device } = useMediaQuery();
 	const isMobile = device === "mobile";
 
-	const dropDownMenu = chatMenuItems && (
-		<DropdownMenu>
-			<DropdownMenuTrigger
-				className={cn(chatMenuDisabled && "pointer-events-none")}
-			>
-				<Button
-					size="icon"
-					variant="ghost"
-					className={cn(
-						"hover:bg-slate-100",
-						chatMenuDisabled && "opacity-50 hover:bg-transparent"
-					)}
-				>
-					<EllipsisVerticalIcon className="text-slate-500 dark:text-slate-400 w-6 h-6" />
-				</Button>
-				{/* <Button
-					size="sm"
-					className={cn(
-						"text-white bg-gradient-to-br from-purple-600 to-blue-500 hover:bg-gradient-to-bl focus:ring-4 focus:outline-none focus:ring-blue-300 dark:focus:ring-blue-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2",
-						chatMenuDisabled && "hidden"
-					)}
-				>
-					actions
-				</Button> */}
-			</DropdownMenuTrigger>
-			<DropdownMenuContent className={cn(isMobile && "ml-3")}>
-				{chatMenuItems.map((item, ind) => {
-					if (item === "separator")
-						return <DropdownMenuSeparator key={ind + "-separator"} />;
-					return (
-						<DropdownMenuItem
-							key={item.label}
-							onClick={item.onClick}
-							className="cursor-pointer"
-						>
-							<div className="flex w-full hover:text-indigo-600">
-								<span className="mr-2">
-									{<item.icon className="w-5 h-5" />}
-								</span>
-								{item.label}
-							</div>
-						</DropdownMenuItem>
-					);
-				})}
-			</DropdownMenuContent>
-		</DropdownMenu>
-	);
-
-	const chatMenuItemsContent = chatMenuItems && (
-		<div>
-			{chatMenuItems.map((item, ind) => {
-				if (item === "separator") return <span key={ind + "-separator"} />;
-				return (
-					<TooltipProvider key={item.label} delayDuration={0}>
-						<Tooltip>
-							<TooltipTrigger asChild>
-								<Button
-									size="icon"
-									variant="ghost"
-									className="hover:bg-slate-100"
-									onClick={item.onClick}
-									disabled={chatMenuDisabled}
-								>
-									{
-										<item.icon className="text-slate-500 dark:text-slate-400 w-6 h-6" />
-									}
-								</Button>
-							</TooltipTrigger>
-							<TooltipContent>
-								<span>{item.label}</span>
-							</TooltipContent>
-						</Tooltip>
-					</TooltipProvider>
-				);
-			})}
-		</div>
-	);
-
 	const topBarContent = (
 		<div className={cn("flex justify-between")}>
-			<div className="relative right-2 mr-4 lg:hidden">{dropDownMenu}</div>
-			<div className="space-x-2 hidden lg:block">{chatMenuItemsContent}</div>
+			{/* <div className="block sm:hidden" /> */}
+			{/* <div className="hidden sm:block">{menuContent ?? null}</div> */}
+			{menuContent ?? null}
 
 			<div className="flex items-center gap-2">
 				{name && (
@@ -190,7 +79,7 @@ const MessageCard = ({
 						"text-xl font-normal leading-loose  dark:text-white min-w-[130px] lg:min-w-[250px]",
 						cairo.className
 					)}
-					style={{ direction: rtl ? "rtl" : "ltr" }}
+					style={{ direction: "rtl" }}
 				>
 					{content}
 				</p>
@@ -198,49 +87,10 @@ const MessageCard = ({
 					<div className="absolute inset-0 w-full h-full bg-white bg-opacity-60 flex items-center justify-center"></div>
 				)}
 			</CardContent>
+			{/* <CardFooter className="sm:hidden">
+				<div className="mx-auto">{menuContent}</div>
+			</CardFooter> */}
 		</Card>
-	);
-
-	return (
-		<div
-			className={cn(
-				"flex-1 flex align-center gap-3 md:gap-5",
-				reverse && "flex-row-reverse",
-				isMobile && "width-full flex-1",
-				className
-				// glow &&
-				// 	"bg-[radial-gradient(circle_farthest-side_at_0_100%,#38B6FF,transparent),radial-gradient(circle_farthest-side_at_100%_0,#5E17EB,transparent),radial-gradient(circle_farthest-side_at_100%_100%,#ffc414,transparent),radial-gradient(circle_farthest-side_at_0_0,#1ca0fb,#141316)]"
-			)}
-			// animate={false}
-			// glow={glow}
-		>
-			<div
-				className={cn(
-					"relative flex items-start gap-2.5 w-full border border-gray-500",
-					// "rounded-[22px]",
-					// "bg-slate-100 bg-opacity-85", // use this when using the background gradient component
-					reverse && "flex-row-reverse"
-				)}
-			>
-				<div
-					className={cn(
-						"h-full flex flex-col leading-1.5 p-4 rounded-xl "
-						// 'border-gray-200 bg-slate-400  dark:bg-slate-700 rounded-e-xl rounded-es-xl'
-					)}
-				>
-					{topBarContent}
-					<p
-						className={cn(
-							"overflow-y-scroll text-xl md:text-3xl lg:text-3xl font-normal py-2.5 text-slate-900 dark:text-white min-w-[130px]"
-						)}
-						style={{ direction: rtl ? "rtl" : "ltr" }}
-					>
-						{content}
-					</p>
-				</div>
-				<div className="absolute top-3 left-2">{dropDownMenu}</div>
-			</div>
-		</div>
 	);
 };
 

@@ -64,12 +64,12 @@ const useChatService = () => {
 		[
 			logger,
 			makeServerlessRequest,
-			preferences.arabic_dialect,
-			preferences.assistant_detail_level,
-			preferences.assistant_language_level,
-			preferences.assistant_tone,
-			preferences.user_interests,
-			preferences.user_personality_traits,
+			preferences?.arabic_dialect,
+			preferences?.assistant_detail_level,
+			preferences?.assistant_language_level,
+			preferences?.assistant_tone,
+			preferences?.user_interests,
+			preferences?.user_personality_traits,
 			user?.fullName,
 			user?.username,
 		]
