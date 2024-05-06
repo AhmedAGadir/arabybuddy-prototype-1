@@ -2,25 +2,25 @@ import React from "react";
 
 import { Button } from "@/components/ui/button";
 import {
-	HoverCard,
-	HoverCardContent,
-	HoverCardTrigger,
-} from "@/components/ui/hover-card";
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from "@/components/ui/popover";
 import {
 	EnvelopeIcon,
 	QuestionMarkCircleIcon,
 } from "@heroicons/react/24/outline";
 import { cn } from "@/lib/utils";
 
-const SupportHoverCard = ({ className }: { className?: string }) => {
+const SupportCard = ({ className }: { className?: string }) => {
 	return (
-		<HoverCard>
-			<HoverCardTrigger asChild className={cn("py-6", className)}>
+		<Popover>
+			<PopoverTrigger asChild className={cn("py-6", className)}>
 				<Button variant="link">
-					<QuestionMarkCircleIcon className="h-7 w-7 text-gray-400" />
+					<QuestionMarkCircleIcon className="h-7 w-7 text-gray-400 hover:text-gray-700" />
 				</Button>
-			</HoverCardTrigger>
-			<HoverCardContent className="w-80 mr-4">
+			</PopoverTrigger>
+			<PopoverContent className="w-80 mr-4">
 				<div className="flex justify-between space-x-4">
 					<EnvelopeIcon className="h-8 w-8" />
 					<div className="space-y-1 text-left">
@@ -30,9 +30,9 @@ const SupportHoverCard = ({ className }: { className?: string }) => {
 						</p>
 					</div>
 				</div>
-			</HoverCardContent>
-		</HoverCard>
+			</PopoverContent>
+		</Popover>
 	);
 };
 
-export default SupportHoverCard;
+export default SupportCard;

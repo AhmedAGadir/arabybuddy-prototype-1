@@ -41,7 +41,7 @@ import { ToastAction } from "@radix-ui/react-toast";
 import { IMessage } from "@/lib/database/models/message.model";
 import { useUser } from "@clerk/nextjs";
 
-import SupportHoverCard from "@/components/shared/SupportHoverCard";
+import SupportCard from "@/components/shared/SupportCard";
 
 import { useMediaQuery } from "@react-hooks-hub/use-media-query";
 import {
@@ -68,17 +68,21 @@ import { cairo } from "@/lib/fonts";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Toggle } from "@/components/ui/toggle";
-import { SparklesIcon } from "@heroicons/react/20/solid";
+import {
+	SparklesIcon,
+	StopIcon,
+	StopCircleIcon,
+} from "@heroicons/react/20/solid";
 import { Card, CardContent } from "@/components/ui/card";
 
-const statusEnum = {
+const status = {
 	IDLE: "IDLE",
 	RECORDING: "RECORDING",
 	PLAYING: "PLAYING",
 	PROCESSING: "PROCESSING",
 } as const;
 
-export type Status = (typeof statusEnum)[keyof typeof statusEnum];
+export type Status = (typeof status)[keyof typeof status];
 
 const taskEnum = {
 	SPEECH_TO_TEXT: "SPEECH_TO_TEXT",
@@ -364,11 +368,14 @@ const ConversationIdPage = ({
 	}, [isRecording]);
 
 	const STATUS: Status = useMemo(() => {
-		if (isRecording) return statusEnum.RECORDING;
-		if (isPlaying) return statusEnum.PLAYING;
-		if (activeTask !== null) return statusEnum.PROCESSING;
-		return statusEnum.IDLE;
+		if (isRecording) return status.RECORDING;
+		if (isPlaying) return status.PLAYING;
+		if (activeTask !== null) return status.PROCESSING;
+		return status.IDLE;
 	}, [activeTask, isPlaying, isRecording]);
+
+	const isProcessing = STATUS === status.PROCESSING;
+	const isIdle = STATUS === status.IDLE;
 
 	const isDoingSpeechToText = activeTask === taskEnum.SPEECH_TO_TEXT;
 	const isDoingAssistant = activeTask === taskEnum.ASSISTANT;
@@ -381,20 +388,25 @@ const ConversationIdPage = ({
 			// idle: "Press ⬇️ the blue blob to start recording",
 			IDLE: ["Click the blob to start recording"],
 			RECORDING: [
+				"Listening...",
 				"Click again to stop recording",
 				"Say something in Arabic...",
 			],
 			PLAYING: [""],
-			PROCESSING: [""],
+			PROCESSING: [
+				...(isDoingSpeechToText ? ["Transcribing..."] : []),
+				...(isDoingAssistant ? ["Thinking..."] : []),
+				...(isDoingTextToSpeech ? ["Almost there..."] : []),
+			],
 		};
 
 		const statusInstructions = instructions[STATUS];
 		const randomIndex = Math.floor(Math.random() * statusInstructions.length);
 		return statusInstructions[randomIndex];
-	}, [STATUS]);
+	}, [STATUS, isDoingAssistant, isDoingSpeechToText, isDoingTextToSpeech]);
 
 	const abortProcessingBtnHandler = useCallback(() => {
-		if (STATUS !== statusEnum.PROCESSING) return;
+		if (!isProcessing) return;
 		switch (activeTask) {
 			case taskEnum.SPEECH_TO_TEXT:
 				abortSpeechToTextRequest();
@@ -409,11 +421,11 @@ const ConversationIdPage = ({
 				break;
 		}
 	}, [
-		STATUS,
 		abortMakeChatCompletion,
 		abortSpeechToTextRequest,
 		abortTextToSpeechRequest,
 		activeTask,
+		isProcessing,
 	]);
 
 	// const [completedTyping, setCompletedTyping] = useState(false);
@@ -498,7 +510,14 @@ const ConversationIdPage = ({
 		}
 	}, [isPending, error, refetch, toast]);
 
-	const messageMenuItems = useMemo(() => {
+	const panelItems: {
+		label: string;
+		onClick: () => void;
+		disabled: boolean;
+		icon: React.FC<any> | (() => JSX.Element);
+		iconClasses?: string;
+		new?: boolean;
+	}[] = useMemo(() => {
 		if (!displayedMessage) return [];
 		return [
 			{
@@ -506,17 +525,45 @@ const ConversationIdPage = ({
 				// icon: ChevronLeftIcon,
 				icon: () => <span>Prev</span>,
 				onClick: () => setDisplayedMessageInd(displayedMessageInd - 1),
-				disabled: isPlaying || displayedMessageInd === 0,
+				disabled: displayedMessageInd === 0 || isRecording,
 			},
-			{
-				label: "Replay",
-				icon: PlayIcon,
-				onClick: replayDisplayedMessage,
-			},
+			...(isIdle || isRecording
+				? [
+						{
+							label: "Replay",
+							icon: PlayIcon,
+							onClick: replayDisplayedMessage,
+							disabled: !isIdle,
+						},
+				  ]
+				: []),
+			...(isProcessing
+				? [
+						{
+							label: "Cancel",
+							icon: StopCircleIcon,
+							iconClasses: "text-destructive w-8 h-8",
+							onClick: abortProcessingBtnHandler,
+							disabled: false,
+						},
+				  ]
+				: []),
+			...(isPlaying
+				? [
+						{
+							label: "Stop Playing",
+							icon: StopIcon,
+							iconClasses: "text-indigo-600 w-8 h-8",
+							onClick: stopPlayingBtnHandler,
+							disabled: false,
+						},
+				  ]
+				: []),
 			{
 				label: "Translate",
 				icon: TranslateIcon,
 				onClick: () => {},
+				disabled: !isIdle,
 			},
 			...(displayedMessage.role === "user"
 				? [
@@ -526,6 +573,7 @@ const ConversationIdPage = ({
 							icon: SparklesIcon,
 							new: true,
 							onClick: () => {},
+							disabled: !isIdle,
 						},
 				  ]
 				: [
@@ -533,57 +581,66 @@ const ConversationIdPage = ({
 							label: "Regenerate",
 							icon: ArrowPathIcon,
 							onClick: () => {},
+							disabled: !isIdle,
 						},
 				  ]),
 			{
 				label: "Dictionary",
 				icon: BookOpenIcon,
 				onClick: () => {},
+				disabled: !isIdle,
 			},
 			{
 				label: "Next",
 				// icon: ChevronRightIcon,
 				icon: () => <span>Next</span>,
 				onClick: () => setDisplayedMessageInd(displayedMessageInd + 1),
-				disabled: isPlaying || displayedMessageInd === messages.length - 1,
+				disabled: displayedMessageInd === messages.length - 1 || isRecording,
 			},
 		];
 	}, [
 		displayedMessage,
-		isPlaying,
 		displayedMessageInd,
+		isPlaying,
+		isRecording,
+		isProcessing,
 		replayDisplayedMessage,
+		isIdle,
+		abortProcessingBtnHandler,
+		stopPlayingBtnHandler,
 		messages.length,
 	]);
 
-	const messageMenuDisabled = STATUS !== statusEnum.IDLE;
-
-	const messageMenuItemsPanelContent = (
-		<div className="flex gap-2">
-			{messageMenuItems.map((item) => {
-				return (
-					<TooltipProvider key={item.label} delayDuration={0}>
-						<Tooltip>
-							<TooltipTrigger asChild>
-								<Button
-									size="icon"
-									variant="ghost"
-									className="group relative text-slate-500 dark:text-slate-400 hover:bg-slate-100"
-									onClick={item.onClick}
-									disabled={messageMenuDisabled || item.disabled}
-								>
-									{<item.icon className="w-6 h-6" />}
-								</Button>
-							</TooltipTrigger>
-							<TooltipContent side="bottom" align="start">
-								<span>{item.label}</span>
-								{item.new && <NewBadge className="ml-2" />}
-							</TooltipContent>
-						</Tooltip>
-					</TooltipProvider>
-				);
-			})}
-		</div>
+	const panelItemsContent = (
+		<Card className="shadow-lg p-2">
+			<CardContent className="flex items-center p-0">
+				<div className="flex gap-2">
+					{panelItems.map((item) => {
+						return (
+							<TooltipProvider key={item.label} delayDuration={0}>
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<Button
+											size="icon"
+											variant="ghost"
+											className="group relative text-slate-500 dark:text-slate-400 hover:bg-slate-100"
+											onClick={item.onClick}
+											disabled={item.disabled}
+										>
+											<item.icon className={cn("w-6 h-6", item.iconClasses)} />
+										</Button>
+									</TooltipTrigger>
+									<TooltipContent side="bottom" align="start">
+										<span>{item.label}</span>
+										{item.new && <NewBadge className="ml-2" />}
+									</TooltipContent>
+								</Tooltip>
+							</TooltipProvider>
+						);
+					})}
+				</div>
+			</CardContent>
+		</Card>
 	);
 
 	const ellipsesButton = (
@@ -592,8 +649,7 @@ const ConversationIdPage = ({
 			variant="ghost"
 			className={cn(
 				"hover:bg-slate-100",
-				messageMenuDisabled &&
-					"opacity-50 hover:bg-transparent pointer-events-none"
+				true && "opacity-50 hover:bg-transparent pointer-events-none"
 			)}
 		>
 			<EllipsisVerticalIcon className="text-slate-500 dark:text-slate-400 w-6 h-6" />
@@ -660,13 +716,7 @@ const ConversationIdPage = ({
 			</div>
 			{/* wrapper */}
 			<div className="h-full flex flex-col items-center justify-between mx-auto">
-				<div className="shadow-lg mt-6">
-					<Card className="p-2">
-						<CardContent className="flex items-center p-0">
-							{messageMenuItemsPanelContent}
-						</CardContent>
-					</Card>
-				</div>
+				<div className="hidden md:block mt-6">{panelItemsContent}</div>
 				<div className="flex-1 min-h-0 basis-0 overflow-y-hidden flex flex-col justify-center items-center px-4 w-full ">
 					{/* chat bubble and pagination wrapper */}
 					<div className="flex flex-col justify-center items-center w-full h-full ">
@@ -713,51 +763,16 @@ const ConversationIdPage = ({
 											: "User avatar"
 									}
 									glow={isPlaying}
-									showLoadingOverlay={STATUS === statusEnum.PROCESSING}
+									showLoadingOverlay={isProcessing}
 									content={<span>{displayedMessage?.content}</span>}
 								/>
 							)}
 						</div>
 					</div>
 				</div>
+				<div className="md:hidden mb-6">{panelItemsContent}</div>
 				<div className="relative w-full px-4 ">
 					<div className="h-14 mx-auto z-10 text-center">
-						{STATUS === statusEnum.PROCESSING && (
-							<Button
-								onClick={abortProcessingBtnHandler}
-								// variant="outline"
-								variant="destructive"
-								size="lg"
-								className="w-full md:w-fit"
-							>
-								Cancel
-							</Button>
-						)}
-						{STATUS === statusEnum.PLAYING && (
-							<Button
-								onClick={stopPlayingBtnHandler}
-								variant="default"
-								// variant="outline"
-								size="lg"
-								className="w-full md:w-fit"
-							>
-								Stop Playing
-							</Button>
-						)}
-						{/* {isRecording && (
-						// <Button variant="link">
-						// 	<XCircleIcon className="text-red-500 w-16 h-16" />
-						// </Button>
-						<Button
-							onClick={() => stopRecording({ force: true })}
-							// variant="default"
-							variant="outline"
-							size="lg"
-							className="w-full md:w-fit"
-						>
-							Stop Recording
-						</Button>
-					)} */}
 						{instructionContent}
 					</div>
 					{/* <div className="h-14 ">{instructionContent}</div> */}
@@ -765,14 +780,11 @@ const ConversationIdPage = ({
 						<Microphone
 							onClick={toggleRecording}
 							mode={STATUS}
-							disabled={
-								STATUS === statusEnum.PROCESSING ||
-								STATUS === statusEnum.PLAYING
-							}
+							disabled={isProcessing || isPlaying}
 							amplitude={amplitude}
 						/>
 					</div>
-					<SupportHoverCard className="absolute bottom-0 right-0" />
+					<SupportCard className="absolute bottom-0 right-0" />
 				</div>
 			</div>
 		</div>

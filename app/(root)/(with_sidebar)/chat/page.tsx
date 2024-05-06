@@ -1,6 +1,6 @@
 "use client";
 
-import SupportHoverCard from "@/components/shared/SupportHoverCard";
+import SupportCard from "@/components/shared/SupportCard";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { useConversations } from "@/hooks/useConversations";
@@ -102,7 +102,7 @@ const ChatPage = () => {
 					</Button>
 				</div>
 			</div>
-			<SupportHoverCard className="absolute bottom-0 right-0" />
+			<SupportCard className="absolute bottom-0 right-0" />
 		</div>
 	);
 };
