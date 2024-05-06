@@ -19,24 +19,11 @@ import { useMessages } from "@/hooks/useMessages";
 import { useConversations } from "@/hooks/useConversations";
 
 import { Button } from "@/components/ui/button";
-import {
-	Pagination,
-	PaginationContent,
-	PaginationItem,
-	PaginationNext,
-	PaginationPrevious,
-} from "@/components/ui/pagination";
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuLabel,
-	DropdownMenuSeparator,
-	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 
 import {
 	ArrowPathIcon,
+	ChevronLeftIcon,
+	ChevronRightIcon,
 	EllipsisVerticalIcon,
 } from "@heroicons/react/24/outline";
 
@@ -82,6 +69,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Toggle } from "@/components/ui/toggle";
 import { SparklesIcon } from "@heroicons/react/20/solid";
+import { Card, CardContent } from "@/components/ui/card";
 
 const statusEnum = {
 	IDLE: "IDLE",
@@ -514,6 +502,13 @@ const ConversationIdPage = ({
 		if (!displayedMessage) return [];
 		return [
 			{
+				label: "Previous",
+				// icon: ChevronLeftIcon,
+				icon: () => <span>Prev</span>,
+				onClick: () => setDisplayedMessageInd(displayedMessageInd - 1),
+				disabled: isPlaying || displayedMessageInd === 0,
+			},
+			{
 				label: "Replay",
 				icon: PlayIcon,
 				onClick: replayDisplayedMessage,
@@ -545,8 +540,21 @@ const ConversationIdPage = ({
 				icon: BookOpenIcon,
 				onClick: () => {},
 			},
+			{
+				label: "Next",
+				// icon: ChevronRightIcon,
+				icon: () => <span>Next</span>,
+				onClick: () => setDisplayedMessageInd(displayedMessageInd + 1),
+				disabled: isPlaying || displayedMessageInd === messages.length - 1,
+			},
 		];
-	}, [replayDisplayedMessage, displayedMessage]);
+	}, [
+		displayedMessage,
+		isPlaying,
+		displayedMessageInd,
+		replayDisplayedMessage,
+		messages.length,
+	]);
 
 	const messageMenuDisabled = STATUS !== statusEnum.IDLE;
 
@@ -562,7 +570,7 @@ const ConversationIdPage = ({
 									variant="ghost"
 									className="group relative text-slate-500 dark:text-slate-400 hover:bg-slate-100"
 									onClick={item.onClick}
-									disabled={messageMenuDisabled}
+									disabled={messageMenuDisabled || item.disabled}
 								>
 									{<item.icon className="w-6 h-6" />}
 								</Button>
@@ -578,71 +586,18 @@ const ConversationIdPage = ({
 		</div>
 	);
 
-	const messageMenuItemsDropdownMenuContent = (
-		<DropdownMenu>
-			<DropdownMenuTrigger
-				className={cn(messageMenuDisabled && "pointer-events-none")}
-			>
-				<Button
-					size="icon"
-					variant="ghost"
-					className={cn(
-						"hover:bg-slate-100",
-						messageMenuDisabled && "opacity-50 hover:bg-transparent"
-					)}
-				>
-					<EllipsisVerticalIcon className="text-slate-500 dark:text-slate-400 w-6 h-6" />
-				</Button>
-			</DropdownMenuTrigger>
-			<DropdownMenuContent className="ml-3 md:ml-0">
-				{messageMenuItems.map((item) => {
-					return (
-						<DropdownMenuItem
-							key={item.label}
-							onClick={item.onClick}
-							className="cursor-pointer"
-						>
-							<div className="flex items-center w-full hover:text-indigo-600">
-								<span className="mr-2">
-									{<item.icon className="w-5 h-5 mr-1" />}
-								</span>
-								{item.label}
-								{item.new && <NewBadge className="ml-4" />}
-							</div>
-						</DropdownMenuItem>
-					);
-				})}
-			</DropdownMenuContent>
-		</DropdownMenu>
-	);
-
-	const paginationPrevDisabled = isPlaying || displayedMessageInd === 0;
-	const paginationNextDisabled =
-		isPlaying || displayedMessageInd === messages.length - 1;
-
-	const paginationContent = (
-		<Pagination className="mt-3">
-			<PaginationContent>
-				<PaginationItem>
-					<PaginationPrevious
-						onClick={() => setDisplayedMessageInd(displayedMessageInd - 1)}
-						className={cn(
-							paginationPrevDisabled &&
-								"pointer-events-none opacity-25 hover:bg-transparent"
-						)}
-					/>
-				</PaginationItem>
-				<PaginationItem>
-					<PaginationNext
-						onClick={() => setDisplayedMessageInd(displayedMessageInd + 1)}
-						className={cn(
-							paginationNextDisabled &&
-								"pointer-events-none opacity-25 hover:bg-transparent"
-						)}
-					/>
-				</PaginationItem>
-			</PaginationContent>
-		</Pagination>
+	const ellipsesButton = (
+		<Button
+			size="icon"
+			variant="ghost"
+			className={cn(
+				"hover:bg-slate-100",
+				messageMenuDisabled &&
+					"opacity-50 hover:bg-transparent pointer-events-none"
+			)}
+		>
+			<EllipsisVerticalIcon className="text-slate-500 dark:text-slate-400 w-6 h-6" />
+		</Button>
 	);
 
 	const instructionContent = (
@@ -705,16 +660,16 @@ const ConversationIdPage = ({
 			</div>
 			{/* wrapper */}
 			<div className="h-full flex flex-col items-center justify-between mx-auto">
+				<div className="shadow-lg mt-6">
+					<Card className="p-2">
+						<CardContent className="flex items-center p-0">
+							{messageMenuItemsPanelContent}
+						</CardContent>
+					</Card>
+				</div>
 				<div className="flex-1 min-h-0 basis-0 overflow-y-hidden flex flex-col justify-center items-center px-4 w-full ">
 					{/* chat bubble and pagination wrapper */}
 					<div className="flex flex-col justify-center items-center w-full h-full ">
-						{/* <div className="shadow-lg md:hidden mt-4">
-							<Card className="p-2">
-								<CardContent className="flex items-center p-0">
-									{messageMenuItemsPanelContent}
-								</CardContent>
-							</Card>
-						</div> */}
 						<div className={cn("min-h-0 w-full max-w-2xl mx-auto mt-4 ")}>
 							{showLoadingMessage && (
 								<MessageCard
@@ -723,23 +678,19 @@ const ConversationIdPage = ({
 									avatarSrc="/assets/arabybuddy.svg"
 									avatarAlt="ArabyBuddy avatar"
 									content={
-										<span
-											className={cn("text-xl leading-loose text-slate-900")}
-										>
-											<PulseLoader
-												// color="#5E17EB"
-												color="black"
-												loading
-												cssOverride={{
-													display: "block",
-													margin: "0",
-													width: 250,
-												}}
-												size={6}
-												aria-label="Loading Spinner"
-												data-testid="loader"
-											/>
-										</span>
+										<PulseLoader
+											// color="#5E17EB"
+											color="black"
+											loading
+											cssOverride={{
+												display: "block",
+												margin: "0",
+												width: 250,
+											}}
+											size={6}
+											aria-label="Loading Spinner"
+											data-testid="loader"
+										/>
 									}
 								/>
 							)}
@@ -762,46 +713,15 @@ const ConversationIdPage = ({
 											: "User avatar"
 									}
 									glow={isPlaying}
-									// showLoadingOverlay={activeTask === taskEnum.TEXT_TO_SPEECH}
 									showLoadingOverlay={STATUS === statusEnum.PROCESSING}
-									menuContent={
-										<div className="relative">
-											<div className="block sm:hidden">
-												{messageMenuItemsDropdownMenuContent}
-											</div>
-											<div className="hidden sm:block">
-												{messageMenuItemsPanelContent}
-											</div>
-										</div>
-									}
-									content={
-										<span
-											className={
-												cn(
-													"text-slate-900"
-													//  isPlaying && "text-indigo-500"
-												)
-												// "font-bold",
-												// "text-xl md:text-3xl text-transparent bg-clip-text leading-loose text-slate-900",
-												// "text-xl leading-loose text-slate-900",
-												// cairo.className
-												// isPlaying &&
-												// 	"bg-gradient-to-r to-araby-purple from-araby-purple"
-												// activeTask === taskEnum.TEXT_TO_SPEECH &&
-												// 	"text-gray-300"
-											}
-										>
-											{displayedMessage?.content}
-										</span>
-									}
+									content={<span>{displayedMessage?.content}</span>}
 								/>
 							)}
 						</div>
-						{!isChatEmpty && !showLoadingMessage && paginationContent}
 					</div>
 				</div>
 				<div className="relative w-full px-4 ">
-					<div className="h-12 mx-auto z-10 text-center ">
+					<div className="h-14 mx-auto z-10 text-center">
 						{STATUS === statusEnum.PROCESSING && (
 							<Button
 								onClick={abortProcessingBtnHandler}
@@ -838,8 +758,9 @@ const ConversationIdPage = ({
 							Stop Recording
 						</Button>
 					)} */}
+						{instructionContent}
 					</div>
-					<div className="h-14 ">{instructionContent}</div>
+					{/* <div className="h-14 ">{instructionContent}</div> */}
 					<div className="text-center w-fit m-auto pb-4 ">
 						<Microphone
 							onClick={toggleRecording}

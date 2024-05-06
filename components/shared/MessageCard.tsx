@@ -38,19 +38,19 @@ const MessageCard = ({
 
 	const topBarContent = (
 		<div className={cn("flex justify-between")}>
-			{/* <div className="block sm:hidden" /> */}
-			{/* <div className="hidden sm:block">{menuContent ?? null}</div> */}
-			{menuContent ?? null}
+			<div className="block sm:hidden" />
+			<div className="hidden sm:block">{menuContent ?? null}</div>
+			{/* {menuContent ?? null} */}
 
 			<div className="flex items-center gap-2">
 				{name && (
-					<span className="text-lg font-medium md:font-semibold text-slate-900 dark:text-white">
+					<span className="text-md sm:text-lg font-medium md:font-semibold text-slate-900 dark:text-white">
 						{name}
 					</span>
 				)}
 
 				<Image
-					className="w-10 h-10 rounded-full"
+					className="w-8 h-8 sm:w-10 sm:h-10 rounded-full"
 					width={12}
 					height={12}
 					src={avatarSrc}
@@ -72,11 +72,11 @@ const MessageCard = ({
 				className
 			)}
 		>
-			<CardHeader>{topBarContent}</CardHeader>
-			<CardContent className="bg-opacity-50 overflow-y-scroll">
+			<CardHeader className="p-4 sm:p-6">{topBarContent}</CardHeader>
+			<CardContent className="p-4 pt-0 sm:p-6 sm:pt-0 bg-opacity-50 overflow-y-scroll">
 				<p
 					className={cn(
-						"text-xl font-normal leading-loose  dark:text-white min-w-[130px] lg:min-w-[250px]",
+						"text-lg leading-loose sm:text-xl sm:leading-loose font-normal  text-slate-900 dark:text-white min-w-[130px] lg:min-w-[250px]",
 						cairo.className
 					)}
 					style={{ direction: "rtl" }}
@@ -87,9 +87,9 @@ const MessageCard = ({
 					<div className="absolute inset-0 w-full h-full bg-white bg-opacity-60 flex items-center justify-center"></div>
 				)}
 			</CardContent>
-			{/* <CardFooter className="sm:hidden">
-				<div className="mx-auto">{menuContent}</div>
-			</CardFooter> */}
+			{/* <CardFooter className="sm:hidden"> */}
+			{/* <div className="mx-auto">{menuContent}</div> */}
+			{/* </CardFooter> */}
 		</Card>
 	);
 };
