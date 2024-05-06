@@ -5,6 +5,7 @@ import { useUser } from "@clerk/nextjs";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLogger } from "./useLogger";
 import { useTypewriter } from "./useTypewriter";
+import { update } from "lodash";
 
 const useMessages = ({ conversationId }: { conversationId: string }) => {
 	const logger = useLogger({ label: "useMessages", color: "#a5ff90" });
@@ -13,14 +14,9 @@ const useMessages = ({ conversationId }: { conversationId: string }) => {
 
 	const queryClient = useQueryClient();
 
-	const { typewriter } = useTypewriter();
+	const { completeTyping, typewriter } = useTypewriter();
 
-	const {
-		isPending,
-		error,
-		data: messages,
-		refetch,
-	} = useQuery({
+	const { isPending, error, data, refetch } = useQuery({
 		queryKey: ["messages", user?.id, conversationId],
 		refetchOnWindowFocus: true,
 		queryFn: async () => {
@@ -114,9 +110,9 @@ const useMessages = ({ conversationId }: { conversationId: string }) => {
 		return await createMessageMutation.mutateAsync({ content, role });
 	};
 
-	const deleteAllMessagesAfterTimeStampMutation = useMutation({
-		mutationFn: async (timestamp: Date) => {
-			logger.log("deleting all messages after timestamp", timestamp);
+	const deleteMessagesMutation = useMutation({
+		mutationFn: async (messageIds: string[]) => {
+			logger.log("deleting messages...", messageIds);
 			const response = await fetch(
 				`/api/conversations/${conversationId}/messages`,
 				{
@@ -124,14 +120,14 @@ const useMessages = ({ conversationId }: { conversationId: string }) => {
 					headers: {
 						"Content-Type": "application/json",
 					},
-					body: JSON.stringify({ timestamp: timestamp.toISOString() }),
+					body: JSON.stringify({ messageIds }),
 				}
 			);
 			if (!response.ok) {
 				throw new Error("Network response was not ok");
 			}
 			const data = await response.json();
-			logger.log("deleted messages", data);
+			logger.log("messages deleted", data);
 			return data;
 		},
 		onSettled: () => {
@@ -142,17 +138,94 @@ const useMessages = ({ conversationId }: { conversationId: string }) => {
 		},
 	});
 
-	const deleteAllMessagesAfterTimeStamp = async (timestamp: Date) => {
-		return await deleteAllMessagesAfterTimeStampMutation.mutateAsync(timestamp);
+	const deleteMessages = async (messageIds: string[]) => {
+		return await deleteMessagesMutation.mutateAsync(messageIds);
 	};
+
+	const updateMessageMutation = useMutation({
+		mutationFn: async (
+			message: Pick<IMessage, "_id" | "content"> & Partial<IMessage>
+		) => {
+			logger.log("updating message...", message);
+			const response = await fetch(
+				`/api/conversations/${conversationId}/messages/${message._id}`,
+				{
+					method: "PUT",
+					headers: {
+						"Content-Type": "application/json",
+					},
+					body: JSON.stringify({ message }),
+				}
+			);
+			if (!response.ok) {
+				throw new Error("Network response was not ok");
+			}
+			const data = await response.json();
+			logger.log("message updated", data);
+			return data;
+		},
+		onError: (err, message) => {
+			logger.error("Error updating message:", err);
+			return err;
+		},
+		onMutate: async (message) => {
+			// Cancel any outgoing refetches
+			await queryClient.cancelQueries({
+				queryKey: ["messages", user?.id, conversationId],
+			});
+
+			// Snapshot the previous value
+			const previousMessages =
+				queryClient.getQueryData(["messages", user?.id, conversationId]) ?? [];
+
+			// Optimistically update to the new value
+			logger.log("optimistically updating messages...");
+			// queryClient.setQueryData(
+			// 	["messages", user?.id, conversationId],
+			// 	(old: IMessage[] = []) =>
+			// 		old.map((m) => (m._id === message._id ? { ...m, ...message } : m))
+			// );
+
+			const setTypedContent = (value: string) => {
+				queryClient.setQueryData(
+					["messages", user?.id, conversationId],
+					(old: IMessage[] = []) =>
+						old.map((m) =>
+							m._id === message._id ? { ...m, content: value } : m
+						)
+				);
+			};
+
+			await typewriter(message.content, setTypedContent, 30);
+
+			// Return a context object with the snapshotted value
+			return { previousMessages };
+		},
+		onSettled: () => {
+			logger.log("message updated, invalidating cache...");
+			queryClient.invalidateQueries({
+				queryKey: ["messages", user?.id, conversationId],
+			});
+		},
+	});
+
+	const updateMessage = async (
+		message: Pick<IMessage, "_id" | "content"> & Partial<IMessage>
+	) => {
+		return await updateMessageMutation.mutateAsync(message);
+	};
+
+	const messages = (data ?? []) as IMessage[];
 
 	return {
 		isPending,
 		error,
-		messages: (messages ?? []) as IMessage[],
+		messages,
 		refetch,
 		createMessage,
-		deleteAllMessagesAfterTimeStamp,
+		updateMessage,
+		completeTyping,
+		deleteMessages,
 	};
 };
 

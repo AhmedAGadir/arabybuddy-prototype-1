@@ -24,7 +24,7 @@ const SupportCard = ({ className }: { className?: string }) => {
 				<div className="flex justify-between space-x-4">
 					<EnvelopeIcon className="h-8 w-8" />
 					<div className="space-y-1 text-left">
-						<h4 className="text-sm font-semibold">support@arabybuddy.com</h4>
+						<h4 className="text-sm font-semibold">support@gadirlabs.io</h4>
 						<p className="text-sm">
 							Contact us with your questions and feedback!
 						</p>

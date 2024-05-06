@@ -27,7 +27,7 @@ export async function GET(
 			clerkId: userId,
 			conversationId,
 		}).sort({
-			updatedAt: 1, // sort by oldest
+			createdAt: 1, // sort by oldest
 		});
 
 		return Response.json(
@@ -97,21 +97,17 @@ export async function DELETE(
 
 		await connectToDatabase();
 
-		// timestamp is Date.toISOString()
-		const { timestamp } = await req.json();
+		const { messageIds } = await req.json();
 
-		console.log("deleting messages after timestamp: ", timestamp);
+		console.log("deleting messages: ", messageIds);
 
-		// deleting all messages after timestamp
 		const messages = await Message.deleteMany({
 			clerkId: userId,
 			conversationId,
-			updatedAt: { $gte: new Date(timestamp) },
+			_id: { $in: messageIds },
 		});
 
-		console.log("deleted messages after timestamp", messages);
-
-		// TODO: update last message in conversation
+		console.log("deleted messages", messages);
 
 		return Response.json(
 			{

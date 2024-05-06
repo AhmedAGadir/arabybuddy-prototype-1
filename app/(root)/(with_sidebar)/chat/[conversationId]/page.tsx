@@ -25,6 +25,7 @@ import {
 	ChevronLeftIcon,
 	ChevronRightIcon,
 	EllipsisVerticalIcon,
+	SparklesIcon,
 	SpeakerWaveIcon,
 } from "@heroicons/react/24/outline";
 
@@ -71,11 +72,12 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Toggle } from "@/components/ui/toggle";
 import {
-	SparklesIcon,
 	StopIcon,
 	StopCircleIcon,
+	XCircleIcon,
 } from "@heroicons/react/20/solid";
 import { Card, CardContent } from "@/components/ui/card";
+import { text } from "stream/consumers";
 
 const status = {
 	IDLE: "IDLE",
@@ -89,6 +91,8 @@ export type Status = (typeof status)[keyof typeof status];
 const task = {
 	SPEECH_TO_TEXT: "SPEECH_TO_TEXT",
 	ASSISTANT: "ASSISTANT",
+	ASSISTANT_REGENERATE: "ASSISTANT_REGENERATE",
+	ASSISTANT_REPHRASE: "ASSISTANT_REPHRASE",
 	TEXT_TO_SPEECH: "TEXT_TO_SPEECH",
 	TEXT_TO_SPEECH_REPLAY: "TEXT_TO_SPEECH_REPLAY",
 } as const;
@@ -123,13 +127,33 @@ const ConversationIdPage = ({
 		error,
 		messages,
 		createMessage,
-		deleteAllMessagesAfterTimeStamp,
+		updateMessage,
+		completeTyping,
+		deleteMessages,
 		refetch,
 	} = useMessages({
 		conversationId,
 	});
 
 	const { updateConversation, deleteConversation } = useConversations();
+
+	useEffect(() => {
+		if (!isPending && error) {
+			toast({
+				title: "Error loading messages",
+				description: "An error occurred while this conversation's messages.",
+				action: (
+					<ToastAction altText="Try again">
+						<Button variant="outline" onClick={() => refetch()}>
+							Try again
+						</Button>
+					</ToastAction>
+				),
+				className: "error-toast",
+				duration: Infinity,
+			});
+		}
+	}, [isPending, error, refetch, toast]);
 
 	// TODO: delete conversation if empty when component unmounts
 	// useEffect(() => {
@@ -153,7 +177,7 @@ const ConversationIdPage = ({
 	// 	// eslint-disable-next-line react-hooks/exhaustive-deps
 	// }, []);
 
-	const [timeStamp, setTimeStamp] = useState<Date | null>();
+	const [timeStamp, setTimeStamp] = useState<Date | null>(null);
 
 	const [activeTask, setActiveTask] = useState<Task | null>(null);
 	// only to be used in onRecordingComplete since it has a closure over the activeTask state
@@ -191,219 +215,6 @@ const ConversationIdPage = ({
 
 	const displayedMessage = messages[displayedMessageInd];
 
-	const [showLoadingMessage, setShowLoadingMessage] = useState(false);
-
-	const onRecordingComplete = useCallback(
-		async (audioBlob: Blob) => {
-			try {
-				// sanitize audio blob - it cant be larger than 9.216 MB
-				if (audioBlob.size > 9216000) {
-					throw new Error("Audio is too long");
-				}
-
-				// show loading message
-				setShowLoadingMessage(true);
-
-				// 1. transcribe the user audio
-				setProgressBarValue(1);
-				setActiveTask(task.SPEECH_TO_TEXT);
-				const { transcription } = await speechToText(audioBlob);
-
-				// TODO: sanitize transcription, no input should be empty
-
-				setProgressBarValue(25);
-				// copy current messages before updating the db
-				const messagesCopy = messages.map(({ role, content }) => ({
-					role,
-					content,
-				}));
-
-				setShowLoadingMessage(false);
-
-				// update database with user message in the foreground (optimistic update)
-				await createMessage({ role: "user", content: transcription });
-
-				// // 2. add user transcription to chat completion
-				setActiveTask(task.ASSISTANT);
-				const { messages: updatedMessages } = await makeChatCompletion(
-					{
-						role: "user",
-						content: transcription,
-					},
-					messagesCopy
-				);
-				const completionMessage = _.last(updatedMessages) as IMessage;
-
-				// show loading message
-				setShowLoadingMessage(true);
-
-				// 3. convert the assistants response to audio
-				setProgressBarValue(75);
-				setActiveTask(task.TEXT_TO_SPEECH);
-				const { base64Audio } = await textToSpeech(completionMessage.content);
-
-				// 4. play assistants response and update message database
-				setProgressBarValue(100);
-				setActiveTask(null);
-				setShowLoadingMessage(false);
-				// update database with user message in the foreground (optimistic update)
-				createMessage(completionMessage);
-				// update latest conversation so sidebar gets updated
-				await playAudio(base64Audio);
-				// update latest conversation in sidebar
-				updateConversation({
-					_id: conversationId,
-					lastMessage: completionMessage.content,
-				});
-				setProgressBarValue(0);
-				setTimeStamp(null);
-
-				return { success: true };
-			} catch (error) {
-				if ((error as any).name === "AbortError") {
-					toast({
-						title: "Message cancelled",
-						description: "The request was aborted.",
-						className: "warning-toast",
-						duration: 10000,
-					});
-				} else {
-					logger.error("onRecordingComplete failed", error);
-					toast({
-						title: "Uh oh! Something went wrong.",
-						description: "There was a problem with your request.",
-						// variant: "destructive",
-						className: "error-toast",
-						duration: 10000,
-					});
-				}
-				if (isPlaying) {
-					stopPlaying();
-				}
-
-				setActiveTask(null);
-				setProgressBarValue(0);
-
-				await deleteAllMessagesAfterTimeStamp(timeStamp as Date);
-
-				setShowLoadingMessage(false);
-
-				setTimeStamp(null);
-
-				return { success: false };
-			}
-		},
-		[
-			speechToText,
-			messages,
-			createMessage,
-			updateConversation,
-			conversationId,
-			makeChatCompletion,
-			textToSpeech,
-			playAudio,
-			isPlaying,
-			deleteAllMessagesAfterTimeStamp,
-			timeStamp,
-			toast,
-			logger,
-			stopPlaying,
-		]
-	);
-
-	const replayDisplayedMessage = useCallback(async () => {
-		try {
-			setProgressBarValue(25);
-			setActiveTask(task.TEXT_TO_SPEECH_REPLAY);
-			const { base64Audio } = await textToSpeech(displayedMessage.content);
-
-			setProgressBarValue(100);
-			setActiveTask(null);
-
-			if (!audioElementInitialized) {
-				initAudioElement();
-			}
-			await playAudio(base64Audio);
-			setProgressBarValue(0);
-		} catch (error) {
-			if ((error as any).name === "AbortError") {
-				toast({
-					title: "Message cancelled",
-					description: "The request was aborted.",
-					className: "warning-toast",
-					duration: 10000,
-				});
-			} else {
-				logger.error("replayDisplayedMessage", error);
-				toast({
-					title: "Uh oh! Something went wrong.",
-					description: "There was a problem replaying this message",
-					className: "error-toast",
-					duration: 10000,
-				});
-			}
-
-			setActiveTask(null);
-			setProgressBarValue(0);
-		}
-	}, [
-		displayedMessage,
-		logger,
-		initAudioElement,
-		playAudio,
-		textToSpeech,
-		toast,
-		audioElementInitialized,
-	]);
-
-	const toggleRecording = useCallback(async () => {
-		setShowInstruction(false);
-
-		if (isPlaying) {
-			stopPlaying();
-			return;
-		}
-
-		if (isRecording) {
-			const { audioBlob } = await stopRecording();
-			if (audioBlob) {
-				const { success } = await onRecordingComplete(audioBlob);
-				if (success) {
-					// TODO: disabling this for now, the UI is confusing
-					// restart recording
-					// startRecording();
-				}
-			}
-			return;
-		}
-
-		if (!isRecording) {
-			if (!audioElementInitialized) {
-				initAudioElement();
-			}
-			setTimeStamp(new Date());
-			startRecording();
-			return;
-		}
-	}, [
-		audioElementInitialized,
-		initAudioElement,
-		isPlaying,
-		isRecording,
-		onRecordingComplete,
-		startRecording,
-		stopPlaying,
-		stopRecording,
-	]);
-
-	const [showInstruction, setShowInstruction] = useState(false);
-
-	useEffect(() => {
-		setTimeout(() => {
-			setShowInstruction(true);
-		}, 1000);
-	}, [isRecording]);
-
 	const STATUS: Status = useMemo(() => {
 		if (isRecording) return status.RECORDING;
 		if (isPlaying) return status.PLAYING;
@@ -416,39 +227,10 @@ const ConversationIdPage = ({
 
 	const isDoingSpeechToText = activeTask === task.SPEECH_TO_TEXT;
 	const isDoingAssistant = activeTask === task.ASSISTANT;
+	const isDoingAssistantRegenerate = activeTask === task.ASSISTANT_REGENERATE;
+	const isDoingAssistantRephrase = activeTask === task.ASSISTANT_REPHRASE;
 	const isDoingTextToSpeech = activeTask === task.TEXT_TO_SPEECH;
 	const isDoingTextToSpeechReplay = activeTask === task.TEXT_TO_SPEECH_REPLAY;
-
-	const instruction = useMemo(() => {
-		const instructions: {
-			[key in Status]: string[];
-		} = {
-			// idle: "Press ⬇️ the blue blob to start recording",
-			IDLE: ["Click the blob to start recording"],
-			RECORDING: [
-				"Listening...",
-				"Click again to stop recording",
-				"Say something in Arabic...",
-			],
-			PLAYING: [""],
-			PROCESSING: [
-				...(isDoingSpeechToText ? ["Transcribing..."] : []),
-				...(isDoingAssistant ? ["Thinking of a response..."] : []),
-				...(isDoingTextToSpeech ? ["Almost there..."] : []),
-				...(isDoingTextToSpeechReplay ? ["Regenerating audio..."] : []),
-			],
-		};
-
-		const statusInstructions = instructions[STATUS];
-		const randomIndex = Math.floor(Math.random() * statusInstructions.length);
-		return statusInstructions[randomIndex];
-	}, [
-		STATUS,
-		isDoingAssistant,
-		isDoingSpeechToText,
-		isDoingTextToSpeech,
-		isDoingTextToSpeechReplay,
-	]);
 
 	const abortProcessingBtnHandler = useCallback(() => {
 		if (!isProcessing) return;
@@ -461,6 +243,8 @@ const ConversationIdPage = ({
 				abortTextToSpeechRequest();
 				break;
 			case task.ASSISTANT:
+			case task.ASSISTANT_REGENERATE:
+			case task.ASSISTANT_REPHRASE:
 				abortMakeChatCompletion();
 				break;
 			default:
@@ -474,33 +258,290 @@ const ConversationIdPage = ({
 		isProcessing,
 	]);
 
-	// const [completedTyping, setCompletedTyping] = useState(false);
-	// const [skipTyping, setSkipTyping] = useState(false);
-	// const skipTypingRef = useRef(false);
-	// skipTypingRef.current = skipTyping;
+	const handleError = useCallback(
+		(error: any, description = "There was a problem with your request.") => {
+			if ((error as any).name === "AbortError") {
+				toast({
+					title: "Message cancelled",
+					description: "The request was aborted.",
+					className: "warning-toast",
+					duration: 10000,
+				});
+			} else {
+				toast({
+					title: "Uh oh! Something went wrong.",
+					description,
+					// variant: "destructive",
+					className: "error-toast",
+					duration: 10000,
+				});
+			}
+			if (isPlaying) {
+				stopPlaying();
+			}
 
-	const stopPlayingBtnHandler = useCallback(() => {
-		stopPlaying();
-		// setSkipTyping(true);
-	}, [stopPlaying]);
+			setActiveTask(null);
+			setProgressBarValue(0);
+		},
+		[isPlaying, stopPlaying, toast]
+	);
 
-	useEffect(() => {
-		if (!isPending && error) {
-			toast({
-				title: "Error loading messages",
-				description: "An error occurred while this conversation's messages.",
-				action: (
-					<ToastAction altText="Try again">
-						<Button variant="outline" onClick={() => refetch()}>
-							Try again
-						</Button>
-					</ToastAction>
-				),
-				className: "error-toast",
-				duration: Infinity,
-			});
+	const handleSpeechToText = useCallback(
+		async (audioBlob: Blob) => {
+			setActiveTask(task.SPEECH_TO_TEXT);
+			const { transcription } = await speechToText(audioBlob);
+			setActiveTask(null);
+			return { transcription };
+		},
+		[speechToText]
+	);
+
+	const handleMakeChatCompletion = useCallback(
+		async (
+			messageHistory: Pick<IMessage, "role" | "content">[],
+			options?: { mode: "regenerate" | "rephrase" }
+		) => {
+			if (options?.mode === "regenerate") {
+				setActiveTask(task.ASSISTANT_REGENERATE);
+			} else if (options?.mode === "rephrase") {
+				setActiveTask(task.ASSISTANT_REPHRASE);
+			} else {
+				setActiveTask(task.ASSISTANT);
+			}
+			const { messages: updatedMessages } = await makeChatCompletion(
+				messageHistory,
+				options
+			);
+			setActiveTask(null);
+			const completionMessage = _.last(updatedMessages) as Pick<
+				IMessage,
+				"role" | "content"
+			>;
+			return { completionMessage };
+		},
+		[makeChatCompletion, setActiveTask]
+	);
+
+	const handleTextToSpeech = useCallback(
+		async (text: string, options?: { replay: boolean }) => {
+			if (options?.replay) {
+				setActiveTask(task.TEXT_TO_SPEECH_REPLAY);
+			} else {
+				setActiveTask(task.TEXT_TO_SPEECH);
+			}
+			const { base64Audio } = await textToSpeech(text);
+			setActiveTask(null);
+			return { base64Audio };
+		},
+		[textToSpeech]
+	);
+
+	const handlePlayAudio = useCallback(
+		async (base64Audio: string) => {
+			if (!audioElementInitialized) {
+				initAudioElement();
+			}
+			await playAudio(base64Audio);
+		},
+		[audioElementInitialized, initAudioElement, playAudio]
+	);
+
+	const onRecordingComplete = useCallback(
+		async (audioBlob: Blob) => {
+			try {
+				// sanitize audio blob - it cant be larger than 9.216 MB
+				if (audioBlob.size > 9216000) {
+					throw new Error("Audio is too long");
+				}
+
+				setTimeStamp(new Date());
+
+				// 1. transcribe the user audio
+				setProgressBarValue(1);
+				const { transcription } = await handleSpeechToText(audioBlob);
+
+				// TODO: sanitize transcription, no input should be empty
+
+				setProgressBarValue(25);
+				// copy messages before updating the db
+				const messageHistory = messages.map(({ role, content }) => ({
+					role,
+					content,
+				}));
+
+				// update database with user message in the foreground (optimistic update)
+				await createMessage({ role: "user", content: transcription });
+
+				// // 2. add user transcription to chat completion
+				const { completionMessage } = await handleMakeChatCompletion([
+					...messageHistory,
+					{
+						role: "user",
+						content: transcription,
+					},
+				]);
+
+				// 3. convert the assistants response to audio
+				setProgressBarValue(75);
+				const { base64Audio } = await handleTextToSpeech(
+					completionMessage.content
+				);
+				// 4. play assistants response and update message database
+				setProgressBarValue(100);
+				// update database with user message in the background (optimistic update)
+				createMessage(completionMessage);
+				await handlePlayAudio(base64Audio);
+
+				// update latest conversation in sidebar
+				updateConversation({
+					_id: conversationId,
+					lastMessage: completionMessage.content,
+				});
+				setProgressBarValue(0);
+				setTimeStamp(null);
+
+				return { success: true };
+			} catch (error) {
+				logger.error("onRecordingComplete failed", error);
+
+				handleError(error);
+
+				const allMessageIdsAfterTimestamp = messages
+					.filter(
+						({ updatedAt }) =>
+							timeStamp === null || new Date(updatedAt) > timeStamp
+					)
+					.map(({ _id }) => _id);
+
+				await deleteMessages(allMessageIdsAfterTimestamp);
+				setTimeStamp(null);
+
+				return { success: false };
+			}
+		},
+		[
+			conversationId,
+			createMessage,
+			deleteMessages,
+			handleError,
+			logger,
+			messages,
+			timeStamp,
+			updateConversation,
+			handleMakeChatCompletion,
+			handlePlayAudio,
+			handleSpeechToText,
+			handleTextToSpeech,
+		]
+	);
+
+	const replayBtnHandler = useCallback(async () => {
+		try {
+			if (!displayedMessage) return;
+
+			setProgressBarValue(25);
+			const { base64Audio } = await handleTextToSpeech(
+				displayedMessage.content,
+				{ replay: true }
+			);
+			setProgressBarValue(100);
+			await handlePlayAudio(base64Audio);
+			setProgressBarValue(0);
+		} catch (error) {
+			logger.error("replayBtnHandler", error);
+			handleError(error, "There was a problem replaying this message");
 		}
-	}, [isPending, error, refetch, toast]);
+	}, [
+		handleTextToSpeech,
+		displayedMessage,
+		handlePlayAudio,
+		logger,
+		handleError,
+	]);
+
+	const stopPlayingHandler = useCallback(() => {
+		if (isPlaying) {
+			stopPlaying();
+			completeTyping();
+		}
+	}, [completeTyping, isPlaying, stopPlaying]);
+
+	const translateBtnHandler = useCallback(async () => {}, []);
+
+	const redoCompletionHandler = useCallback(
+		async (options: { mode: "regenerate" | "rephrase" }) => {
+			try {
+				setProgressBarValue(25);
+
+				const messageHistory = messages
+					.map(({ role, content }) => ({
+						role,
+						content,
+					}))
+					.slice(0, displayedMessageInd);
+
+				const messageIdsAfterDisplayedMessage = messages
+					.slice(displayedMessageInd + 1)
+					.map(({ _id }) => _id);
+
+				const { completionMessage } = await handleMakeChatCompletion(
+					[
+						...messageHistory,
+						{
+							role: displayedMessage.role,
+							content: displayedMessage.content,
+						},
+					],
+					options
+				);
+
+				setProgressBarValue(75);
+
+				// delete all messages after displayedMessage
+				await deleteMessages(messageIdsAfterDisplayedMessage);
+
+				const { base64Audio } = await handleTextToSpeech(
+					completionMessage.content
+				);
+
+				updateMessage({
+					_id: displayedMessage._id,
+					conversationId: conversationId,
+					clerkId: displayedMessage.clerkId,
+					...completionMessage,
+				});
+				await handlePlayAudio(base64Audio);
+
+				updateConversation({
+					_id: conversationId,
+					lastMessage: completionMessage.content,
+				});
+				setProgressBarValue(0);
+			} catch (error) {
+				logger.error("redoCompletion", error);
+				const errorMessage = {
+					regenerate: "There was a problem regenerating this message",
+					rephrase: "There was a problem rephrasing this message",
+				};
+
+				handleError(error, errorMessage[options.mode]);
+			}
+		},
+		[
+			conversationId,
+			deleteMessages,
+			displayedMessage,
+			displayedMessageInd,
+			handleError,
+			logger,
+			messages,
+			updateConversation,
+			updateMessage,
+			handleMakeChatCompletion,
+			handlePlayAudio,
+			handleTextToSpeech,
+		]
+	);
 
 	const panelItems: {
 		label: string;
@@ -524,7 +565,7 @@ const ConversationIdPage = ({
 						{
 							label: "Replay",
 							icon: PlayIcon,
-							onClick: replayDisplayedMessage,
+							onClick: replayBtnHandler,
 							disabled: !isIdle,
 						},
 				  ]
@@ -533,7 +574,7 @@ const ConversationIdPage = ({
 				? [
 						{
 							label: "Cancel",
-							icon: StopCircleIcon,
+							icon: XCircleIcon,
 							iconClasses: "text-destructive w-8 h-8",
 							onClick: abortProcessingBtnHandler,
 							disabled: false,
@@ -546,17 +587,11 @@ const ConversationIdPage = ({
 							label: "Stop Playing",
 							icon: StopIcon,
 							iconClasses: "text-indigo-600 w-8 h-8",
-							onClick: stopPlayingBtnHandler,
+							onClick: stopPlayingHandler,
 							disabled: false,
 						},
 				  ]
 				: []),
-			{
-				label: "Translate",
-				icon: TranslateIcon,
-				onClick: () => {},
-				disabled: !isIdle,
-			},
 			...(displayedMessage.role === "user"
 				? [
 						{
@@ -564,7 +599,7 @@ const ConversationIdPage = ({
 							// icon: MagicWandIcon,
 							icon: SparklesIcon,
 							new: true,
-							onClick: () => {},
+							onClick: () => redoCompletionHandler({ mode: "rephrase" }),
 							disabled: !isIdle,
 						},
 				  ]
@@ -572,7 +607,7 @@ const ConversationIdPage = ({
 						{
 							label: "Regenerate",
 							icon: ArrowPathIcon,
-							onClick: () => {},
+							onClick: () => redoCompletionHandler({ mode: "regenerate" }),
 							disabled: !isIdle,
 						},
 				  ]),
@@ -580,6 +615,12 @@ const ConversationIdPage = ({
 				label: "Dictionary",
 				icon: BookOpenIcon,
 				onClick: () => {},
+				disabled: !isIdle,
+			},
+			{
+				label: "Translate",
+				icon: TranslateIcon,
+				onClick: translateBtnHandler,
 				disabled: !isIdle,
 			},
 			{
@@ -591,16 +632,18 @@ const ConversationIdPage = ({
 			},
 		];
 	}, [
+		abortProcessingBtnHandler,
 		displayedMessage,
 		displayedMessageInd,
-		isPlaying,
-		isRecording,
-		isProcessing,
-		replayDisplayedMessage,
+		translateBtnHandler,
 		isIdle,
-		abortProcessingBtnHandler,
-		stopPlayingBtnHandler,
+		isPlaying,
+		isProcessing,
+		isRecording,
 		messages.length,
+		redoCompletionHandler,
+		replayBtnHandler,
+		stopPlayingHandler,
 	]);
 
 	const panelItemsContent = (
@@ -648,10 +691,54 @@ const ConversationIdPage = ({
 		</Button>
 	);
 
+	const [showInstruction, setShowInstruction] = useState(false);
+
+	useEffect(() => {
+		setTimeout(() => {
+			setShowInstruction(true);
+		}, 1000);
+	}, [isRecording]);
+
+	const instruction = useMemo(() => {
+		const instructions: {
+			[key in Status]: string[];
+		} = {
+			// idle: "Press ⬇️ the blue blob to start recording",
+			IDLE: ["Click the blob to start recording"],
+			RECORDING: [
+				"Listening...",
+				"Click again to stop recording",
+				"Say something in Arabic...",
+			],
+			PLAYING: [""],
+			PROCESSING: [
+				...(isDoingSpeechToText ? ["Transcribing..."] : []),
+				...(isDoingAssistant ? ["Thinking of a response..."] : []),
+				...(isDoingTextToSpeech ? ["Preparing audio..."] : []),
+				...(isDoingTextToSpeechReplay ? ["Regenerating audio..."] : []),
+				...(isDoingAssistantRegenerate ? ["Regenerating response..."] : []),
+				...(isDoingAssistantRephrase
+					? ["Rephrasing your message to make it sound more natural..."]
+					: []),
+			],
+		};
+
+		const statusInstructions = instructions[STATUS];
+		const randomIndex = Math.floor(Math.random() * statusInstructions.length);
+		return statusInstructions[randomIndex];
+	}, [
+		STATUS,
+		isDoingAssistant,
+		isDoingAssistantRephrase,
+		isDoingAssistantRegenerate,
+		isDoingSpeechToText,
+		isDoingTextToSpeech,
+		isDoingTextToSpeechReplay,
+	]);
+
 	const instructionContent = (
 		<Transition
 			className={cn(
-				"text-center",
 				cairo.className,
 				// "font-extrabold text-2xl md:text-3xl tracking-tight",
 				"text-xl tracking-tight",
@@ -695,7 +782,7 @@ const ConversationIdPage = ({
 			avatarAlt: "ArabyBuddy avatar",
 		};
 
-		if (showLoadingMessage) {
+		if (false) {
 			if (isDoingSpeechToText) {
 				name = userDetails.name;
 				avatarSrc = userDetails.avatarSrc;
@@ -722,12 +809,7 @@ const ConversationIdPage = ({
 			avatarSrc,
 			avatarAlt,
 		};
-	}, [
-		displayedMessage?.role,
-		isDoingSpeechToText,
-		showLoadingMessage,
-		user?.imageUrl,
-	]);
+	}, [displayedMessage?.role, isDoingSpeechToText, user?.imageUrl]);
 
 	const messageCardContent = !isChatEmpty && (
 		<MessageCard
@@ -740,17 +822,36 @@ const ConversationIdPage = ({
 			avatarSrc={messageCardDetails.avatarSrc}
 			avatarAlt={messageCardDetails.avatarAlt}
 			// glow={isPlaying}
-			showLoadingOverlay={isDoingTextToSpeechReplay}
+			showLoadingOverlay={
+				STATUS === status.PROCESSING || STATUS === status.RECORDING
+			}
 			menuContent={
-				<SpeakerWaveIcon
-					className={cn(
-						"w-6 h-6 text-slate-400 hidden transition ease-in-out",
-						isPlaying && "block"
-					)}
-				/>
+				// <SpeakerWaveIcon
+				// 	className={cn(
+				// 		"w-6 h-6 text-slate-400 hidden transition ease-in-out",
+				// 		isPlaying && "block"
+				// 	)}
+				// />
+				isPlaying ? (
+					<ScaleLoader
+						color="#b5bac4"
+						loading
+						height={20}
+						cssOverride={{
+							display: "block",
+							margin: "0",
+							width: 250,
+						}}
+						speedMultiplier={1.5}
+						aria-label="Loading Spinner"
+						data-testid="loader"
+					/>
+				) : (
+					<span />
+				)
 			}
 			content={
-				showLoadingMessage ? (
+				false ? (
 					<PulseLoader
 						color="black"
 						loading
@@ -770,6 +871,45 @@ const ConversationIdPage = ({
 			}
 		/>
 	);
+
+	const toggleRecordingHandler = useCallback(async () => {
+		setShowInstruction(false);
+
+		if (isPlaying) {
+			stopPlaying();
+			return;
+		}
+
+		if (isRecording) {
+			const { audioBlob } = await stopRecording();
+			if (audioBlob) {
+				const { success } = await onRecordingComplete(audioBlob);
+				if (success) {
+					// TODO: implement auto-restatart recording
+					// restart recording
+					// startRecording();
+				}
+			}
+			return;
+		}
+
+		if (!isRecording) {
+			if (!audioElementInitialized) {
+				initAudioElement();
+			}
+			startRecording();
+			return;
+		}
+	}, [
+		audioElementInitialized,
+		initAudioElement,
+		isPlaying,
+		isRecording,
+		onRecordingComplete,
+		startRecording,
+		stopPlaying,
+		stopRecording,
+	]);
 
 	if (isPending) {
 		return (
@@ -797,7 +937,6 @@ const ConversationIdPage = ({
 			{/* wrapper */}
 			<div className="h-full flex flex-col items-center justify-between mx-auto gap-4 py-4 md:pt-6">
 				<div className="hidden md:block">{panelItemsContent}</div>
-
 				<div
 					className={cn(
 						"flex-1 min-h-0 basis-0 flex flex-col justify-center items-center px-4 w-full"
@@ -813,13 +952,11 @@ const ConversationIdPage = ({
 				</div>
 				<div className="md:hidden my-3">{panelItemsContent}</div>
 				<div className="relative w-full px-4">
-					<div className="h-14 mx-auto z-10 text-center">
-						{instructionContent}
-					</div>
+					<div className="h-16 z-10 text-center">{instructionContent}</div>
 					{/* <div className="h-14 ">{instructionContent}</div> */}
 					<div className="text-center w-fit m-auto">
 						<Microphone
-							onClick={toggleRecording}
+							onClick={toggleRecordingHandler}
 							mode={STATUS}
 							disabled={isProcessing}
 							amplitude={amplitude}

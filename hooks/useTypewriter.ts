@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 const useTypewriter = () => {
 	const [completedTyping, setCompletedTyping] = useState(false);
+	const forceCompleteRef = useRef(false);
 
 	const typewriter = async (
 		content: string,
@@ -14,6 +15,11 @@ const useTypewriter = () => {
 
 		while (i < content.length) {
 			await new Promise((resolve) => setTimeout(resolve, delay));
+			if (forceCompleteRef.current) {
+				setTypedContent(content);
+				forceCompleteRef.current = false;
+				break;
+			}
 			setTypedContent(content.slice(0, i + 1));
 			i++;
 		}
@@ -21,7 +27,11 @@ const useTypewriter = () => {
 		setCompletedTyping(true);
 	};
 
-	return { completedTyping, typewriter };
+	const completeTyping = () => {
+		forceCompleteRef.current = true;
+	};
+
+	return { completeTyping, typewriter };
 };
 
 export { useTypewriter };

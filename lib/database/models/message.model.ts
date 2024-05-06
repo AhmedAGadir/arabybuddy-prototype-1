@@ -6,8 +6,8 @@ export interface IMessage extends Document {
 	conversationId: string;
 	role: "user" | "assistant";
 	content: string;
-	createdAt: Date;
-	updatedAt: Date;
+	createdAt: string;
+	updatedAt: string;
 }
 
 const MessageSchema = new Schema(

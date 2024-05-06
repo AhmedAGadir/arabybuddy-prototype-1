@@ -20,13 +20,12 @@ export async function POST(req: Request, res: Response) {
 			throw new Error("User not authenticated");
 		}
 
-		const { messageHistory, latestMessage, username, preferences } =
-			await req.json();
+		const { messageHistory, mode, firstName, preferences } = await req.json();
 
 		const { updatedMessages } = await openAIAddChatMessageAndAwaitResponse({
 			messageHistory,
-			latestMessage,
-			username,
+			mode,
+			firstName,
 			preferences,
 		});
 
@@ -43,7 +42,7 @@ export async function POST(req: Request, res: Response) {
 }
 
 function createAssistantInstructions(
-	username: string | undefined,
+	firstName: string | undefined,
 	preferences: {
 		arabic_dialect: IPreferences["arabic_dialect"];
 		assistant_language_level: IPreferences["assistant_language_level"];
@@ -55,8 +54,8 @@ function createAssistantInstructions(
 ) {
 	let instructions = "You are 'ArabyBuddy', a friendly Arabic language tutor. ";
 
-	if (username) {
-		instructions += `You are here to converse with ${username}. make sure you include their name in your initial greeting.`;
+	if (firstName) {
+		instructions += `You are here to converse with ${firstName}. make sure you include their name in your initial greeting.`;
 	}
 
 	instructions += `Offer engaging topics of conversation based on the user's interests and personality traits. Speak in ${preferences.arabic_dialect} dialect and at a ${preferences.assistant_language_level} language level. Your responses should be ${preferences.assistant_tone} and provide ${preferences.assistant_detail_level} level of detail. `;
@@ -78,13 +77,13 @@ function createAssistantInstructions(
 
 const openAIAddChatMessageAndAwaitResponse = async ({
 	messageHistory,
-	latestMessage,
-	username,
+	mode,
+	firstName,
 	preferences,
 }: {
 	messageHistory: Pick<IMessage, "role" | "content">[];
-	latestMessage: Pick<IMessage, "role" | "content">;
-	username: string | undefined;
+	firstName: string | undefined;
+	mode: "rephrase" | "regenerate" | undefined;
 	preferences: {
 		arabic_dialect: IPreferences["arabic_dialect"];
 		assistant_language_level: IPreferences["assistant_language_level"];
@@ -95,7 +94,7 @@ const openAIAddChatMessageAndAwaitResponse = async ({
 	};
 }) => {
 	// create the assistant
-	const instructions = createAssistantInstructions(username, preferences);
+	const instructions = createAssistantInstructions(firstName, preferences);
 	console.log("Creating assistant - instructions", instructions);
 
 	const assistant = await openai.beta.assistants.create({
@@ -104,22 +103,35 @@ const openAIAddChatMessageAndAwaitResponse = async ({
 		model: "gpt-4-turbo-preview",
 	});
 
-	console.log("Adding message history to thread", messageHistory);
+	const latestMessage = messageHistory[messageHistory.length - 1];
+	const messageHistoryWithoutLatest = messageHistory.slice(
+		0,
+		messageHistory.length - 1
+	);
+
+	console.log("Adding message history to thread", messageHistoryWithoutLatest);
 	// create the thread and pass all previous messages
 	const thread = await openai.beta.threads.create({
-		messages: messageHistory,
+		messages: messageHistoryWithoutLatest,
 	});
 
 	console.log("adding latest chat message to thread", latestMessage);
 	// add transcription to thread
 	await openai.beta.threads.messages.create(thread.id, latestMessage);
 
+	if (mode === "rephrase") {
+		console.log("adding rephrase instructions...");
+	}
+
 	console.log("polling....");
 	// run the thread with the assistant
 	const run = await openai.beta.threads.runs.createAndPoll(thread.id, {
 		assistant_id: assistant.id,
-		//   instructions: "Please address the user as Jane Doe. The user has a premium account."
-		// instructions: "Respond to the user.",
+		...(mode === "rephrase"
+			? {
+					instructions: `rephrase the users latest message so that it sounds more natural in ${preferences.arabic_dialect} dialect`,
+			  }
+			: {}),
 	});
 
 	console.log("run.status", run.status);
