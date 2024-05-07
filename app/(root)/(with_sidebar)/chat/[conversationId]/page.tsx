@@ -887,8 +887,10 @@ const ConversationIdPage = ({
 		() => ({
 			// idle: "Press ⬇️ the blue blob to start recording",
 			IDLE: [
+				...(messages.length === 0 ? ["Welcome to ArabyBuddy!"] : []),
 				"Click the microphone to start recording",
-				"Lets have a conversation in Arabic",
+				"Ask a question or say something in Arabic...",
+				// "هيا بنا",
 			],
 			RECORDING: [
 				"Listening...",
@@ -914,6 +916,7 @@ const ConversationIdPage = ({
 			isDoingSpeechToText,
 			isDoingTextToSpeech,
 			isDoingTextToSpeechReplay,
+			messages.length,
 		]
 	);
 
@@ -1124,6 +1127,13 @@ const ConversationIdPage = ({
 		</Drawer>
 	);
 
+	const recordingBlob = isRecording && (
+		<>
+			<span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#FF0066] opacity-75" />
+			<span className="relative inline-flex rounded-full h-4 w-4 bg-[#FF0066]" />
+		</>
+	);
+
 	if (isPending) {
 		return (
 			<div className="flex-1 flex items-center justify-center bg-g">
@@ -1148,50 +1158,24 @@ const ConversationIdPage = ({
 				{progressBarContent}
 			</div>
 			{/* wrapper */}
-			<div className="h-full flex flex-col items-center justify-between mx-auto gap-4 py-4 md:pt-6">
+			<div className="h-full flex flex-col items-center justify-between mx-auto gap-4 py-4 md:pt-6 md:pb-14">
 				<div className="hidden md:block">{panelItemsContent}</div>
 				{drawerContent}
+				{/* chat bubble and pagination wrapper */}
 				<div
 					className={cn(
-						"flex-1 min-h-0 basis-0 flex flex-col justify-center items-center px-4 w-full"
+						"flex-1 min-h-0 basis-0 flex flex-col justify-center items-center px-4 w-full h-full"
 						// "overflow-y-hidden"
 					)}
 				>
-					{/* chat bubble and pagination wrapper */}
-					<div className="flex flex-col justify-center items-center w-full h-full ">
-						<div className={cn("min-h-0 w-full max-w-2xl mx-auto")}>
-							{messageCardContent}
-						</div>
+					<div className={cn("min-h-0 w-full max-w-2xl mx-auto")}>
+						{messageCardContent}
 					</div>
 				</div>
 
-				<span className="relative flex h-4 w-4">
-					<span
-						className={cn(
-							"animate-ping absolute inline-flex h-full w-full rounded-full bg-[#FF0066] opacity-75",
-							!isRecording && "hidden"
-						)}
-					></span>
-					<span
-						className={cn(
-							"relative inline-flex rounded-full h-4 w-4 bg-[#FF0066]",
-							!isRecording && "hidden"
-						)}
-					></span>
-				</span>
-				<div className="relative w-full px-4">
-					<div className="h-14 z-10 text-center">{instructionContent}</div>
-					{/* <div className="h-14 ">{instructionContent}</div> */}
-					{/* <div className="text-center w-fit m-auto">
-						<Microphone
-							onClick={toggleRecordingHandler}
-							mode={STATUS}
-							disabled={isProcessing}
-							amplitude={amplitude}
-						/>
-					</div> */}
-				</div>
-				<div className="md:hidden mb-14">{panelItemsContent}</div>
+				<div className="relative flex h-4 w-4 my-2">{recordingBlob}</div>
+				<div className="h-12 w-full px-4 text-center">{instructionContent}</div>
+				<div className="md:hidden">{panelItemsContent}</div>
 				<SupportCard className="absolute bottom-0 right-0" />
 			</div>
 		</div>
