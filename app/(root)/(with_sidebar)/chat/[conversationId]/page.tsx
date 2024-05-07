@@ -721,7 +721,7 @@ const ConversationIdPage = ({
 													size="default"
 													className={
 														cn(
-															" text-slate-500 dark:text-slate-400 hover:bg-slate-100",
+															"h-14 w-14 text-slate-500 dark:text-slate-400 hover:bg-slate-100",
 															"data-[state=on]:bg-primary data-[state=on]:text-white hover:data-[state=on]:bg-primary/80 px-2 "
 														)
 														// "relative text-slate-500 dark:text-slate-400 hover:bg-slate-100",
@@ -740,7 +740,7 @@ const ConversationIdPage = ({
 												<Button
 													size="icon"
 													variant="ghost"
-													className="relative text-slate-500 dark:text-slate-400 hover:bg-slate-100"
+													className="relative h-14 w-14 text-slate-500 dark:text-slate-400 hover:bg-slate-100"
 													onClick={item.onClick}
 													disabled={item.disabled}
 												>
