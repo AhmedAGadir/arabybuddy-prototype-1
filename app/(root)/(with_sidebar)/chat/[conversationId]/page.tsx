@@ -196,26 +196,27 @@ const ConversationIdPage = ({
 	}, [isPending, error, refetch, toast]);
 
 	// TODO: delete conversation if empty when component unmounts
-	// useEffect(() => {
-	// 	// delete conversation if empty when component unmounts
-	// 	return () => {
-	// 		if (_.isEmpty(messages)) {
-	// 			try {
-	// 				deleteConversation(conversationId);
-	// 			} catch (error) {
-	// 				logger.error("deleteConversation failed", error);
-	// 				toast({
-	// 					title: "Something went wrong.",
-	// 					description: "There was a problem deleting this conversation.",
-	// 					// variant: "destructive",
-	// 					className: "error-toast",
-	// 					duration: 10000,
-	// 				});
-	// 			}
-	// 		}
-	// 	};
-	// 	// eslint-disable-next-line react-hooks/exhaustive-deps
-	// }, []);
+	useEffect(() => {
+		// delete conversation if empty when component unmounts
+		return () => {
+			logger.log("unmounting conversationIdPage", conversationId);
+			if (_.isEmpty(messages)) {
+				try {
+					deleteConversation(conversationId);
+				} catch (error) {
+					logger.error("deleteConversation failed", error);
+					toast({
+						title: "Something went wrong.",
+						description: "There was a problem deleting this conversation.",
+						// variant: "destructive",
+						className: "error-toast",
+						duration: 10000,
+					});
+				}
+			}
+		};
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, []);
 
 	const [timeStamp, setTimeStamp] = useState<Date | null>(null);
 
@@ -401,7 +402,7 @@ const ConversationIdPage = ({
 		async (audioBlob: Blob) => {
 			try {
 				// wait 5 seconds and return
-				await new Promise((resolve) => setTimeout(resolve, 5000));
+				return await new Promise((resolve) => setTimeout(resolve, 5000));
 
 				// sanitize audio blob - it cant be larger than 9.216 MB
 				if (audioBlob.size > 9216000) {
@@ -778,7 +779,7 @@ const ConversationIdPage = ({
 													size="default"
 													className={
 														cn(
-															"sm:h-14 sm:w-14 text-slate-500 dark:text-slate-400 hover:bg-slate-100",
+															"h-11 w-11 sm:h-14 sm:w-14 text-slate-500 dark:text-slate-400 hover:bg-slate-100",
 															"data-[state=on]:bg-primary data-[state=on]:text-white hover:data-[state=on]:bg-primary/80 px-2 "
 														)
 														// "relative text-slate-500 dark:text-slate-400 hover:bg-slate-100",
@@ -797,7 +798,7 @@ const ConversationIdPage = ({
 												<Button
 													size="icon"
 													variant="ghost"
-													className="relative sm:h-14 sm:w-14 text-slate-500 dark:text-slate-400 hover:bg-slate-100"
+													className="relative h-11 w-11 sm:h-14 sm:w-14 text-slate-500 dark:text-slate-400 hover:bg-slate-100"
 													onClick={item.onClick}
 													disabled={item.disabled}
 												>
@@ -873,7 +874,7 @@ const ConversationIdPage = ({
 			[key in Status]: string[];
 		} = {
 			// idle: "Press ⬇️ the blue blob to start recording",
-			IDLE: ["Click the blob to start recording"],
+			IDLE: ["Click the microphone to start recording"],
 			RECORDING: [
 				"Listening...",
 				"Click again to stop recording",
@@ -1146,9 +1147,8 @@ const ConversationIdPage = ({
 						</div>
 					</div>
 				</div>
-				<div className="md:hidden my-3">{panelItemsContent}</div>
 				<div className="relative w-full px-4">
-					<div className="h-16 z-10 text-center">{instructionContent}</div>
+					<div className="h-14 z-10 text-center">{instructionContent}</div>
 					{/* <div className="h-14 ">{instructionContent}</div> */}
 					{/* <div className="text-center w-fit m-auto">
 						<Microphone
@@ -1158,8 +1158,9 @@ const ConversationIdPage = ({
 							amplitude={amplitude}
 						/>
 					</div> */}
-					<SupportCard className="absolute bottom-0 right-0" />
 				</div>
+				<div className="md:hidden mb-14">{panelItemsContent}</div>
+				<SupportCard className="absolute bottom-0 right-0" />
 			</div>
 		</div>
 	);
