@@ -93,6 +93,7 @@ import { text } from "stream/consumers";
 import { Minus, Plus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { usePathname, useSearchParams } from "next/navigation";
+import { useCyclingText } from "@/hooks/useCyclingText";
 
 const status = {
 	IDLE: "IDLE",
@@ -622,7 +623,7 @@ const ConversationIdPage = ({
 	}, []);
 
 	const toggleRecordingHandler = useCallback(async () => {
-		setShowInstruction(false);
+		hideInstruction();
 
 		if (isPlaying) {
 			stopPlaying();
@@ -880,20 +881,15 @@ const ConversationIdPage = ({
 		</Button>
 	);
 
-	const [showInstruction, setShowInstruction] = useState(false);
-
-	useEffect(() => {
-		setTimeout(() => {
-			setShowInstruction(true);
-		}, 1000);
-	}, [isRecording]);
-
-	const instruction = useMemo(() => {
-		const instructions: {
-			[key in Status]: string[];
-		} = {
+	const instructions: {
+		[key in Status]: string[];
+	} = useMemo(
+		() => ({
 			// idle: "Press ⬇️ the blue blob to start recording",
-			IDLE: ["Click the microphone to start recording"],
+			IDLE: [
+				"Click the microphone to start recording",
+				"Lets have a conversation in Arabic",
+			],
 			RECORDING: [
 				"Listening...",
 				"Click again to stop recording",
@@ -910,20 +906,22 @@ const ConversationIdPage = ({
 					? ["Rephrasing your message to make it sound more natural..."]
 					: []),
 			],
-		};
+		}),
+		[
+			isDoingAssistant,
+			isDoingAssistantRegenerate,
+			isDoingAssistantRephrase,
+			isDoingSpeechToText,
+			isDoingTextToSpeech,
+			isDoingTextToSpeechReplay,
+		]
+	);
 
-		const statusInstructions = instructions[STATUS];
-		const randomIndex = Math.floor(Math.random() * statusInstructions.length);
-		return statusInstructions[randomIndex];
-	}, [
-		STATUS,
-		isDoingAssistant,
-		isDoingAssistantRephrase,
-		isDoingAssistantRegenerate,
-		isDoingSpeechToText,
-		isDoingTextToSpeech,
-		isDoingTextToSpeechReplay,
-	]);
+	const {
+		text: instruction,
+		showText: showInstruction,
+		hideText: hideInstruction,
+	} = useCyclingText(instructions[STATUS]);
 
 	const instructionContent = (
 		<Transition
