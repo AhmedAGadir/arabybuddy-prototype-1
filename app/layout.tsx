@@ -29,9 +29,9 @@ export default function RootLayout({
 						// when i eventually remove this, change eslinrc.json back to {"extends": "next/core-web-vitals"}
 						// eslint-disable-next-line @next/next/no-sync-scripts
 					}
-					{/* { */}
-					<script src="https://cdn.jsdelivr.net/gh/c-kick/mobileConsole/hnl.mobileconsole.min.js"></script>
-					{/* } */}
+					{
+						// <script src="https://cdn.jsdelivr.net/gh/c-kick/mobileConsole/hnl.mobileconsole.min.js"></script>
+					}
 				</head>
 				<body className={(roboto.className, "h-full")}>{children}</body>
 			</html>
