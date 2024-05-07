@@ -71,11 +71,13 @@ const Blob = ({
 const Microphone = ({
 	onClick,
 	mode,
+	size,
 	disabled,
 	amplitude,
 }: {
 	onClick: () => void;
 	mode: Status;
+	size: number;
 	disabled?: boolean;
 	amplitude: number | null;
 }) => {
@@ -106,16 +108,11 @@ const Microphone = ({
 		}
 	}, [mode]);
 
-	const { device } = useMediaQuery();
-	const isMobile = device === "mobile";
-
-	const baseSize = isMobile ? 100 : 150;
-
-	const containerSize = isMobile ? 100 : 150;
+	const baseSize = size;
 
 	const duration = 10;
 
-	const size = amplitude ? baseSize + amplitude * 2 : baseSize;
+	const amplifiedSize = amplitude ? baseSize + amplitude * 2 : baseSize;
 
 	return (
 		<button
@@ -126,12 +123,12 @@ const Microphone = ({
 			<div
 				style={{
 					position: "relative",
-					width: containerSize,
-					height: containerSize,
+					width: baseSize,
+					height: baseSize,
 				}}
 			>
 				<Blob
-					size={size}
+					size={amplifiedSize}
 					duration={duration}
 					values={blobDValues.join(";")}
 					pathProps={{
@@ -141,7 +138,7 @@ const Microphone = ({
 				/>
 
 				<Blob
-					size={size}
+					size={amplifiedSize}
 					duration={duration}
 					values={blobDValues.reverse().join(";")}
 					pathProps={{
@@ -151,7 +148,7 @@ const Microphone = ({
 				/>
 
 				<Blob
-					size={size}
+					size={amplifiedSize}
 					duration={duration}
 					values={blobDValues.reverse().join(";")}
 					pathProps={{

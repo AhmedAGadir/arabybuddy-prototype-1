@@ -25,6 +25,7 @@ import {
 	ChevronLeftIcon,
 	ChevronRightIcon,
 	EllipsisVerticalIcon,
+	MicrophoneIcon as MicrophoneIconOutline,
 	SparklesIcon,
 	SpeakerWaveIcon,
 } from "@heroicons/react/24/outline";
@@ -85,6 +86,7 @@ import {
 	StopIcon,
 	StopCircleIcon,
 	XCircleIcon,
+	MicrophoneIcon as MicrophoneIconSolid,
 } from "@heroicons/react/20/solid";
 import { Card, CardContent } from "@/components/ui/card";
 import { text } from "stream/consumers";
@@ -606,6 +608,45 @@ const ConversationIdPage = ({
 		setDrawerOpen((prev) => !prev);
 	}, []);
 
+	const toggleRecordingHandler = useCallback(async () => {
+		setShowInstruction(false);
+
+		if (isPlaying) {
+			stopPlaying();
+			return;
+		}
+
+		if (isRecording) {
+			const { audioBlob } = await stopRecording();
+			if (audioBlob) {
+				const { success } = await onRecordingComplete(audioBlob);
+				if (success) {
+					// TODO: implement auto-restatart recording
+					// restart recording
+					// startRecording();
+				}
+			}
+			return;
+		}
+
+		if (!isRecording) {
+			if (!audioElementInitialized) {
+				initAudioElement();
+			}
+			startRecording();
+			return;
+		}
+	}, [
+		audioElementInitialized,
+		initAudioElement,
+		isPlaying,
+		isRecording,
+		onRecordingComplete,
+		startRecording,
+		stopPlaying,
+		stopRecording,
+	]);
+
 	const panelItems: PanelItem[] = useMemo(() => {
 		if (!displayedMessage) return [];
 		return [
@@ -668,6 +709,12 @@ const ConversationIdPage = ({
 						},
 				  ]),
 			{
+				label: "Record",
+				icon: isRecording ? MicrophoneIconSolid : MicrophoneIconOutline,
+				onClick: toggleRecordingHandler,
+				disabled: isProcessing,
+			},
+			{
 				label: "Dictionary",
 				toggle: true,
 				pressed: dictionaryMode,
@@ -699,6 +746,7 @@ const ConversationIdPage = ({
 		abortProcessingBtnHandler,
 		isPlaying,
 		stopPlayingHandler,
+		toggleRecordingHandler,
 		dictionaryMode,
 		dictionaryBtnHandler,
 		translateBtnHandler,
@@ -923,6 +971,42 @@ const ConversationIdPage = ({
 		};
 	}, [displayedMessage?.role, isDoingSpeechToText, user?.imageUrl]);
 
+	const menuContent = useMemo(() => {
+		if (isPlaying) {
+			// <SpeakerWaveIcon
+			// 	className={cn(
+			// 		"w-6 h-6 text-slate-400 hidden transition ease-in-out",
+			// 		isPlaying && "block"
+			// 	)}
+			// />
+			return (
+				<ScaleLoader
+					color="#b5bac4"
+					loading
+					height={20}
+					cssOverride={{
+						display: "block",
+						margin: "0",
+					}}
+					speedMultiplier={1.5}
+					aria-label="Loading Spinner"
+					data-testid="loader"
+				/>
+			);
+		}
+
+		if (isRecording) {
+			return (
+				<span className="relative flex h-4 w-4">
+					<span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#FF0066] opacity-75"></span>
+					<span className="relative inline-flex rounded-full h-4 w-4 bg-[#FF0066]"></span>
+				</span>
+			);
+		}
+
+		return <span />;
+	}, [isPlaying, isRecording]);
+
 	const messageCardContent = !isChatEmpty && (
 		<MessageCard
 			className={cn(
@@ -934,33 +1018,8 @@ const ConversationIdPage = ({
 			avatarSrc={messageCardDetails.avatarSrc}
 			avatarAlt={messageCardDetails.avatarAlt}
 			// glow={isPlaying}
-			showLoadingOverlay={
-				STATUS === status.PROCESSING || STATUS === status.RECORDING
-			}
-			menuContent={
-				// <SpeakerWaveIcon
-				// 	className={cn(
-				// 		"w-6 h-6 text-slate-400 hidden transition ease-in-out",
-				// 		isPlaying && "block"
-				// 	)}
-				// />
-				isPlaying ? (
-					<ScaleLoader
-						color="#b5bac4"
-						loading
-						height={20}
-						cssOverride={{
-							display: "block",
-							margin: "0",
-						}}
-						speedMultiplier={1.5}
-						aria-label="Loading Spinner"
-						data-testid="loader"
-					/>
-				) : (
-					<span />
-				)
-			}
+			showLoadingOverlay={STATUS === status.PROCESSING}
+			menuContent={menuContent}
 			content={
 				false ? (
 					<PulseLoader
@@ -982,45 +1041,6 @@ const ConversationIdPage = ({
 			}
 		/>
 	);
-
-	const toggleRecordingHandler = useCallback(async () => {
-		setShowInstruction(false);
-
-		if (isPlaying) {
-			stopPlaying();
-			return;
-		}
-
-		if (isRecording) {
-			const { audioBlob } = await stopRecording();
-			if (audioBlob) {
-				const { success } = await onRecordingComplete(audioBlob);
-				if (success) {
-					// TODO: implement auto-restatart recording
-					// restart recording
-					// startRecording();
-				}
-			}
-			return;
-		}
-
-		if (!isRecording) {
-			if (!audioElementInitialized) {
-				initAudioElement();
-			}
-			startRecording();
-			return;
-		}
-	}, [
-		audioElementInitialized,
-		initAudioElement,
-		isPlaying,
-		isRecording,
-		onRecordingComplete,
-		startRecording,
-		stopPlaying,
-		stopRecording,
-	]);
 
 	const drawerContent = (
 		<Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
@@ -1121,14 +1141,14 @@ const ConversationIdPage = ({
 				<div className="relative w-full px-4">
 					<div className="h-16 z-10 text-center">{instructionContent}</div>
 					{/* <div className="h-14 ">{instructionContent}</div> */}
-					<div className="text-center w-fit m-auto">
+					{/* <div className="text-center w-fit m-auto">
 						<Microphone
 							onClick={toggleRecordingHandler}
 							mode={STATUS}
 							disabled={isProcessing}
 							amplitude={amplitude}
 						/>
-					</div>
+					</div> */}
 					<SupportCard className="absolute bottom-0 right-0" />
 				</div>
 			</div>
