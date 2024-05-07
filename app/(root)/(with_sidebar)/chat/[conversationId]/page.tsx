@@ -92,6 +92,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { text } from "stream/consumers";
 import { Minus, Plus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { usePathname, useSearchParams } from "next/navigation";
 
 const status = {
 	IDLE: "IDLE",
@@ -195,28 +196,36 @@ const ConversationIdPage = ({
 		}
 	}, [isPending, error, refetch, toast]);
 
-	// TODO: delete conversation if empty when component unmounts
-	useEffect(() => {
-		// delete conversation if empty when component unmounts
-		return () => {
-			logger.log("unmounting conversationIdPage", conversationId);
-			if (_.isEmpty(messages)) {
-				try {
-					deleteConversation(conversationId);
-				} catch (error) {
-					logger.error("deleteConversation failed", error);
-					toast({
-						title: "Something went wrong.",
-						description: "There was a problem deleting this conversation.",
-						// variant: "destructive",
-						className: "error-toast",
-						duration: 10000,
-					});
-				}
-			}
-		};
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, []);
+	// const pathname = usePathname();
+	// const searchParams = useSearchParams();
+
+	// useEffect(() => {
+	// 	const url = `${pathname}?${searchParams}`;
+	// 	logger.log("url", url);
+
+	// 	return () => {
+	// 		if (!url.includes(conversationId)) {
+	// 			// redirect to the correct url
+	// 			logger.log("unmounting conversationIdPage", conversationId);
+	// 			// if (_.isEmpty(messages)) {
+	// 			// 	try {
+	// 			// 		deleteConversation(conversationId);
+	// 			// 	} catch (error) {
+	// 			// 		logger.error("deleteConversation failed", error);
+	// 			// 		toast({
+	// 			// 			title: "Something went wrong.",
+	// 			// 			description: "There was a problem deleting this conversation.",
+	// 			// 			// variant: "destructive",
+	// 			// 			className: "error-toast",
+	// 			// 			duration: 10000,
+	// 			// 		});
+	// 			// 	}
+	// 			// }
+	// 		}
+	// 	};
+
+	// 	// eslint-disable-next-line react-hooks/exhaustive-deps
+	// }, [pathname, searchParams, conversationId]);
 
 	const [timeStamp, setTimeStamp] = useState<Date | null>(null);
 
@@ -401,9 +410,6 @@ const ConversationIdPage = ({
 	const onRecordingComplete = useCallback(
 		async (audioBlob: Blob) => {
 			try {
-				// wait 5 seconds and return
-				return await new Promise((resolve) => setTimeout(resolve, 5000));
-
 				// sanitize audio blob - it cant be larger than 9.216 MB
 				if (audioBlob.size > 9216000) {
 					throw new Error("Audio is too long");
