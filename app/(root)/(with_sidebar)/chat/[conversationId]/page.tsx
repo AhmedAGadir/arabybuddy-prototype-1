@@ -410,6 +410,8 @@ const ConversationIdPage = ({
 
 	const onRecordingComplete = useCallback(
 		async (audioBlob: Blob) => {
+			await new Promise((resolve) => setTimeout(resolve, 3000));
+			throw new Error("Not implemented");
 			try {
 				// sanitize audio blob - it cant be larger than 9.216 MB
 				if (audioBlob.size > 9216000) {
@@ -721,11 +723,12 @@ const ConversationIdPage = ({
 			{
 				label: "Record",
 				onClick: toggleRecordingHandler,
-				icon: isRecording ? MicrophoneIconSolid : MicrophoneIconOutline,
-				// toggle: true,
-				// pressed: isRecording,
-				// onPressed: toggleRecordingHandler,
-				// icon: MicrophoneIconOutline,
+				// icon: isRecording ? MicrophoneIconSolid : MicrophoneIconOutline,
+				// iconClasses: isRecording ? "text-araby-blue" : "",
+				toggle: true,
+				pressed: isRecording,
+				onPressed: toggleRecordingHandler,
+				icon: MicrophoneIconOutline,
 				disabled: isProcessing,
 			},
 			{
@@ -1012,14 +1015,14 @@ const ConversationIdPage = ({
 			);
 		}
 
-		if (isRecording) {
-			return (
-				<span className="relative flex h-4 w-4">
-					<span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#FF0066] opacity-75"></span>
-					<span className="relative inline-flex rounded-full h-4 w-4 bg-[#FF0066]"></span>
-				</span>
-			);
-		}
+		// if (isRecording) {
+		// 	return (
+		// 		<span className="relative flex h-4 w-4">
+		// 			<span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#FF0066] opacity-75"></span>
+		// 			<span className="relative inline-flex rounded-full h-4 w-4 bg-[#FF0066]"></span>
+		// 		</span>
+		// 	);
+		// }
 
 		return <span />;
 	}, [isPlaying, isRecording]);
@@ -1154,6 +1157,21 @@ const ConversationIdPage = ({
 						</div>
 					</div>
 				</div>
+
+				<span className="relative flex h-4 w-4">
+					<span
+						className={cn(
+							"animate-ping absolute inline-flex h-full w-full rounded-full bg-[#FF0066] opacity-75",
+							!isRecording && "hidden"
+						)}
+					></span>
+					<span
+						className={cn(
+							"relative inline-flex rounded-full h-4 w-4 bg-[#FF0066]",
+							!isRecording && "hidden"
+						)}
+					></span>
+				</span>
 				<div className="relative w-full px-4">
 					<div className="h-14 z-10 text-center">{instructionContent}</div>
 					{/* <div className="h-14 ">{instructionContent}</div> */}
