@@ -400,6 +400,9 @@ const ConversationIdPage = ({
 	const onRecordingComplete = useCallback(
 		async (audioBlob: Blob) => {
 			try {
+				// wait 5 seconds and return
+				await new Promise((resolve) => setTimeout(resolve, 5000));
+
 				// sanitize audio blob - it cant be larger than 9.216 MB
 				if (audioBlob.size > 9216000) {
 					throw new Error("Audio is too long");
@@ -648,14 +651,13 @@ const ConversationIdPage = ({
 	]);
 
 	const panelItems: PanelItem[] = useMemo(() => {
-		if (!displayedMessage) return [];
 		return [
 			{
 				label: "Previous",
 				// icon: ChevronLeftIcon,
 				icon: () => <span>Prev</span>,
 				onClick: () => setDisplayedMessageInd(displayedMessageInd - 1),
-				disabled: displayedMessageInd === 0 || isRecording,
+				disabled: !displayedMessage || displayedMessageInd === 0 || isRecording,
 			},
 			...(isIdle || isRecording
 				? [
@@ -663,7 +665,7 @@ const ConversationIdPage = ({
 							label: "Replay",
 							icon: PlayIcon,
 							onClick: replayBtnHandler,
-							disabled: !isIdle,
+							disabled: !displayedMessage || !isIdle,
 						},
 				  ]
 				: []),
@@ -689,7 +691,7 @@ const ConversationIdPage = ({
 						},
 				  ]
 				: []),
-			...(displayedMessage.role === "user"
+			...(displayedMessage && displayedMessage.role === "user"
 				? [
 						{
 							label: "Rephrase",
@@ -697,7 +699,7 @@ const ConversationIdPage = ({
 							icon: SparklesIcon,
 							new: true,
 							onClick: () => redoCompletionHandler({ mode: "rephrase" }),
-							disabled: !isIdle,
+							disabled: !displayedMessage || !isIdle,
 						},
 				  ]
 				: [
@@ -705,13 +707,17 @@ const ConversationIdPage = ({
 							label: "Regenerate",
 							icon: ArrowPathIcon,
 							onClick: () => redoCompletionHandler({ mode: "regenerate" }),
-							disabled: !isIdle,
+							disabled: !displayedMessage || !isIdle,
 						},
 				  ]),
 			{
 				label: "Record",
-				icon: isRecording ? MicrophoneIconSolid : MicrophoneIconOutline,
 				onClick: toggleRecordingHandler,
+				icon: isRecording ? MicrophoneIconSolid : MicrophoneIconOutline,
+				// toggle: true,
+				// pressed: isRecording,
+				// onPressed: toggleRecordingHandler,
+				// icon: MicrophoneIconOutline,
 				disabled: isProcessing,
 			},
 			{
@@ -720,20 +726,23 @@ const ConversationIdPage = ({
 				pressed: dictionaryMode,
 				onPressed: dictionaryBtnHandler,
 				icon: BookOpenIcon,
-				disabled: !isIdle,
+				disabled: !displayedMessage || !isIdle,
 			},
 			{
 				label: "Translate",
 				icon: TranslateIcon,
 				onClick: translateBtnHandler,
-				disabled: !isIdle,
+				disabled: !displayedMessage || !isIdle,
 			},
 			{
 				label: "Next",
 				// icon: ChevronRightIcon,
 				icon: () => <span>Next</span>,
 				onClick: () => setDisplayedMessageInd(displayedMessageInd + 1),
-				disabled: displayedMessageInd === messages.length - 1 || isRecording,
+				disabled:
+					!displayedMessage ||
+					displayedMessageInd === messages.length - 1 ||
+					isRecording,
 			},
 		];
 	}, [
@@ -769,7 +778,7 @@ const ConversationIdPage = ({
 													size="default"
 													className={
 														cn(
-															"h-14 w-14 text-slate-500 dark:text-slate-400 hover:bg-slate-100",
+															"sm:h-14 sm:w-14 text-slate-500 dark:text-slate-400 hover:bg-slate-100",
 															"data-[state=on]:bg-primary data-[state=on]:text-white hover:data-[state=on]:bg-primary/80 px-2 "
 														)
 														// "relative text-slate-500 dark:text-slate-400 hover:bg-slate-100",
@@ -788,7 +797,7 @@ const ConversationIdPage = ({
 												<Button
 													size="icon"
 													variant="ghost"
-													className="relative h-14 w-14 text-slate-500 dark:text-slate-400 hover:bg-slate-100"
+													className="relative sm:h-14 sm:w-14 text-slate-500 dark:text-slate-400 hover:bg-slate-100"
 													onClick={item.onClick}
 													disabled={item.disabled}
 												>
