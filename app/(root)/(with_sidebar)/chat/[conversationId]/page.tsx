@@ -410,8 +410,8 @@ const ConversationIdPage = ({
 
 	const onRecordingComplete = useCallback(
 		async (audioBlob: Blob) => {
-			await new Promise((resolve) => setTimeout(resolve, 3000));
-			throw new Error("Not implemented");
+			// await new Promise((resolve) => setTimeout(resolve, 3000));
+			// throw new Error("Not implemented");
 			try {
 				// sanitize audio blob - it cant be larger than 9.216 MB
 				if (audioBlob.size > 9216000) {
