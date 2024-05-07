@@ -38,9 +38,9 @@ const MessageCard = ({
 
 	const topBarContent = (
 		<div className={cn("flex justify-between")}>
-			<div className="block sm:hidden" />
-			<div className="hidden sm:block">{menuContent ?? null}</div>
-			{/* {menuContent ?? null} */}
+			{/* <div className="block sm:hidden" /> */}
+			{/* <div className="hidden sm:block">{menuContent ?? null}</div> */}
+			{menuContent ?? null}
 
 			<div className="flex items-center gap-2">
 				{name && (

@@ -952,7 +952,6 @@ const ConversationIdPage = ({
 						cssOverride={{
 							display: "block",
 							margin: "0",
-							width: 250,
 						}}
 						speedMultiplier={1.5}
 						aria-label="Loading Spinner"
