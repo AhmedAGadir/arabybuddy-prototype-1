@@ -61,6 +61,16 @@ import {
 	TooltipProvider,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+	Drawer,
+	DrawerClose,
+	DrawerContent,
+	DrawerDescription,
+	DrawerFooter,
+	DrawerHeader,
+	DrawerTitle,
+	DrawerTrigger,
+} from "@/components/ui/drawer";
 
 import _, { set } from "lodash";
 import { Transition } from "@headlessui/react";
@@ -78,6 +88,8 @@ import {
 } from "@heroicons/react/20/solid";
 import { Card, CardContent } from "@/components/ui/card";
 import { text } from "stream/consumers";
+import { Minus, Plus } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 const status = {
 	IDLE: "IDLE",
@@ -109,6 +121,32 @@ const NewBadge = ({ className }: { className?: string }) => (
 		New
 	</span>
 );
+
+type IconType = React.FC<any> | (() => JSX.Element);
+
+interface BasePanelItem {
+	label: string;
+	disabled: boolean;
+	icon: IconType;
+	iconClasses?: string;
+	new?: boolean;
+}
+
+interface ButtonPanelItem extends BasePanelItem {
+	onClick: () => void;
+	toggle?: never;
+	pressed?: never;
+	onPressed?: never;
+}
+
+interface TogglePanelItem extends BasePanelItem {
+	toggle: boolean;
+	pressed: boolean;
+	onPressed: (pressed: boolean) => void;
+	onClick?: never;
+}
+
+type PanelItem = ButtonPanelItem | TogglePanelItem;
 
 // try to keep business logic out of this page as its a presentation/view component
 const ConversationIdPage = ({
@@ -210,6 +248,17 @@ const ConversationIdPage = ({
 	const [displayedMessageInd, setDisplayedMessageInd] = useState<number>(0);
 
 	useEffect(() => {
+		logger.log("active task", activeTask);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [activeTask]);
+
+	// a hack to stop changing the displayed message when the user is updating a message
+	const [updatingMessage, setUpdatingMessage] = useState(false);
+	const updatingMessageRef = useRef<boolean>();
+	updatingMessageRef.current = updatingMessage;
+
+	useEffect(() => {
+		if (updatingMessageRef.current) return;
 		setDisplayedMessageInd(messages.length - 1);
 	}, [messages]);
 
@@ -466,8 +515,6 @@ const ConversationIdPage = ({
 		}
 	}, [completeTyping, isPlaying, stopPlaying]);
 
-	const translateBtnHandler = useCallback(async () => {}, []);
-
 	const redoCompletionHandler = useCallback(
 		async (options: { mode: "regenerate" | "rephrase" }) => {
 			try {
@@ -498,11 +545,13 @@ const ConversationIdPage = ({
 				setProgressBarValue(75);
 
 				// delete all messages after displayedMessage
-				await deleteMessages(messageIdsAfterDisplayedMessage);
+				// await deleteMessages(messageIdsAfterDisplayedMessage);
 
 				const { base64Audio } = await handleTextToSpeech(
 					completionMessage.content
 				);
+
+				setUpdatingMessage(true);
 
 				updateMessage({
 					_id: displayedMessage._id,
@@ -512,6 +561,8 @@ const ConversationIdPage = ({
 				});
 				await handlePlayAudio(base64Audio);
 
+				setUpdatingMessage(false);
+
 				updateConversation({
 					_id: conversationId,
 					lastMessage: completionMessage.content,
@@ -519,17 +570,16 @@ const ConversationIdPage = ({
 				setProgressBarValue(0);
 			} catch (error) {
 				logger.error("redoCompletion", error);
-				const errorMessage = {
+				const errorMessages = {
 					regenerate: "There was a problem regenerating this message",
 					rephrase: "There was a problem rephrasing this message",
 				};
 
-				handleError(error, errorMessage[options.mode]);
+				handleError(error, errorMessages[options.mode]);
 			}
 		},
 		[
 			conversationId,
-			deleteMessages,
 			displayedMessage,
 			displayedMessageInd,
 			handleError,
@@ -543,14 +593,20 @@ const ConversationIdPage = ({
 		]
 	);
 
-	const panelItems: {
-		label: string;
-		onClick: () => void;
-		disabled: boolean;
-		icon: React.FC<any> | (() => JSX.Element);
-		iconClasses?: string;
-		new?: boolean;
-	}[] = useMemo(() => {
+	const [drawerOpen, setDrawerOpen] = useState(false);
+
+	const [dictionaryMode, setDictionaryMode] = useState(false);
+
+	const dictionaryBtnHandler = useCallback(() => {
+		console.log("dictionaryBtnHandler");
+		setDictionaryMode((prev) => !prev);
+	}, []);
+
+	const translateBtnHandler = useCallback(async () => {
+		setDrawerOpen((prev) => !prev);
+	}, []);
+
+	const panelItems: PanelItem[] = useMemo(() => {
 		if (!displayedMessage) return [];
 		return [
 			{
@@ -613,8 +669,10 @@ const ConversationIdPage = ({
 				  ]),
 			{
 				label: "Dictionary",
+				toggle: true,
+				pressed: dictionaryMode,
+				onPressed: dictionaryBtnHandler,
 				icon: BookOpenIcon,
-				onClick: () => {},
 				disabled: !isIdle,
 			},
 			{
@@ -632,18 +690,20 @@ const ConversationIdPage = ({
 			},
 		];
 	}, [
-		abortProcessingBtnHandler,
 		displayedMessage,
 		displayedMessageInd,
-		translateBtnHandler,
-		isIdle,
-		isPlaying,
-		isProcessing,
 		isRecording,
+		isIdle,
+		replayBtnHandler,
+		isProcessing,
+		abortProcessingBtnHandler,
+		isPlaying,
+		stopPlayingHandler,
+		dictionaryMode,
+		dictionaryBtnHandler,
+		translateBtnHandler,
 		messages.length,
 		redoCompletionHandler,
-		replayBtnHandler,
-		stopPlayingHandler,
 	]);
 
 	const panelItemsContent = (
@@ -655,15 +715,41 @@ const ConversationIdPage = ({
 							<TooltipProvider key={item.label} delayDuration={0}>
 								<Tooltip>
 									<TooltipTrigger asChild>
-										<Button
-											size="icon"
-											variant="ghost"
-											className="group relative text-slate-500 dark:text-slate-400 hover:bg-slate-100"
-											onClick={item.onClick}
-											disabled={item.disabled}
-										>
-											<item.icon className={cn("w-6 h-6", item.iconClasses)} />
-										</Button>
+										<>
+											{item.toggle && (
+												<Toggle
+													size="default"
+													className={
+														cn(
+															" text-slate-500 dark:text-slate-400 hover:bg-slate-100",
+															"data-[state=on]:bg-primary data-[state=on]:text-white hover:data-[state=on]:bg-primary/80 px-2 "
+														)
+														// "relative text-slate-500 dark:text-slate-400 hover:bg-slate-100",
+														// item.pressed && "bg-slate-400"
+													}
+													pressed={item.pressed}
+													onPressedChange={item.onPressed}
+													disabled={item.disabled}
+												>
+													<item.icon
+														className={cn("w-6 h-6", item.iconClasses)}
+													/>
+												</Toggle>
+											)}
+											{!item.toggle && (
+												<Button
+													size="icon"
+													variant="ghost"
+													className="relative text-slate-500 dark:text-slate-400 hover:bg-slate-100"
+													onClick={item.onClick}
+													disabled={item.disabled}
+												>
+													<item.icon
+														className={cn("w-6 h-6", item.iconClasses)}
+													/>
+												</Button>
+											)}
+										</>
 									</TooltipTrigger>
 									<TooltipContent side="bottom" align="start">
 										<span>{item.label}</span>
@@ -677,6 +763,32 @@ const ConversationIdPage = ({
 			</CardContent>
 		</Card>
 	);
+
+	const displayedMessageContent =
+		dictionaryMode && STATUS === status.IDLE ? (
+			<div className="flex flex-wrap gap-2">
+				{
+					// filter out anything that is not a word, remember were not only using english
+					_.words(
+						displayedMessage?.content.replace(
+							/[!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~?]/g,
+							""
+						)
+					).map((word, i) => (
+						<Badge
+							key={`${word}_${i}`}
+							variant="secondary"
+							className="text-lg cursor-pointer hover:bg-primary hover:text-white"
+							onClick={() => setDrawerOpen(true)}
+						>
+							{word}
+						</Badge>
+					))
+				}
+			</div>
+		) : (
+			displayedMessage?.content
+		);
 
 	const ellipsesButton = (
 		<Button
@@ -866,7 +978,7 @@ const ConversationIdPage = ({
 						speedMultiplier={0.75}
 					/>
 				) : (
-					<span>{displayedMessage?.content}</span>
+					<div>{displayedMessageContent}</div>
 				)
 			}
 		/>
@@ -911,9 +1023,64 @@ const ConversationIdPage = ({
 		stopRecording,
 	]);
 
+	const drawerContent = (
+		<Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
+			{/* <DrawerTrigger asChild>
+				<Button variant="outline">Open Drawer</Button>
+			</DrawerTrigger> */}
+			<DrawerContent>
+				<div className="mx-auto w-full max-w-sm">
+					<DrawerHeader>
+						<DrawerTitle>Move Goal</DrawerTitle>
+						<DrawerDescription>Set your daily activity goal.</DrawerDescription>
+					</DrawerHeader>
+					<div className="p-4 pb-0">
+						<div className="flex items-center justify-center space-x-2">
+							<Button
+								variant="outline"
+								size="icon"
+								className="h-8 w-8 shrink-0 rounded-full"
+								onClick={() => {}}
+								// disabled={goal <= 200}
+							>
+								<Minus className="h-4 w-4" />
+								<span className="sr-only">Decrease</span>
+							</Button>
+							<div className="flex-1 text-center">
+								<div className="text-7xl font-bold tracking-tighter">goal</div>
+								<div className="text-[0.70rem] uppercase text-muted-foreground">
+									Calories/day
+								</div>
+							</div>
+							<Button
+								variant="outline"
+								size="icon"
+								className="h-8 w-8 shrink-0 rounded-full"
+								onClick={() => {}}
+								// disabled={goal >= 400}
+							>
+								<Plus className="h-4 w-4" />
+								<span className="sr-only">Increase</span>
+							</Button>
+						</div>
+						<div className="mt-3 h-[120px]">
+							<div> information</div>
+						</div>
+					</div>
+					<DrawerFooter>
+						<Button>Submit</Button>
+						<DrawerClose asChild>
+							<Button variant="outline">Cancel</Button>
+						</DrawerClose>
+					</DrawerFooter>
+				</div>
+			</DrawerContent>
+		</Drawer>
+	);
+
 	if (isPending) {
 		return (
-			<div className="flex-1 flex items-center justify-center background-texture">
+			<div className="flex-1 flex items-center justify-center bg-g">
 				<SkewLoader
 					color="black"
 					loading
@@ -937,6 +1104,7 @@ const ConversationIdPage = ({
 			{/* wrapper */}
 			<div className="h-full flex flex-col items-center justify-between mx-auto gap-4 py-4 md:pt-6">
 				<div className="hidden md:block">{panelItemsContent}</div>
+				{drawerContent}
 				<div
 					className={cn(
 						"flex-1 min-h-0 basis-0 flex flex-col justify-center items-center px-4 w-full"

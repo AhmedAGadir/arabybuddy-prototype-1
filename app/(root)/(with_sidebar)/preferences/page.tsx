@@ -1057,6 +1057,14 @@ const PreferencesPage = () => {
 																<div className="flex flex-wrap gap-2">
 																	{interests.map((interest) => (
 																		<Badge
+																			className={cn(
+																				"cursor-pointer",
+																				(field.value ?? []).includes(
+																					interest.value
+																				)
+																					? "bg-indigo-600 hover:bg-indigo-400"
+																					: "hover:bg-indigo-400 hover:text-primary-foreground"
+																			)}
 																			key={interest.value}
 																			variant={
 																				(field.value ?? []).includes(
@@ -1114,6 +1122,12 @@ const PreferencesPage = () => {
 												<div className="mt-2 flex flex-wrap gap-2">
 													{PERSONALITY_TRAITS.map((trait) => (
 														<Badge
+															className={cn(
+																"cursor-pointer",
+																(field.value ?? []).includes(trait.value)
+																	? "bg-indigo-600 hover:bg-indigo-400"
+																	: "hover:bg-indigo-400 hover:text-primary-foreground"
+															)}
 															key={trait.value}
 															variant={
 																(field.value ?? []).includes(trait.value)
