@@ -199,6 +199,7 @@ const ConversationIdPage = ({
 	// const pathname = usePathname();
 	// const searchParams = useSearchParams();
 
+	// TODO: delete empty conversations when unmounting
 	// useEffect(() => {
 	// 	const url = `${pathname}?${searchParams}`;
 	// 	logger.log("url", url);
