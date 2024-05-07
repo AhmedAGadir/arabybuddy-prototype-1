@@ -667,7 +667,11 @@ const ConversationIdPage = ({
 				// icon: ChevronLeftIcon,
 				icon: () => <span>Prev</span>,
 				onClick: () => setDisplayedMessageInd(displayedMessageInd - 1),
-				disabled: !displayedMessage || displayedMessageInd === 0 || isRecording,
+				disabled:
+					!displayedMessage ||
+					displayedMessageInd === 0 ||
+					isRecording ||
+					isPlaying,
 			},
 			...(isIdle || isRecording
 				? [
@@ -684,8 +688,11 @@ const ConversationIdPage = ({
 						{
 							label: "Cancel",
 							icon: XCircleIcon,
-							iconClasses: "text-destructive w-8 h-8",
-							onClick: abortProcessingBtnHandler,
+							iconClasses: "text-white w-8 h-8",
+							// onClick: abortProcessingBtnHandler,
+							toggle: true,
+							pressed: true,
+							onPressed: abortProcessingBtnHandler,
 							disabled: false,
 						},
 				  ]
@@ -722,7 +729,7 @@ const ConversationIdPage = ({
 				  ]),
 			{
 				label: "Record",
-				onClick: toggleRecordingHandler,
+				// onClick: toggleRecordingHandler,
 				// icon: isRecording ? MicrophoneIconSolid : MicrophoneIconOutline,
 				// iconClasses: isRecording ? "text-araby-blue" : "",
 				toggle: true,
@@ -753,7 +760,8 @@ const ConversationIdPage = ({
 				disabled:
 					!displayedMessage ||
 					displayedMessageInd === messages.length - 1 ||
-					isRecording,
+					isRecording ||
+					isPlaying,
 			},
 		];
 	}, [
@@ -790,7 +798,8 @@ const ConversationIdPage = ({
 													className={
 														cn(
 															"h-11 w-11 sm:h-14 sm:w-14 text-slate-500 dark:text-slate-400 hover:bg-slate-100",
-															"data-[state=on]:bg-primary data-[state=on]:text-white hover:data-[state=on]:bg-primary/80 px-2 "
+															"data-[state=on]:bg-primary data-[state=on]:text-white hover:data-[state=on]:bg-primary/80 px-2"
+															// "data-[state=on]:bg-slate-500 data-[state=on]:text-white hover:data-[state=on]:bg-slate-400 px-2 "
 														)
 														// "relative text-slate-500 dark:text-slate-400 hover:bg-slate-100",
 														// item.pressed && "bg-slate-400"
@@ -893,7 +902,7 @@ const ConversationIdPage = ({
 			PLAYING: [""],
 			PROCESSING: [
 				...(isDoingSpeechToText ? ["Transcribing..."] : []),
-				...(isDoingAssistant ? ["Thinking of a response..."] : []),
+				...(isDoingAssistant ? ["Generating a response..."] : []),
 				...(isDoingTextToSpeech ? ["Preparing audio..."] : []),
 				...(isDoingTextToSpeechReplay ? ["Regenerating audio..."] : []),
 				...(isDoingAssistantRegenerate ? ["Regenerating response..."] : []),
@@ -1025,7 +1034,7 @@ const ConversationIdPage = ({
 		// }
 
 		return <span />;
-	}, [isPlaying, isRecording]);
+	}, [isPlaying]);
 
 	const messageCardContent = !isChatEmpty && (
 		<MessageCard
