@@ -327,7 +327,7 @@ const ConversationIdPage = ({
 				toast({
 					title: "Message cancelled",
 					description: "The request was aborted.",
-					className: "warning-toast",
+					className: "info-toast",
 					duration: 10000,
 				});
 			} else {
