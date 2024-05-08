@@ -666,8 +666,11 @@ const ConversationIdPage = ({
 		setDictionaryMode((prev) => !prev);
 	}, []);
 
+	const [showTranslation, setShowTranslation] = useState(true);
+
 	const translateBtnHandler = useCallback(async () => {
 		try {
+			setShowTranslation(true);
 			setProgressBarValue(25);
 
 			const messageHistory = messages
@@ -854,12 +857,25 @@ const ConversationIdPage = ({
 				icon: BookOpenIcon,
 				disabled: !displayedMessage || !isIdle,
 			},
-			{
-				label: "Translate",
-				icon: TranslateIcon,
-				onClick: translateBtnHandler,
-				disabled: !displayedMessage || !isIdle,
-			},
+			...(displayedMessage && displayedMessage.translation
+				? [
+						{
+							label: "Translate",
+							icon: TranslateIcon,
+							toggle: true,
+							pressed: showTranslation,
+							onPressed: () => setShowTranslation((prev) => !prev),
+							disabled: !isIdle,
+						},
+				  ]
+				: [
+						{
+							label: "Translate",
+							icon: TranslateIcon,
+							onClick: translateBtnHandler,
+							disabled: !displayedMessage || !isIdle,
+						},
+				  ]),
 			{
 				label: "Next",
 				// icon: ChevronRightIcon,
@@ -949,25 +965,34 @@ const ConversationIdPage = ({
 		</Card>
 	);
 
-	const displayedMessageContent =
-		dictionaryMode && STATUS === status.IDLE ? (
-			<div className="flex flex-wrap gap-2">
-				{_.words(
-					displayedMessage?.content.replace(nonWordCharactersRegExp, "")
-				).map((word, i) => (
-					<Badge
-						key={`${word}_${i}`}
-						variant="secondary"
-						className="text-lg cursor-pointer hover:bg-primary hover:text-white"
-						onClick={() => setDrawerOpen(true)}
-					>
-						{word}
-					</Badge>
-				))}
-			</div>
-		) : (
-			displayedMessage?.content
-		);
+	const displayedMessageContent = useMemo(() => {
+		if (!displayedMessage) return null;
+
+		if (dictionaryMode && STATUS === status.IDLE) {
+			return (
+				<div className="flex flex-wrap gap-2">
+					{_.words(
+						displayedMessage?.content.replace(nonWordCharactersRegExp, "")
+					).map((word, i) => (
+						<Badge
+							key={`${word}_${i}`}
+							variant="secondary"
+							className="text-lg cursor-pointer hover:bg-primary hover:text-white"
+							onClick={() => setDrawerOpen(true)}
+						>
+							{word}
+						</Badge>
+					))}
+				</div>
+			);
+		}
+
+		if (showTranslation) {
+			return displayedMessage?.translation;
+		}
+
+		return displayedMessage?.content;
+	}, [STATUS, dictionaryMode, displayedMessage, showTranslation]);
 
 	const ellipsesButton = (
 		<Button
