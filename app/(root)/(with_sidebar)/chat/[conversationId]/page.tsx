@@ -666,7 +666,7 @@ const ConversationIdPage = ({
 		setDictionaryMode((prev) => !prev);
 	}, []);
 
-	const [showTranslation, setShowTranslation] = useState(true);
+	const [showTranslation, setShowTranslation] = useState(false);
 
 	const translateBtnHandler = useCallback(async () => {
 		try {
@@ -892,15 +892,16 @@ const ConversationIdPage = ({
 		displayedMessage,
 		displayedMessageInd,
 		isRecording,
+		isPlaying,
 		isIdle,
 		replayBtnHandler,
 		isProcessing,
 		abortProcessingBtnHandler,
-		isPlaying,
 		stopPlayingHandler,
 		toggleRecordingHandler,
 		dictionaryMode,
 		dictionaryBtnHandler,
+		showTranslation,
 		translateBtnHandler,
 		messages.length,
 		redoCompletionHandler,
@@ -987,7 +988,7 @@ const ConversationIdPage = ({
 			);
 		}
 
-		if (showTranslation) {
+		if (showTranslation && displayedMessage?.translation) {
 			return displayedMessage?.translation;
 		}
 
