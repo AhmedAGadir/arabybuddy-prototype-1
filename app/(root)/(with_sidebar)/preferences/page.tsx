@@ -27,7 +27,7 @@ import {
 } from "@/components/ui/select";
 
 import { z } from "zod";
-import { ARABIC_DIALECTS } from "@/types/languagesTypes";
+import { ARABIC_DIALECTS } from "@/types/types";
 import {
 	RadioGroup as RadioGroupRadix,
 	RadioGroupItem as RadioGroupItemRadix,

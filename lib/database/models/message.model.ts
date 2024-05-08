@@ -6,6 +6,7 @@ export interface IMessage extends Document {
 	conversationId: string;
 	role: "user" | "assistant";
 	content: string;
+	translation?: string;
 	createdAt: string;
 	updatedAt: string;
 }
@@ -30,9 +31,13 @@ const MessageSchema = new Schema(
 			type: String,
 			required: true,
 		},
+		translation: {
+			type: String,
+		},
 	},
 	{
 		timestamps: true,
+		strict: false,
 	}
 );
 

@@ -9,3 +9,5 @@ export const MIME_TYPES = [
 	"audio/mpga",
 	"audio/m4a",
 ];
+
+export const nonWordCharactersRegExp = /[!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~?]/g;

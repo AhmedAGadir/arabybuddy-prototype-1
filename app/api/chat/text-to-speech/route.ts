@@ -1,7 +1,7 @@
 import { ElevenLabsClient } from "elevenlabs";
 import { streamToBase64 } from "@/lib/utils";
 import { IPreferences } from "@/lib/database/models/preferences.model";
-import { ArabicDialect } from "@/types/languagesTypes";
+import { ArabicDialect } from "@/types/types";
 import { auth } from "@clerk/nextjs/server";
 
 const elevenlabs = new ElevenLabsClient({

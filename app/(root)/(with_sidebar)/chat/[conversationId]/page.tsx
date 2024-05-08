@@ -94,6 +94,7 @@ import { Minus, Plus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useCyclingText } from "@/hooks/useCyclingText";
+import { nonWordCharactersRegExp } from "@/lib/constants";
 
 const status = {
 	IDLE: "IDLE",
@@ -109,6 +110,7 @@ const task = {
 	ASSISTANT: "ASSISTANT",
 	ASSISTANT_REGENERATE: "ASSISTANT_REGENERATE",
 	ASSISTANT_REPHRASE: "ASSISTANT_REPHRASE",
+	ASSISTANT_TRANSLATE: "ASSISTANT_TRANSLATE",
 	TEXT_TO_SPEECH: "TEXT_TO_SPEECH",
 	TEXT_TO_SPEECH_REPLAY: "TEXT_TO_SPEECH_REPLAY",
 } as const;
@@ -292,8 +294,56 @@ const ConversationIdPage = ({
 	const isDoingAssistant = activeTask === task.ASSISTANT;
 	const isDoingAssistantRegenerate = activeTask === task.ASSISTANT_REGENERATE;
 	const isDoingAssistantRephrase = activeTask === task.ASSISTANT_REPHRASE;
+	const isDoingAssistantTranslate = activeTask === task.ASSISTANT_TRANSLATE;
 	const isDoingTextToSpeech = activeTask === task.TEXT_TO_SPEECH;
 	const isDoingTextToSpeechReplay = activeTask === task.TEXT_TO_SPEECH_REPLAY;
+
+	const instructions: {
+		[key in Status]: string[];
+	} = useMemo(
+		() => ({
+			// idle: "Press ⬇️ the blue blob to start recording",
+			IDLE: [
+				...(messages.length === 0 ? ["Welcome to ArabyBuddy!"] : []),
+				"Click the microphone to start recording",
+				"Ask a question or say something in Arabic...",
+				// "هيا بنا",
+			],
+			RECORDING: [
+				"Listening...",
+				"Click again to stop recording",
+				"Say something in Arabic...",
+			],
+			PLAYING: [""],
+			PROCESSING: [
+				...(isDoingSpeechToText ? ["Transcribing..."] : []),
+				...(isDoingAssistant ? ["Generating a response..."] : []),
+				...(isDoingTextToSpeech ? ["Preparing audio..."] : []),
+				...(isDoingTextToSpeechReplay ? ["Regenerating audio..."] : []),
+				...(isDoingAssistantRegenerate ? ["Regenerating response..."] : []),
+				...(isDoingAssistantRephrase
+					? ["Rephrasing your message to make it sound more natural..."]
+					: []),
+				...(isDoingAssistantTranslate ? ["Translating your message..."] : []),
+			],
+		}),
+		[
+			isDoingAssistant,
+			isDoingAssistantRegenerate,
+			isDoingAssistantRephrase,
+			isDoingSpeechToText,
+			isDoingTextToSpeech,
+			isDoingTextToSpeechReplay,
+			isDoingAssistantTranslate,
+			messages.length,
+		]
+	);
+
+	const {
+		text: instruction,
+		showText: showInstruction,
+		hideText: hideInstruction,
+	} = useCyclingText(instructions[STATUS]);
 
 	const abortProcessingBtnHandler = useCallback(() => {
 		if (!isProcessing) return;
@@ -362,15 +412,22 @@ const ConversationIdPage = ({
 	const handleMakeChatCompletion = useCallback(
 		async (
 			messageHistory: Pick<IMessage, "role" | "content">[],
-			options?: { mode: "regenerate" | "rephrase" }
+			options?: { mode: "regenerate" | "rephrase" | "translate" }
 		) => {
-			if (options?.mode === "regenerate") {
-				setActiveTask(task.ASSISTANT_REGENERATE);
-			} else if (options?.mode === "rephrase") {
-				setActiveTask(task.ASSISTANT_REPHRASE);
-			} else {
-				setActiveTask(task.ASSISTANT);
+			switch (options?.mode) {
+				case "regenerate":
+					setActiveTask(task.ASSISTANT_REGENERATE);
+					break;
+				case "rephrase":
+					setActiveTask(task.ASSISTANT_REPHRASE);
+					break;
+				case "translate":
+					setActiveTask(task.ASSISTANT_TRANSLATE);
+					break;
+				default:
+					setActiveTask(task.ASSISTANT);
 			}
+
 			const { messages: updatedMessages } = await makeChatCompletion(
 				messageHistory,
 				options
@@ -543,10 +600,6 @@ const ConversationIdPage = ({
 					}))
 					.slice(0, displayedMessageInd);
 
-				const messageIdsAfterDisplayedMessage = messages
-					.slice(displayedMessageInd + 1)
-					.map(({ _id }) => _id);
-
 				const { completionMessage } = await handleMakeChatCompletion(
 					[
 						...messageHistory,
@@ -560,9 +613,6 @@ const ConversationIdPage = ({
 
 				setProgressBarValue(75);
 
-				// delete all messages after displayedMessage
-				// await deleteMessages(messageIdsAfterDisplayedMessage);
-
 				const { base64Audio } = await handleTextToSpeech(
 					completionMessage.content
 				);
@@ -570,9 +620,7 @@ const ConversationIdPage = ({
 				setUpdatingMessage(true);
 
 				updateMessage({
-					_id: displayedMessage._id,
-					conversationId: conversationId,
-					clerkId: displayedMessage.clerkId,
+					...displayedMessage,
 					...completionMessage,
 				});
 				await handlePlayAudio(base64Audio);
@@ -619,8 +667,66 @@ const ConversationIdPage = ({
 	}, []);
 
 	const translateBtnHandler = useCallback(async () => {
-		setDrawerOpen((prev) => !prev);
-	}, []);
+		try {
+			setProgressBarValue(25);
+
+			const messageHistory = messages
+				.map(({ role, content }) => ({
+					role,
+					content,
+				}))
+				.slice(0, displayedMessageInd);
+
+			const { completionMessage } = await handleMakeChatCompletion(
+				[
+					...messageHistory,
+					{
+						role: displayedMessage.role,
+						content: displayedMessage.content,
+					},
+				],
+				{ mode: "translate" }
+			);
+
+			setProgressBarValue(75);
+
+			const { base64Audio } = await handleTextToSpeech(
+				completionMessage.content
+			);
+
+			setUpdatingMessage(true);
+
+			updateMessage({
+				...displayedMessage,
+				translation: completionMessage.content,
+			});
+			await handlePlayAudio(base64Audio);
+
+			setUpdatingMessage(false);
+
+			updateConversation({
+				_id: conversationId,
+				lastMessage: completionMessage.content,
+			});
+			setProgressBarValue(0);
+		} catch (error) {
+			logger.error("translateBtnHandler", error);
+
+			handleError(error, "There was a problem translating this message");
+		}
+	}, [
+		conversationId,
+		displayedMessage,
+		displayedMessageInd,
+		handleError,
+		handleMakeChatCompletion,
+		handlePlayAudio,
+		handleTextToSpeech,
+		logger,
+		messages,
+		updateConversation,
+		updateMessage,
+	]);
 
 	const toggleRecordingHandler = useCallback(async () => {
 		hideInstruction();
@@ -652,6 +758,7 @@ const ConversationIdPage = ({
 		}
 	}, [
 		audioElementInitialized,
+		hideInstruction,
 		initAudioElement,
 		isPlaying,
 		isRecording,
@@ -845,24 +952,18 @@ const ConversationIdPage = ({
 	const displayedMessageContent =
 		dictionaryMode && STATUS === status.IDLE ? (
 			<div className="flex flex-wrap gap-2">
-				{
-					// filter out anything that is not a word, remember were not only using english
-					_.words(
-						displayedMessage?.content.replace(
-							/[!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~?]/g,
-							""
-						)
-					).map((word, i) => (
-						<Badge
-							key={`${word}_${i}`}
-							variant="secondary"
-							className="text-lg cursor-pointer hover:bg-primary hover:text-white"
-							onClick={() => setDrawerOpen(true)}
-						>
-							{word}
-						</Badge>
-					))
-				}
+				{_.words(
+					displayedMessage?.content.replace(nonWordCharactersRegExp, "")
+				).map((word, i) => (
+					<Badge
+						key={`${word}_${i}`}
+						variant="secondary"
+						className="text-lg cursor-pointer hover:bg-primary hover:text-white"
+						onClick={() => setDrawerOpen(true)}
+					>
+						{word}
+					</Badge>
+				))}
 			</div>
 		) : (
 			displayedMessage?.content
@@ -880,51 +981,6 @@ const ConversationIdPage = ({
 			<EllipsisVerticalIcon className="text-slate-500 dark:text-slate-400 w-6 h-6" />
 		</Button>
 	);
-
-	const instructions: {
-		[key in Status]: string[];
-	} = useMemo(
-		() => ({
-			// idle: "Press ⬇️ the blue blob to start recording",
-			IDLE: [
-				...(messages.length === 0 ? ["Welcome to ArabyBuddy!"] : []),
-				"Click the microphone to start recording",
-				"Ask a question or say something in Arabic...",
-				// "هيا بنا",
-			],
-			RECORDING: [
-				"Listening...",
-				"Click again to stop recording",
-				"Say something in Arabic...",
-			],
-			PLAYING: [""],
-			PROCESSING: [
-				...(isDoingSpeechToText ? ["Transcribing..."] : []),
-				...(isDoingAssistant ? ["Generating a response..."] : []),
-				...(isDoingTextToSpeech ? ["Preparing audio..."] : []),
-				...(isDoingTextToSpeechReplay ? ["Regenerating audio..."] : []),
-				...(isDoingAssistantRegenerate ? ["Regenerating response..."] : []),
-				...(isDoingAssistantRephrase
-					? ["Rephrasing your message to make it sound more natural..."]
-					: []),
-			],
-		}),
-		[
-			isDoingAssistant,
-			isDoingAssistantRegenerate,
-			isDoingAssistantRephrase,
-			isDoingSpeechToText,
-			isDoingTextToSpeech,
-			isDoingTextToSpeechReplay,
-			messages.length,
-		]
-	);
-
-	const {
-		text: instruction,
-		showText: showInstruction,
-		hideText: hideInstruction,
-	} = useCyclingText(instructions[STATUS]);
 
 	const instructionContent = (
 		<Transition
@@ -1073,7 +1129,11 @@ const ConversationIdPage = ({
 	);
 
 	const drawerContent = (
-		<Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
+		<Drawer
+			open={drawerOpen}
+			// open={true}
+			onOpenChange={setDrawerOpen}
+		>
 			{/* <DrawerTrigger asChild>
 				<Button variant="outline">Open Drawer</Button>
 			</DrawerTrigger> */}
@@ -1154,30 +1214,25 @@ const ConversationIdPage = ({
 
 	return (
 		<div className={cn("w-full background-texture")}>
-			<div className="w-screen absolute top-0 left-0 z-30">
+			<div className="absolute top-0 left-0 z-30 w-screen">
 				{progressBarContent}
 			</div>
 			{/* wrapper */}
-			<div className="h-full flex flex-col items-center justify-between mx-auto gap-4 py-4 md:pt-6 md:pb-14">
+			<div className="h-full flex flex-col items-center justify-between mx-auto gap-4 px-4 py-4 md:pt-6 md:pb-14">
 				<div className="hidden md:block">{panelItemsContent}</div>
-				{drawerContent}
 				{/* chat bubble and pagination wrapper */}
-				<div
-					className={cn(
-						"flex-1 min-h-0 basis-0 flex flex-col justify-center items-center px-4 w-full h-full"
-						// "overflow-y-hidden"
-					)}
-				>
-					<div className={cn("min-h-0 w-full max-w-2xl mx-auto")}>
+				<div className="flex-1 min-h-0 basis-0 flex flex-col justify-center items-center w-full h-full max-w-2xl">
+					{/* message card container */}
+					<div className={cn("min-h-0 w-full max-w-2xl ")}>
 						{messageCardContent}
 					</div>
 				</div>
-
 				<div className="relative flex h-4 w-4 my-2">{recordingBlob}</div>
-				<div className="h-12 w-full px-4 text-center">{instructionContent}</div>
-				<div className="md:hidden">{panelItemsContent}</div>
-				<SupportCard className="absolute bottom-0 right-0" />
+				<div className="h-12 w-full text-center">{instructionContent}</div>
+				<div className="md:hidden mb-8">{panelItemsContent}</div>
 			</div>
+			{drawerContent}
+			<SupportCard className="absolute bottom-0 right-0" />
 		</div>
 	);
 };

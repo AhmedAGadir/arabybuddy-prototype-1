@@ -19,7 +19,7 @@ const useChatService = () => {
 	const makeChatCompletion = useCallback(
 		async (
 			messageHistory: Pick<IMessage, "role" | "content">[],
-			options: { mode: "regenerate" | "rephrase" } | undefined
+			options: { mode: "regenerate" | "rephrase" | "translate" } | undefined
 		) => {
 			try {
 				const params = {

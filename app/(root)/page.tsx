@@ -18,7 +18,7 @@ import {
 import Clerk from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
 import { useMediaQuery } from "@react-hooks-hub/use-media-query";
-import { ArabicDialect } from "@/types/languagesTypes";
+import { ArabicDialect } from "@/types/types";
 import Background from "@/components/shared/Background";
 
 export default function Home() {

@@ -34,10 +34,11 @@ export async function PUT(
 				clerkId: userId,
 				conversationId,
 			},
+			{ $set: message },
 			{
-				...message,
-			},
-			{ new: true }
+				new: true,
+				strict: false, // needed for when adding translations
+			}
 		);
 
 		if (!updatedMessage) {

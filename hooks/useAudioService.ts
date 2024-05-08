@@ -90,7 +90,7 @@ const useAudioService = () => {
 				throw error;
 			}
 		},
-		[logger, makeServerlessRequestTextToSpeech]
+		[logger, makeServerlessRequestTextToSpeech, preferences]
 	);
 
 	return {

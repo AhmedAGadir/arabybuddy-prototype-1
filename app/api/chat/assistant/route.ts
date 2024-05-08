@@ -14,7 +14,7 @@ const openai = new OpenAI({
 
 type RequestBody = {
 	messageHistory: Pick<IMessage, "role" | "content">[];
-	mode: "rephrase" | "regenerate" | undefined;
+	mode: "rephrase" | "regenerate" | "translate" | undefined;
 	firstName: string | undefined;
 	preferences: {
 		arabic_dialect: IPreferences["arabic_dialect"];
@@ -37,14 +37,31 @@ export async function POST(req: Request, res: Response) {
 		const { messageHistory, mode, firstName, preferences }: RequestBody =
 			await req.json();
 
+		const messageHistoryWithoutLatest = messageHistory.slice(
+			0,
+			messageHistory.length - 1
+		);
+
+		const latestMessage = messageHistory[messageHistory.length - 1];
+
+		if (mode === "translate") {
+			const { translatedMessage } = await openAITranslateMessage({
+				message: latestMessage,
+				preferences,
+			});
+
+			const messages = [
+				...messageHistoryWithoutLatest,
+				{
+					role: latestMessage.role,
+					content: translatedMessage ?? "",
+				},
+			];
+
+			return Response.json({ messages }, { status: 200 });
+		}
+
 		if (mode === "rephrase") {
-			const messageHistoryWithoutLatest = messageHistory.slice(
-				0,
-				messageHistory.length - 1
-			);
-
-			const latestMessage = messageHistory[messageHistory.length - 1];
-
 			const { rephrasedMessage } = await openAIRephraseMessage({
 				message: latestMessage,
 				preferences,
@@ -53,7 +70,7 @@ export async function POST(req: Request, res: Response) {
 			const messages = [
 				...messageHistoryWithoutLatest,
 				{
-					role: "user",
+					role: latestMessage.role,
 					content: rephrasedMessage ?? "",
 				},
 			];
@@ -73,6 +90,38 @@ export async function POST(req: Request, res: Response) {
 		return Response.error();
 	}
 }
+
+const openAITranslateMessage = async ({
+	message,
+	preferences,
+}: {
+	message: Pick<IMessage, "role" | "content">;
+	preferences: { arabic_dialect: IPreferences["arabic_dialect"] };
+}) => {
+	console.log("translating message...", message);
+
+	// TODO: dialect needs to be added on the message itself
+	const systemMessage = `You are 'ArabyBuddy', a friendly Arabic language tutor. our goal is to help the user learn Arabic and have engaging conversations. You should translate the last message from the ${preferences.arabic_dialect} dialect into english.`;
+
+	console.log("systemMessage", systemMessage);
+
+	const completion = await openai.chat.completions.create({
+		messages: [
+			{
+				role: "system",
+				content: systemMessage,
+			},
+			message,
+		],
+		model: "gpt-4-turbo-preview",
+	});
+
+	const translatedMessage = completion.choices[0].message.content;
+
+	console.log("translatedMessage", translatedMessage);
+
+	return { translatedMessage };
+};
 
 const openAIRephraseMessage = async ({
 	message,

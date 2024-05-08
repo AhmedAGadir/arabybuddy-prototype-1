@@ -1,4 +1,4 @@
-import { ArabicDialect } from "@/types/languagesTypes";
+import { ArabicDialect } from "@/types/types";
 import { Schema, model, models } from "mongoose";
 
 export interface IPreferences {
