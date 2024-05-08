@@ -4,6 +4,7 @@ import { IPreferences } from "@/lib/database/models/preferences.model";
 import { ArabicDialect } from "@/types/types";
 import { auth } from "@clerk/nextjs/server";
 
+// for every 1000 characters above your usage, they charge you $0.30
 const elevenlabs = new ElevenLabsClient({
 	apiKey: process.env.ELEVENLABS_API_KEY,
 });

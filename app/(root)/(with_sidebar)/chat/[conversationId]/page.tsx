@@ -274,8 +274,15 @@ const ConversationIdPage = ({
 	updatingMessageRef.current = updatingMessage;
 
 	useEffect(() => {
+		logger.log("updatingMessage", updatingMessage);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [updatingMessage]);
+
+	useEffect(() => {
 		if (updatingMessageRef.current) return;
+		logger.log("setting displayed message to latest message");
 		setDisplayedMessageInd(messages.length - 1);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [messages]);
 
 	const displayedMessage = messages[displayedMessageInd];
@@ -671,18 +678,10 @@ const ConversationIdPage = ({
 	const translateBtnHandler = useCallback(async () => {
 		try {
 			setShowTranslation(true);
-			setProgressBarValue(25);
-
-			const messageHistory = messages
-				.map(({ role, content }) => ({
-					role,
-					content,
-				}))
-				.slice(0, displayedMessageInd);
+			setProgressBarValue(50);
 
 			const { completionMessage } = await handleMakeChatCompletion(
 				[
-					...messageHistory,
 					{
 						role: displayedMessage.role,
 						content: displayedMessage.content,
@@ -712,10 +711,6 @@ const ConversationIdPage = ({
 
 			setUpdatingMessage(false);
 
-			updateConversation({
-				_id: conversationId,
-				lastMessage: completionMessage.content,
-			});
 			setProgressBarValue(0);
 		} catch (error) {
 			logger.error("translateBtnHandler", error);
@@ -723,16 +718,12 @@ const ConversationIdPage = ({
 			handleError(error, "There was a problem translating this message");
 		}
 	}, [
-		conversationId,
 		displayedMessage,
-		displayedMessageInd,
 		handleError,
 		handleMakeChatCompletion,
 		handlePlayAudio,
 		handleTextToSpeech,
 		logger,
-		messages,
-		updateConversation,
 		updateMessage,
 	]);
 
