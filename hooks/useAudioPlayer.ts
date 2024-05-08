@@ -1,14 +1,31 @@
 import { base64ToBlob } from "@/lib/utils";
 import { useState, useRef } from "react";
 import { useLogger } from "./useLogger";
+import { set } from "lodash";
 
 const useAudioPlayer = () => {
 	const logger = useLogger({ label: "useAudioPlayer", color: "#b98eff" });
 
 	const [isPlaying, setIsPlaying] = useState(false);
+	const [duration, setDuration] = useState(0);
+	const [currentTime, setCurrentTime] = useState(0);
 
 	const audioRef = useRef<HTMLAudioElement>();
 	const audioSrcRef = useRef<string | null>(null);
+
+	const updateDuration = () => {
+		if (!audioRef.current) return;
+		// duration to 1 decimal place
+		const duration = Math.floor(audioRef.current.duration * 10) / 10;
+		setDuration(duration);
+	};
+
+	const updateCurrentTime = () => {
+		if (!audioRef.current) return;
+		// currentTime to 1 decimal place
+		const currentTime = Math.floor(audioRef.current.currentTime * 10) / 10;
+		setCurrentTime(currentTime);
+	};
 
 	const playAudio = async (base64Audio: string) => {
 		const audioBlob = base64ToBlob(base64Audio, "audio/mp3");
@@ -41,10 +58,17 @@ const useAudioPlayer = () => {
 				URL.revokeObjectURL(audioSrcRef.current ?? "");
 				audioSrcRef.current = null;
 				audioRef.current?.removeEventListener("ended", onAudioEnded);
+				audioRef.current?.removeEventListener("loadedmetadata", updateDuration);
+				audioRef.current?.removeEventListener("timeupdate", updateCurrentTime);
+				setCurrentTime(0);
+				setDuration(0);
+
 				resolve();
 			};
 
 			audioRef.current.addEventListener("ended", onAudioEnded);
+			audioRef.current.addEventListener("loadedmetadata", updateDuration);
+			audioRef.current.addEventListener("timeupdate", updateCurrentTime);
 
 			try {
 				logger.log("Playing audio");
@@ -68,7 +92,6 @@ const useAudioPlayer = () => {
 		logger.log("Initializing audio element...");
 
 		const audio = new Audio();
-
 		audioRef.current = audio;
 	};
 
@@ -107,6 +130,8 @@ const useAudioPlayer = () => {
 		audioElementInitialized,
 		stopPlaying,
 		pausePlaying,
+		duration,
+		currentTime,
 	};
 };
 

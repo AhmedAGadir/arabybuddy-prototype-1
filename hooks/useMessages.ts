@@ -67,21 +67,19 @@ const useMessages = ({ conversationId }: { conversationId: string }) => {
 
 			// Optimistically update to the new value
 			logger.log("optimistically updating messages...");
-			// queryClient.setQueryData(
-			// 	["messages", user?.id, conversationId],
-			// 	(old: IMessage[] = []) => [...old, { content, role }]
-			// );
+			queryClient.setQueryData(
+				["messages", user?.id, conversationId],
+				(old: IMessage[] = []) => [...old, { content, role }]
+			);
 
-			const setTypedContent = (value: string) => {
-				queryClient.setQueryData(
-					["messages", user?.id, conversationId],
-					(old: IMessage[] = []) => [...old, { content: value, role }]
-				);
-			};
+			// const setTypedContent = (value: string) => {
+			// 	queryClient.setQueryData(
+			// 		["messages", user?.id, conversationId],
+			// 		(old: IMessage[] = []) => [...old, { content: value, role }]
+			// 	);
+			// };
 
-			await typewriter(content, setTypedContent, 30);
-
-			//
+			// await typewriter(content, setTypedContent, 30);
 
 			// Return a context object with the snapshotted value
 			return { previousMessages };
@@ -187,37 +185,49 @@ const useMessages = ({ conversationId }: { conversationId: string }) => {
 			const previousMessages =
 				queryClient.getQueryData(["messages", user?.id, conversationId]) ?? [];
 
-			// Optimistically update to the new value
-			logger.log("optimistically updating messages...");
-			// queryClient.setQueryData(
-			// 	["messages", user?.id, conversationId],
-			// 	(old: IMessage[] = []) =>
-			// 		old.map((m) => (m._id === message._id ? { ...m, ...message } : m))
-			// );
-
 			const isTranslating = options.translate;
 
-			const textToType = isTranslating
-				? message.translation ?? ""
-				: message.content;
+			// Optimistically update to the new value
+			logger.log("optimistically updating messages...");
+			queryClient.setQueryData(
+				["messages", user?.id, conversationId],
+				(old: IMessage[] = []) =>
+					old.map((m) =>
+						m._id === message._id
+							? {
+									...m,
+									translation: isTranslating
+										? message.translation
+										: m.translation,
+									content: isTranslating ? m.content : message.content,
+							  }
+							: m
+					)
+			);
 
-			const setTypedContent = (value: string) => {
-				queryClient.setQueryData(
-					["messages", user?.id, conversationId],
-					(old: IMessage[] = []) =>
-						old.map((m) =>
-							m._id === message._id
-								? {
-										...m,
-										translation: isTranslating ? value : m.translation,
-										content: isTranslating ? m.content : value,
-								  }
-								: m
-						)
-				);
-			};
+			// const isTranslating = options.translate;
 
-			await typewriter(textToType, setTypedContent, 30);
+			// const textToType = isTranslating
+			// 	? message.translation ?? ""
+			// 	: message.content;
+
+			// const setTypedContent = (value: string) => {
+			// 	queryClient.setQueryData(
+			// 		["messages", user?.id, conversationId],
+			// 		(old: IMessage[] = []) =>
+			// 			old.map((m) =>
+			// 				m._id === message._id
+			// 					? {
+			// 							...m,
+			// 							translation: isTranslating ? value : m.translation,
+			// 							content: isTranslating ? m.content : value,
+			// 					  }
+			// 					: m
+			// 			)
+			// 	);
+			// };
+
+			// await typewriter(textToType, setTypedContent, 30);
 
 			// Return a context object with the snapshotted value
 			return { previousMessages };

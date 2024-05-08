@@ -203,19 +203,14 @@ const ConversationIdPage = ({
 
 	useEffect(() => {
 		if (updatingMessageRef.current) return;
-		logger.log("setting displayed message to latest message");
 		setDisplayedMessageInd(messages.length - 1);
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [messages]);
 
-	const displayedMessage = useMemo(() => {
-		// if (displayedMessageInd === undefined) {
-		// 	if (noMessages) return null;
-		// 	return messages[messages.length - 1];
-		// }
-
-		return messages[displayedMessageInd];
-	}, [displayedMessageInd, messages]);
+	const displayedMessage = useMemo(
+		() => messages[displayedMessageInd],
+		[displayedMessageInd, messages]
+	);
 
 	// a hack to stop changing the displayed message when the user is updating a message
 	const [updatingMessage, setUpdatingMessage] = useState(false);
@@ -287,6 +282,8 @@ const ConversationIdPage = ({
 		initAudioElement,
 		audioElementInitialized,
 		stopPlaying,
+		duration,
+		currentTime,
 	} = useAudioPlayer();
 
 	const { isRecording, startRecording, stopRecording, amplitude } =
@@ -370,6 +367,7 @@ const ConversationIdPage = ({
 			case task.ASSISTANT:
 			case task.ASSISTANT_REGENERATE:
 			case task.ASSISTANT_REPHRASE:
+			case task.ASSISTANT_TRANSLATE:
 				abortMakeChatCompletion();
 				break;
 			default:
@@ -671,7 +669,7 @@ const ConversationIdPage = ({
 	const translateBtnHandler = useCallback(async () => {
 		try {
 			setShowTranslation(true);
-			setProgressBarValue(50);
+			setProgressBarValue(25);
 
 			const { completionMessage } = await handleMakeChatCompletion(
 				[
@@ -727,8 +725,7 @@ const ConversationIdPage = ({
 
 	const [dictionaryMode, setDictionaryMode] = useState(false);
 
-	const dictionaryBtnHandler = useCallback(() => {
-		console.log("dictionaryBtnHandler");
+	const toggleDictionaryHandler = useCallback(() => {
 		setDictionaryMode((prev) => !prev);
 	}, []);
 
@@ -843,9 +840,6 @@ const ConversationIdPage = ({
 				  ]),
 			{
 				label: "Record",
-				// onClick: toggleRecordingHandler,
-				// icon: isRecording ? MicrophoneIconSolid : MicrophoneIconOutline,
-				// iconClasses: isRecording ? "text-araby-blue" : "",
 				toggle: true,
 				pressed: isRecording,
 				onPressed: toggleRecordingHandler,
@@ -856,7 +850,7 @@ const ConversationIdPage = ({
 				label: "Dictionary",
 				toggle: true,
 				pressed: dictionaryMode,
-				onPressed: dictionaryBtnHandler,
+				onPressed: toggleDictionaryHandler,
 				icon: BookOpenIcon,
 				disabled: !displayedMessage || !isIdle,
 			},
@@ -903,7 +897,7 @@ const ConversationIdPage = ({
 		stopPlayingHandler,
 		toggleRecordingHandler,
 		dictionaryMode,
-		dictionaryBtnHandler,
+		toggleDictionaryHandler,
 		showTranslation,
 		translateBtnHandler,
 		messages.length,
@@ -969,6 +963,17 @@ const ConversationIdPage = ({
 		</Card>
 	);
 
+	// const [percentageTemp, setPercentageTemp] = useState(0);
+
+	// useEffect(() => {
+	// 	// loop increasing percentage (reset at 100)
+	// 	const interval = setInterval(() => {
+	// 		setPercentageTemp((prev) => (prev + 10) % 101);
+	// 	}, 100);
+
+	// 	return () => clearInterval(interval);
+	// }, []);
+
 	const displayedMessageContent = useMemo(() => {
 		if (!displayedMessage) return null;
 
@@ -991,32 +996,84 @@ const ConversationIdPage = ({
 			);
 		}
 
-		if (showTranslation && displayedMessage?.translation) {
-			return displayedMessage?.translation;
-		}
+		const textToDisplay =
+			showTranslation && displayedMessage?.translation
+				? displayedMessage?.translation
+				: displayedMessage?.content;
 
-		return displayedMessage?.content;
+		// const textPlayed = textToDisplay.slice(
+		// 	0,
+		// 	(textToDisplay.length * percentageTemp) / 100
+		// );
+		// const textToPlay = textToDisplay.slice(
+		// 	(textToDisplay.length * percentageTemp) / 100
+		// );
+
+		// return (
+		// 	<div className="duration-0 ease-in-out p-2 rounded-md">
+		// 		<span className="bg-indigo-500 rounded-md text-white transition-all duration-0 ease-in-out">
+		// 			{textPlayed}
+		// 		</span>
+		// 		{textToPlay}
+		// 	</div>
+		// );
+
+		// return (
+		// 	<span className="transition-all ease-in-out ">
+		// 		{textPlayed}
+		// 		<span className="text-slate-300 transition-all ease-in-out">
+		// 			{textToPlay}
+		// 		</span>
+		// 	</span>
+		// );
+
+		// return (
+		// 	<div className="relative duration-500 ease-in-out">
+		// 		<div
+		// 			className="absolute inset-0 bg-blue-500 duration-500 ease-in-out"
+		// 			style={{ width: `${percentageTemp}%` }}
+		// 		></div>
+		// 		<p className="relative z-10">{textToDisplay}</p>
+		// 	</div>
+		// );
+
+		// if (isPlaying) {
+		// 	const percentage = (currentTime / duration) * 100;
+
+		// 	const textPlayed = textToDisplay.slice(
+		// 		0,
+		// 		(textToDisplay.length * percentage) / 100
+		// 	);
+		// 	const textToPlay = textToDisplay.slice(
+		// 		(textToDisplay.length * percentage) / 100
+		// 	);
+		// 	return (
+		// 		<span className="transition-opacity duration-500 ease-in-out">
+		// 			{textPlayed}
+		// 			<span className="text-slate-300">{textToPlay}</span>
+		// 		</span>
+		// 	);
+		// }
+
+		// const firstHalf = textToDisplay.slice(0, textToDisplay.length / 2);
+		// const secondHalf = textToDisplay.slice(textToDisplay.length / 2);
+
+		// return (
+		// 	<>
+		// 		{firstHalf}
+		// 		<span className="text-slate-300">{secondHalf}</span>
+		// 	</>
+		// );
+
+		return textToDisplay;
 	}, [STATUS, dictionaryMode, displayedMessage, showTranslation]);
-
-	const ellipsesButton = (
-		<Button
-			size="icon"
-			variant="ghost"
-			className={cn(
-				"hover:bg-slate-100",
-				true && "opacity-50 hover:bg-transparent pointer-events-none"
-			)}
-		>
-			<EllipsisVerticalIcon className="text-slate-500 dark:text-slate-400 w-6 h-6" />
-		</Button>
-	);
 
 	const instructionContent = (
 		<Transition
 			className={cn(
 				cairo.className,
 				// "font-extrabold text-2xl md:text-3xl tracking-tight",
-				"text-xl tracking-tight",
+				"text-lg sm:text-xl tracking-tight",
 				"text-transparent bg-clip-text bg-gradient-to-r to-araby-purple from-araby-blue py-4 text-gray-600"
 			)}
 			show={showInstruction}
@@ -1055,26 +1112,14 @@ const ConversationIdPage = ({
 			avatarAlt: "ArabyBuddy avatar",
 		};
 
-		if (false) {
-			if (isDoingSpeechToText) {
-				name = userDetails.name;
-				avatarSrc = userDetails.avatarSrc;
-				avatarAlt = userDetails.avatarAlt;
-			} else {
-				name = arabyBuddyDetails.name;
-				avatarSrc = arabyBuddyDetails.avatarSrc;
-				avatarAlt = arabyBuddyDetails.avatarAlt;
-			}
+		if (displayedMessage?.role === "assistant") {
+			name = arabyBuddyDetails.name;
+			avatarSrc = arabyBuddyDetails.avatarSrc;
+			avatarAlt = arabyBuddyDetails.avatarAlt;
 		} else {
-			if (displayedMessage?.role === "assistant") {
-				name = arabyBuddyDetails.name;
-				avatarSrc = arabyBuddyDetails.avatarSrc;
-				avatarAlt = arabyBuddyDetails.avatarAlt;
-			} else {
-				name = userDetails.name;
-				avatarSrc = userDetails.avatarSrc;
-				avatarAlt = userDetails.avatarAlt;
-			}
+			name = userDetails.name;
+			avatarSrc = userDetails.avatarSrc;
+			avatarAlt = userDetails.avatarAlt;
 		}
 
 		return {
@@ -1082,7 +1127,7 @@ const ConversationIdPage = ({
 			avatarSrc,
 			avatarAlt,
 		};
-	}, [displayedMessage?.role, isDoingSpeechToText, user?.imageUrl]);
+	}, [displayedMessage?.role, user?.imageUrl]);
 
 	const menuContent = useMemo(() => {
 		if (isPlaying) {
@@ -1108,17 +1153,11 @@ const ConversationIdPage = ({
 			);
 		}
 
-		// if (isRecording) {
-		// 	return (
-		// 		<span className="relative flex h-4 w-4">
-		// 			<span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#FF0066] opacity-75"></span>
-		// 			<span className="relative inline-flex rounded-full h-4 w-4 bg-[#FF0066]"></span>
-		// 		</span>
-		// 	);
-		// }
-
 		return <span />;
 	}, [isPlaying]);
+
+	const isShowingTranslation =
+		showTranslation && displayedMessage?.translation && !dictionaryMode;
 
 	const messageCardContent = messages.length > 0 && (
 		<MessageCard
@@ -1150,8 +1189,9 @@ const ConversationIdPage = ({
 					/>
 				) : (
 					<div
-					// const isShowingDirection = showTranslation && displayedMessage?.translation && !dictionaryMode;
-					// style={{ direction: isShowingTranslation ? "ltr" : "rtl" }}
+						style={{
+							direction: isShowingTranslation ? "ltr" : "rtl",
+						}}
 					>
 						{displayedMessageContent}
 					</div>
@@ -1160,8 +1200,8 @@ const ConversationIdPage = ({
 		/>
 	);
 
-	const messageIndexContent = messages && (
-		<div className="text-slate-400 mt-1 w-full flex justify-end px-4">
+	const messageIndexContent = messages.length > 0 && (
+		<div className="text-slate-400 mt-1 w-full flex justify-end px-4 text-md">
 			{displayedMessageInd + 1} / {messages.length}
 		</div>
 	);
