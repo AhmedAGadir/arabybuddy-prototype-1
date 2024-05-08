@@ -73,7 +73,7 @@ import {
 	DrawerTrigger,
 } from "@/components/ui/drawer";
 
-import _, { set } from "lodash";
+import _ from "lodash";
 import { Transition } from "@headlessui/react";
 
 import { cn } from "@/lib/utils";
@@ -166,6 +166,8 @@ const ConversationIdPage = ({
 
 	const { user } = useUser();
 
+	const { updateConversation, deleteConversation } = useConversations();
+
 	const {
 		isPending,
 		error,
@@ -178,8 +180,6 @@ const ConversationIdPage = ({
 	} = useMessages({
 		conversationId,
 	});
-
-	const { updateConversation, deleteConversation } = useConversations();
 
 	useEffect(() => {
 		if (!isPending && error) {
@@ -198,6 +198,34 @@ const ConversationIdPage = ({
 			});
 		}
 	}, [isPending, error, refetch, toast]);
+
+	const [displayedMessageInd, setDisplayedMessageInd] = useState<number>(0);
+
+	useEffect(() => {
+		if (updatingMessageRef.current) return;
+		logger.log("setting displayed message to latest message");
+		setDisplayedMessageInd(messages.length - 1);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [messages]);
+
+	const displayedMessage = useMemo(() => {
+		// if (displayedMessageInd === undefined) {
+		// 	if (noMessages) return null;
+		// 	return messages[messages.length - 1];
+		// }
+
+		return messages[displayedMessageInd];
+	}, [displayedMessageInd, messages]);
+
+	// a hack to stop changing the displayed message when the user is updating a message
+	const [updatingMessage, setUpdatingMessage] = useState(false);
+	const updatingMessageRef = useRef<boolean>();
+	updatingMessageRef.current = updatingMessage;
+
+	useEffect(() => {
+		logger.log("updatingMessage", updatingMessage);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [updatingMessage]);
 
 	// const pathname = usePathname();
 	// const searchParams = useSearchParams();
@@ -231,14 +259,17 @@ const ConversationIdPage = ({
 	// 	// eslint-disable-next-line react-hooks/exhaustive-deps
 	// }, [pathname, searchParams, conversationId]);
 
-	const [timeStamp, setTimeStamp] = useState<Date | null>(null);
+	const [timestamp, setTimestamp] = useState<Date | null>(null);
 
 	const [activeTask, setActiveTask] = useState<Task | null>(null);
-	// only to be used in onRecordingComplete since it has a closure over the activeTask state
-	const activeTaskRef = useRef<Task | null>(null);
-	activeTaskRef.current = activeTask;
+
+	useEffect(() => {
+		logger.log("active task", activeTask);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [activeTask]);
 
 	const [progressBarValue, setProgressBarValue] = useState(0);
+	// TODO: can remove this?
 	const progressBarValueRef = useRef<number>();
 	progressBarValueRef.current = progressBarValue;
 
@@ -260,32 +291,6 @@ const ConversationIdPage = ({
 
 	const { isRecording, startRecording, stopRecording, amplitude } =
 		useRecording();
-
-	const [displayedMessageInd, setDisplayedMessageInd] = useState<number>(0);
-
-	useEffect(() => {
-		logger.log("active task", activeTask);
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [activeTask]);
-
-	// a hack to stop changing the displayed message when the user is updating a message
-	const [updatingMessage, setUpdatingMessage] = useState(false);
-	const updatingMessageRef = useRef<boolean>();
-	updatingMessageRef.current = updatingMessage;
-
-	useEffect(() => {
-		logger.log("updatingMessage", updatingMessage);
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [updatingMessage]);
-
-	useEffect(() => {
-		if (updatingMessageRef.current) return;
-		logger.log("setting displayed message to latest message");
-		setDisplayedMessageInd(messages.length - 1);
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [messages]);
-
-	const displayedMessage = messages[displayedMessageInd];
 
 	const STATUS: Status = useMemo(() => {
 		if (isRecording) return status.RECORDING;
@@ -483,8 +488,6 @@ const ConversationIdPage = ({
 					throw new Error("Audio is too long");
 				}
 
-				setTimeStamp(new Date());
-
 				// 1. transcribe the user audio
 				setProgressBarValue(1);
 				const { transcription } = await handleSpeechToText(audioBlob);
@@ -527,7 +530,7 @@ const ConversationIdPage = ({
 					lastMessage: completionMessage.content,
 				});
 				setProgressBarValue(0);
-				setTimeStamp(null);
+				setTimestamp(null);
 
 				return { success: true };
 			} catch (error) {
@@ -535,32 +538,31 @@ const ConversationIdPage = ({
 
 				handleError(error);
 
-				const allMessageIdsAfterTimestamp = messages
-					.filter(
-						({ updatedAt }) =>
-							timeStamp === null || new Date(updatedAt) > timeStamp
-					)
-					.map(({ _id }) => _id);
+				if (timestamp) {
+					const allMessageIdsAfterTimestamp = messages
+						.filter(({ updatedAt }) => new Date(updatedAt) > timestamp)
+						.map(({ _id }) => _id);
 
-				await deleteMessages(allMessageIdsAfterTimestamp);
-				setTimeStamp(null);
+					await deleteMessages(allMessageIdsAfterTimestamp);
+					setTimestamp(null);
+				}
 
 				return { success: false };
 			}
 		},
 		[
-			conversationId,
-			createMessage,
-			deleteMessages,
-			handleError,
-			logger,
-			messages,
-			timeStamp,
-			updateConversation,
-			handleMakeChatCompletion,
-			handlePlayAudio,
 			handleSpeechToText,
+			messages,
+			createMessage,
+			handleMakeChatCompletion,
 			handleTextToSpeech,
+			handlePlayAudio,
+			updateConversation,
+			conversationId,
+			logger,
+			handleError,
+			deleteMessages,
+			timestamp,
 		]
 	);
 
@@ -664,15 +666,6 @@ const ConversationIdPage = ({
 		]
 	);
 
-	const [drawerOpen, setDrawerOpen] = useState(false);
-
-	const [dictionaryMode, setDictionaryMode] = useState(false);
-
-	const dictionaryBtnHandler = useCallback(() => {
-		console.log("dictionaryBtnHandler");
-		setDictionaryMode((prev) => !prev);
-	}, []);
-
 	const [showTranslation, setShowTranslation] = useState(false);
 
 	const translateBtnHandler = useCallback(async () => {
@@ -709,7 +702,10 @@ const ConversationIdPage = ({
 			);
 			await handlePlayAudio(base64Audio);
 
-			setUpdatingMessage(false);
+			// TODO: FIX - hack to stop updating message index after translating
+			setTimeout(() => {
+				setUpdatingMessage(false);
+			}, 2000);
 
 			setProgressBarValue(0);
 		} catch (error) {
@@ -726,6 +722,15 @@ const ConversationIdPage = ({
 		logger,
 		updateMessage,
 	]);
+
+	const [drawerOpen, setDrawerOpen] = useState(false);
+
+	const [dictionaryMode, setDictionaryMode] = useState(false);
+
+	const dictionaryBtnHandler = useCallback(() => {
+		console.log("dictionaryBtnHandler");
+		setDictionaryMode((prev) => !prev);
+	}, []);
 
 	const toggleRecordingHandler = useCallback(async () => {
 		hideInstruction();
@@ -749,6 +754,8 @@ const ConversationIdPage = ({
 		}
 
 		if (!isRecording) {
+			setTimestamp(new Date());
+
 			if (!audioElementInitialized) {
 				initAudioElement();
 			}
@@ -773,7 +780,7 @@ const ConversationIdPage = ({
 				label: "Previous",
 				// icon: ChevronLeftIcon,
 				icon: () => <span>Prev</span>,
-				onClick: () => setDisplayedMessageInd(displayedMessageInd - 1),
+				onClick: () => setDisplayedMessageInd((prevInd) => prevInd - 1),
 				disabled:
 					!displayedMessage ||
 					displayedMessageInd === 0 ||
@@ -876,7 +883,7 @@ const ConversationIdPage = ({
 				label: "Next",
 				// icon: ChevronRightIcon,
 				icon: () => <span>Next</span>,
-				onClick: () => setDisplayedMessageInd(displayedMessageInd + 1),
+				onClick: () => setDisplayedMessageInd((prevInd) => prevInd + 1),
 				disabled:
 					!displayedMessage ||
 					displayedMessageInd === messages.length - 1 ||
@@ -1033,8 +1040,6 @@ const ConversationIdPage = ({
 		/>
 	);
 
-	const isChatEmpty = _.isEmpty(messages);
-
 	const messageCardDetails = useMemo(() => {
 		let name: string, avatarSrc: string, avatarAlt: string;
 
@@ -1115,7 +1120,7 @@ const ConversationIdPage = ({
 		return <span />;
 	}, [isPlaying]);
 
-	const messageCardContent = !isChatEmpty && (
+	const messageCardContent = messages.length > 0 && (
 		<MessageCard
 			className={cn(
 				"h-full bg-white text-slate-900 dark:text-white"
@@ -1153,6 +1158,12 @@ const ConversationIdPage = ({
 				)
 			}
 		/>
+	);
+
+	const messageIndexContent = messages && (
+		<div className="text-slate-400 mt-1 w-full flex justify-end px-4">
+			{displayedMessageInd + 1} / {messages.length}
+		</div>
 	);
 
 	const drawerContent = (
@@ -1253,6 +1264,7 @@ const ConversationIdPage = ({
 					<div className={cn("min-h-0 w-full max-w-2xl ")}>
 						{messageCardContent}
 					</div>
+					{messageIndexContent}
 				</div>
 				<div className="relative flex h-4 w-4 my-2">{recordingBlob}</div>
 				<div className="h-12 w-full text-center">{instructionContent}</div>
