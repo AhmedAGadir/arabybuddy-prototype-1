@@ -699,10 +699,15 @@ const ConversationIdPage = ({
 
 			setUpdatingMessage(true);
 
-			updateMessage({
-				...displayedMessage,
-				translation: completionMessage.content,
-			});
+			updateMessage(
+				{
+					...displayedMessage,
+					translation: completionMessage.content,
+				},
+				{
+					translate: true,
+				}
+			);
 			await handlePlayAudio(base64Audio);
 
 			setUpdatingMessage(false);
@@ -1148,7 +1153,12 @@ const ConversationIdPage = ({
 						speedMultiplier={0.75}
 					/>
 				) : (
-					<div>{displayedMessageContent}</div>
+					<div
+					// const isShowingDirection = showTranslation && displayedMessage?.translation && !dictionaryMode;
+					// style={{ direction: isShowingTranslation ? "ltr" : "rtl" }}
+					>
+						{displayedMessageContent}
+					</div>
 				)
 			}
 		/>

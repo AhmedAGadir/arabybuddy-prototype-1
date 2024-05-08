@@ -143,9 +143,12 @@ const useMessages = ({ conversationId }: { conversationId: string }) => {
 	};
 
 	const updateMessageMutation = useMutation({
-		mutationFn: async (
-			message: Pick<IMessage, "_id" | "content"> & Partial<IMessage>
-		) => {
+		mutationFn: async ({
+			message,
+		}: {
+			message: Pick<IMessage, "_id" | "content"> & Partial<IMessage>;
+			options: { translate?: boolean };
+		}) => {
 			logger.log("updating message...", message);
 			const response = await fetch(
 				`/api/conversations/${conversationId}/messages/${message._id}`,
@@ -168,7 +171,13 @@ const useMessages = ({ conversationId }: { conversationId: string }) => {
 			logger.error("Error updating message:", err);
 			return err;
 		},
-		onMutate: async (message) => {
+		onMutate: async ({
+			message,
+			options,
+		}: {
+			message: Pick<IMessage, "_id" | "content"> & Partial<IMessage>;
+			options: { translate?: boolean };
+		}) => {
 			// Cancel any outgoing refetches
 			await queryClient.cancelQueries({
 				queryKey: ["messages", user?.id, conversationId],
@@ -186,17 +195,29 @@ const useMessages = ({ conversationId }: { conversationId: string }) => {
 			// 		old.map((m) => (m._id === message._id ? { ...m, ...message } : m))
 			// );
 
+			const isTranslating = options.translate;
+
+			const textToType = isTranslating
+				? message.translation ?? ""
+				: message.content;
+
 			const setTypedContent = (value: string) => {
 				queryClient.setQueryData(
 					["messages", user?.id, conversationId],
 					(old: IMessage[] = []) =>
 						old.map((m) =>
-							m._id === message._id ? { ...m, content: value } : m
+							m._id === message._id
+								? {
+										...m,
+										translation: isTranslating ? value : m.translation,
+										content: isTranslating ? m.content : value,
+								  }
+								: m
 						)
 				);
 			};
 
-			await typewriter(message.content, setTypedContent, 30);
+			await typewriter(textToType, setTypedContent, 30);
 
 			// Return a context object with the snapshotted value
 			return { previousMessages };
@@ -210,9 +231,10 @@ const useMessages = ({ conversationId }: { conversationId: string }) => {
 	});
 
 	const updateMessage = async (
-		message: Pick<IMessage, "_id" | "content"> & Partial<IMessage>
+		message: Pick<IMessage, "_id" | "content"> & Partial<IMessage>,
+		options: { translate?: boolean } = {}
 	) => {
-		return await updateMessageMutation.mutateAsync(message);
+		return await updateMessageMutation.mutateAsync({ message, options });
 	};
 
 	const messages = (data ?? []) as IMessage[];
