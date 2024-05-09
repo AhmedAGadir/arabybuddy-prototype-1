@@ -80,15 +80,23 @@ export async function POST(req: Request, res: Response) {
 			return Response.json({ messages }, { status: 200 });
 		}
 
-		const { updatedMessages } = await openAIAddChatMessageAndAwaitResponse({
+		const { completionMessage } = await openAIGetCompletionMessage({
 			messageHistory,
 			firstName,
 			preferences,
 		});
 
-		return Response.json({ messages: updatedMessages }, { status: 200 });
+		const messages = [
+			...messageHistoryWithoutLatest,
+			{
+				role: completionMessage.role,
+				content: completionMessage.content,
+			},
+		];
+
+		return Response.json({ messages }, { status: 200 });
 	} catch (error) {
-		console.error("Error connection to OpenAI Asssistant API", error);
+		console.error("Error connection to OpenAI", error);
 		return Response.error();
 	}
 }
@@ -156,61 +164,33 @@ const openAIRephraseMessage = async ({
 	return { rephrasedMessage };
 };
 
-const openAIAddChatMessageAndAwaitResponse = async ({
-	firstName,
+const openAIGetCompletionMessage = async ({
 	messageHistory,
+	firstName,
 	preferences,
 }: Pick<RequestBody, "firstName" | "messageHistory" | "preferences">) => {
-	// create the assistant
-	const instructions = createAssistantInstructions(firstName, preferences);
-	console.log("Creating assistant - instructions", instructions);
+	console.log("");
 
-	const assistant = await openai.beta.assistants.create({
-		name: "ArabyBuddy",
-		instructions,
+	const systemMessage = createAssistantInstructions(firstName, preferences);
+
+	console.log("systemMessage", systemMessage);
+
+	const completion = await openai.chat.completions.create({
+		messages: [
+			{
+				role: "system",
+				content: systemMessage,
+			},
+			...messageHistory,
+		],
 		model: "gpt-4-turbo-preview",
 	});
 
-	const latestMessage = messageHistory[messageHistory.length - 1];
-	const messageHistoryWithoutLatest = messageHistory.slice(
-		0,
-		messageHistory.length - 1
-	);
+	const completionMessage = completion.choices[0].message;
 
-	console.log("Adding message history to thread", messageHistoryWithoutLatest);
-	// create the thread and pass all previous messages
-	const thread = await openai.beta.threads.create({
-		messages: messageHistoryWithoutLatest,
-	});
+	console.log("completionMessage", completionMessage);
 
-	console.log("adding latest chat message to thread", latestMessage);
-	// add transcription to thread
-	await openai.beta.threads.messages.create(thread.id, latestMessage);
-
-	console.log("polling....");
-	// run the thread with the assistant
-	const run = await openai.beta.threads.runs.createAndPoll(thread.id, {
-		assistant_id: assistant.id,
-		// instructions
-	});
-
-	console.log("run.status", run.status);
-	let updatedMessages = [];
-
-	if (run.status === "completed") {
-		const messagesPage: OpenAI.Beta.Threads.Messages.MessagesPage =
-			await openai.beta.threads.messages.list(run.thread_id);
-
-		updatedMessages = messagesPage.data.reverse().map((message) => ({
-			role: message.role,
-			content: (message.content[0] as TextContentBlock).text.value,
-		}));
-		console.log("updatedMessages", updatedMessages);
-	} else {
-		throw new Error("Thread run either failed or is not completed");
-	}
-
-	return { updatedMessages };
+	return { completionMessage };
 };
 
 function createAssistantInstructions(
@@ -246,3 +226,60 @@ function createAssistantInstructions(
 
 	return instructions;
 }
+
+// const openAIAddChatMessageAndAwaitResponse = async ({
+// 	firstName,
+// 	messageHistory,
+// 	preferences,
+// }: Pick<RequestBody, "firstName" | "messageHistory" | "preferences">) => {
+// 	// create the assistant
+// 	const instructions = createAssistantInstructions(firstName, preferences);
+// 	console.log("Creating assistant - instructions", instructions);
+
+// 	const assistant = await openai.beta.assistants.create({
+// 		name: "ArabyBuddy",
+// 		instructions,
+// 		model: "gpt-4-turbo-preview",
+// 	});
+
+// 	const latestMessage = messageHistory[messageHistory.length - 1];
+// 	const messageHistoryWithoutLatest = messageHistory.slice(
+// 		0,
+// 		messageHistory.length - 1
+// 	);
+
+// 	console.log("Adding message history to thread", messageHistoryWithoutLatest);
+// 	// create the thread and pass all previous messages
+// 	const thread = await openai.beta.threads.create({
+// 		messages: messageHistoryWithoutLatest,
+// 	});
+
+// 	console.log("adding latest chat message to thread", latestMessage);
+// 	// add transcription to thread
+// 	await openai.beta.threads.messages.create(thread.id, latestMessage);
+
+// 	console.log("polling....");
+// 	// run the thread with the assistant
+// 	const run = await openai.beta.threads.runs.createAndPoll(thread.id, {
+// 		assistant_id: assistant.id,
+// 		// instructions
+// 	});
+
+// 	console.log("run.status", run.status);
+// 	let updatedMessages = [];
+
+// 	if (run.status === "completed") {
+// 		const messagesPage: OpenAI.Beta.Threads.Messages.MessagesPage =
+// 			await openai.beta.threads.messages.list(run.thread_id);
+
+// 		updatedMessages = messagesPage.data.reverse().map((message) => ({
+// 			role: message.role,
+// 			content: (message.content[0] as TextContentBlock).text.value,
+// 		}));
+// 		console.log("updatedMessages", updatedMessages);
+// 	} else {
+// 		throw new Error("Thread run either failed or is not completed");
+// 	}
+
+// 	return { updatedMessages };
+// };

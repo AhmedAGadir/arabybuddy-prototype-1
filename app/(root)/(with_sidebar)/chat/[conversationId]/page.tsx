@@ -96,6 +96,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { useCyclingText } from "@/hooks/useCyclingText";
 import { nonWordCharactersRegExp } from "@/lib/constants";
 import { OpenAIMessage } from "@/app/api/chat/assistant/route";
+import useTimestamp from "@/hooks/useTimestamp";
 
 const status = {
 	IDLE: "IDLE",
@@ -255,7 +256,7 @@ const ConversationIdPage = ({
 	// 	// eslint-disable-next-line react-hooks/exhaustive-deps
 	// }, [pathname, searchParams, conversationId]);
 
-	const [timestamp, setTimestamp] = useState<Date | null>(null);
+	const { timestamp, setTimestamp } = useTimestamp();
 
 	const [activeTask, setActiveTask] = useState<Task | null>(null);
 
@@ -485,6 +486,8 @@ const ConversationIdPage = ({
 					throw new Error("Audio is too long");
 				}
 
+				setTimestamp(new Date());
+
 				// 1. transcribe the user audio
 				setProgressBarValue(1);
 				const { transcription } = await handleSpeechToText(audioBlob);
@@ -548,6 +551,7 @@ const ConversationIdPage = ({
 			}
 		},
 		[
+			setTimestamp,
 			handleSpeechToText,
 			messages,
 			createMessage,
@@ -750,8 +754,6 @@ const ConversationIdPage = ({
 		}
 
 		if (!isRecording) {
-			setTimestamp(new Date());
-
 			if (!audioElementInitialized) {
 				initAudioElement();
 			}
