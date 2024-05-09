@@ -12,8 +12,10 @@ const openai = new OpenAI({
 	apiKey: process.env.OPENAI_API_KEY,
 });
 
+export type OpenAIMessage = Pick<IMessage, "role" | "content">;
+
 type RequestBody = {
-	messageHistory: Pick<IMessage, "role" | "content">[];
+	messageHistory: OpenAIMessage[];
 	mode: "rephrase" | "regenerate" | "translate" | undefined;
 	firstName: string | undefined;
 	preferences: {
@@ -95,7 +97,7 @@ const openAITranslateMessage = async ({
 	message,
 	preferences,
 }: {
-	message: Pick<IMessage, "role" | "content">;
+	message: OpenAIMessage;
 	preferences: { arabic_dialect: IPreferences["arabic_dialect"] };
 }) => {
 	console.log("translating message...", message);
@@ -127,7 +129,7 @@ const openAIRephraseMessage = async ({
 	message,
 	preferences,
 }: {
-	message: Pick<IMessage, "role" | "content">;
+	message: OpenAIMessage;
 	preferences: { arabic_dialect: IPreferences["arabic_dialect"] };
 }) => {
 	console.log("rephrasing message...", message);

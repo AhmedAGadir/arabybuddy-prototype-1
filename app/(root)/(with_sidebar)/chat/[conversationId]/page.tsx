@@ -95,6 +95,7 @@ import { Badge } from "@/components/ui/badge";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useCyclingText } from "@/hooks/useCyclingText";
 import { nonWordCharactersRegExp } from "@/lib/constants";
+import { OpenAIMessage } from "@/app/api/chat/assistant/route";
 
 const status = {
 	IDLE: "IDLE",
@@ -282,8 +283,6 @@ const ConversationIdPage = ({
 		initAudioElement,
 		audioElementInitialized,
 		stopPlaying,
-		duration,
-		currentTime,
 	} = useAudioPlayer();
 
 	const { isRecording, startRecording, stopRecording, amplitude } =
@@ -421,7 +420,7 @@ const ConversationIdPage = ({
 
 	const handleMakeChatCompletion = useCallback(
 		async (
-			messageHistory: Pick<IMessage, "role" | "content">[],
+			messageHistory: OpenAIMessage[],
 			options?: { mode: "regenerate" | "rephrase" | "translate" }
 		) => {
 			switch (options?.mode) {
@@ -963,17 +962,6 @@ const ConversationIdPage = ({
 		</Card>
 	);
 
-	// const [percentageTemp, setPercentageTemp] = useState(0);
-
-	// useEffect(() => {
-	// 	// loop increasing percentage (reset at 100)
-	// 	const interval = setInterval(() => {
-	// 		setPercentageTemp((prev) => (prev + 10) % 101);
-	// 	}, 100);
-
-	// 	return () => clearInterval(interval);
-	// }, []);
-
 	const displayedMessageContent = useMemo(() => {
 		if (!displayedMessage) return null;
 
@@ -1000,70 +988,6 @@ const ConversationIdPage = ({
 			showTranslation && displayedMessage?.translation
 				? displayedMessage?.translation
 				: displayedMessage?.content;
-
-		// const textPlayed = textToDisplay.slice(
-		// 	0,
-		// 	(textToDisplay.length * percentageTemp) / 100
-		// );
-		// const textToPlay = textToDisplay.slice(
-		// 	(textToDisplay.length * percentageTemp) / 100
-		// );
-
-		// return (
-		// 	<div className="duration-0 ease-in-out p-2 rounded-md">
-		// 		<span className="bg-indigo-500 rounded-md text-white transition-all duration-0 ease-in-out">
-		// 			{textPlayed}
-		// 		</span>
-		// 		{textToPlay}
-		// 	</div>
-		// );
-
-		// return (
-		// 	<span className="transition-all ease-in-out ">
-		// 		{textPlayed}
-		// 		<span className="text-slate-300 transition-all ease-in-out">
-		// 			{textToPlay}
-		// 		</span>
-		// 	</span>
-		// );
-
-		// return (
-		// 	<div className="relative duration-500 ease-in-out">
-		// 		<div
-		// 			className="absolute inset-0 bg-blue-500 duration-500 ease-in-out"
-		// 			style={{ width: `${percentageTemp}%` }}
-		// 		></div>
-		// 		<p className="relative z-10">{textToDisplay}</p>
-		// 	</div>
-		// );
-
-		// if (isPlaying) {
-		// 	const percentage = (currentTime / duration) * 100;
-
-		// 	const textPlayed = textToDisplay.slice(
-		// 		0,
-		// 		(textToDisplay.length * percentage) / 100
-		// 	);
-		// 	const textToPlay = textToDisplay.slice(
-		// 		(textToDisplay.length * percentage) / 100
-		// 	);
-		// 	return (
-		// 		<span className="transition-opacity duration-500 ease-in-out">
-		// 			{textPlayed}
-		// 			<span className="text-slate-300">{textToPlay}</span>
-		// 		</span>
-		// 	);
-		// }
-
-		// const firstHalf = textToDisplay.slice(0, textToDisplay.length / 2);
-		// const secondHalf = textToDisplay.slice(textToDisplay.length / 2);
-
-		// return (
-		// 	<>
-		// 		{firstHalf}
-		// 		<span className="text-slate-300">{secondHalf}</span>
-		// 	</>
-		// );
 
 		return textToDisplay;
 	}, [STATUS, dictionaryMode, displayedMessage, showTranslation]);

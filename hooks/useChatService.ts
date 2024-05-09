@@ -5,6 +5,7 @@ import { IMessage } from "@/lib/database/models/message.model";
 import { usePreferences } from "./usePreferences";
 import { DEFAULT_USER_PREFERENCES } from "@/lib/database/models/preferences.model";
 import { useUser } from "@clerk/nextjs";
+import { OpenAIMessage } from "@/app/api/chat/assistant/route";
 
 const useChatService = () => {
 	const logger = useLogger({ label: "ChatService", color: "#fe7de9" });
@@ -18,7 +19,7 @@ const useChatService = () => {
 
 	const makeChatCompletion = useCallback(
 		async (
-			messageHistory: Pick<IMessage, "role" | "content">[],
+			messageHistory: OpenAIMessage[],
 			options: { mode: "regenerate" | "rephrase" | "translate" } | undefined
 		) => {
 			try {

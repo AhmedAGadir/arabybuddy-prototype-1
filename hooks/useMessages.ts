@@ -6,6 +6,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLogger } from "./useLogger";
 import { useTypewriter } from "./useTypewriter";
 import { update } from "lodash";
+import { OpenAIMessage } from "@/app/api/chat/assistant/route";
 
 const useMessages = ({ conversationId }: { conversationId: string }) => {
 	const logger = useLogger({ label: "useMessages", color: "#a5ff90" });
@@ -31,10 +32,7 @@ const useMessages = ({ conversationId }: { conversationId: string }) => {
 	});
 
 	const createMessageMutation = useMutation({
-		mutationFn: async ({
-			content,
-			role,
-		}: Pick<IMessage, "role" | "content">) => {
+		mutationFn: async ({ content, role }: OpenAIMessage) => {
 			logger.log("creating message...");
 			const response = await fetch(
 				`/api/conversations/${conversationId}/messages`,
@@ -54,7 +52,7 @@ const useMessages = ({ conversationId }: { conversationId: string }) => {
 			return data;
 		},
 		// When mutate is called:
-		onMutate: async ({ content, role }: Pick<IMessage, "role" | "content">) => {
+		onMutate: async ({ content, role }: OpenAIMessage) => {
 			// Cancel any outgoing refetches
 			// (so they don't overwrite our optimistic update)
 			await queryClient.cancelQueries({
@@ -101,10 +99,7 @@ const useMessages = ({ conversationId }: { conversationId: string }) => {
 		},
 	});
 
-	const createMessage = async ({
-		content,
-		role,
-	}: Pick<IMessage, "role" | "content">) => {
+	const createMessage = async ({ content, role }: OpenAIMessage) => {
 		return await createMessageMutation.mutateAsync({ content, role });
 	};
 
