@@ -22,10 +22,12 @@ import { Button } from "@/components/ui/button";
 
 import {
 	ArrowPathIcon,
+	BookOpenIcon,
 	ChevronLeftIcon,
 	ChevronRightIcon,
 	EllipsisVerticalIcon,
 	MicrophoneIcon as MicrophoneIconOutline,
+	PlayIcon,
 	SparklesIcon,
 	SpeakerWaveIcon,
 } from "@heroicons/react/24/outline";
@@ -48,13 +50,8 @@ import { useUser } from "@clerk/nextjs";
 import SupportCard from "@/components/shared/SupportCard";
 
 import { useMediaQuery } from "@react-hooks-hub/use-media-query";
-import {
-	BookOpenIcon,
-	BookOpenSolidIcon,
-	MagicWandIcon,
-	PlayIcon,
-	TranslateIcon,
-} from "@/components/shared/icons";
+
+import { TranslateIcon } from "@/components/shared/icons/Translate";
 
 import {
 	Tooltip,
@@ -183,6 +180,25 @@ const ConversationIdPage = ({
 		conversationId,
 	});
 
+	const { makeChatCompletion, abortMakeChatCompletion } = useChatService();
+	const {
+		speechToText,
+		textToSpeech,
+		abortSpeechToTextRequest,
+		abortTextToSpeechRequest,
+	} = useAudioService();
+
+	const {
+		playAudio,
+		isPlaying,
+		initAudioElement,
+		audioElementInitialized,
+		stopPlaying,
+	} = useAudioPlayer();
+
+	const { isRecording, startRecording, stopRecording, amplitude } =
+		useRecording();
+
 	useEffect(() => {
 		if (!isPending && error) {
 			toast({
@@ -214,7 +230,7 @@ const ConversationIdPage = ({
 		[displayedMessageInd, messages]
 	);
 
-	// a hack to stop changing the displayed message when the user is updating a message
+	// TODO: FIX - a hack to stop changing the displayed message when the user is updating a message
 	const [updatingMessage, setUpdatingMessage] = useState(false);
 	const updatingMessageRef = useRef<boolean>();
 	updatingMessageRef.current = updatingMessage;
@@ -269,25 +285,6 @@ const ConversationIdPage = ({
 	// TODO: can remove this?
 	const progressBarValueRef = useRef<number>();
 	progressBarValueRef.current = progressBarValue;
-
-	const { makeChatCompletion, abortMakeChatCompletion } = useChatService();
-	const {
-		speechToText,
-		textToSpeech,
-		abortSpeechToTextRequest,
-		abortTextToSpeechRequest,
-	} = useAudioService();
-
-	const {
-		playAudio,
-		isPlaying,
-		initAudioElement,
-		audioElementInitialized,
-		stopPlaying,
-	} = useAudioPlayer();
-
-	const { isRecording, startRecording, stopRecording, amplitude } =
-		useRecording();
 
 	const STATUS: Status = useMemo(() => {
 		if (isRecording) return status.RECORDING;
@@ -486,8 +483,6 @@ const ConversationIdPage = ({
 					throw new Error("Audio is too long");
 				}
 
-				setTimestamp(new Date());
-
 				// 1. transcribe the user audio
 				setProgressBarValue(1);
 				const { transcription } = await handleSpeechToText(audioBlob);
@@ -538,6 +533,7 @@ const ConversationIdPage = ({
 
 				handleError(error);
 
+				// TODO: fix, this is broken again
 				if (timestamp) {
 					const allMessageIdsAfterTimestamp = messages
 						.filter(({ updatedAt }) => new Date(updatedAt) > timestamp)
@@ -754,6 +750,8 @@ const ConversationIdPage = ({
 		}
 
 		if (!isRecording) {
+			setTimestamp(new Date());
+
 			if (!audioElementInitialized) {
 				initAudioElement();
 			}
@@ -767,6 +765,7 @@ const ConversationIdPage = ({
 		isPlaying,
 		isRecording,
 		onRecordingComplete,
+		setTimestamp,
 		startRecording,
 		stopPlaying,
 		stopRecording,
@@ -1083,7 +1082,9 @@ const ConversationIdPage = ({
 	}, [isPlaying]);
 
 	const isShowingTranslation =
-		showTranslation && displayedMessage?.translation && !dictionaryMode;
+		showTranslation &&
+		displayedMessage?.translation &&
+		(!dictionaryMode || isPlaying);
 
 	const messageCardContent = messages.length > 0 && (
 		<MessageCard
@@ -1127,7 +1128,7 @@ const ConversationIdPage = ({
 	);
 
 	const messageIndexContent = messages.length > 0 && (
-		<div className="text-slate-400 mt-1 w-full flex justify-end px-4 text-md">
+		<div className="text-slate-400 mt-1 w-full flex justify-end px-4 text-sm">
 			{displayedMessageInd + 1} / {messages.length}
 		</div>
 	);

@@ -2,7 +2,6 @@ import { IMessage } from "@/lib/database/models/message.model";
 import { IPreferences } from "@/lib/database/models/preferences.model";
 import { auth } from "@clerk/nextjs/server";
 import OpenAI from "openai";
-import { TextContentBlock } from "openai/resources/beta/threads/messages/messages.mjs";
 
 export const maxDuration = 60; // seconds
 
@@ -28,6 +27,84 @@ type RequestBody = {
 	};
 };
 
+const getSystemMessage = ({
+	mode,
+	firstName,
+	preferences,
+}: {
+	mode: RequestBody["mode"];
+	firstName: RequestBody["firstName"];
+	preferences: RequestBody["preferences"];
+}) => {
+	let systemMessage =
+		"You are 'ArabyBuddy', a friendly Arabic language tutor. ";
+
+	if (mode === "translate") {
+		systemMessage += `Our goal is to help the user learn Arabic and have engaging conversations. You should translate the last message from the ${preferences.arabic_dialect} dialect into english.`;
+		return systemMessage;
+	}
+
+	if (mode === "rephrase") {
+		systemMessage += `Our goal is to help the user learn Arabic and have engaging conversations. You should rephrase the last message to make it sound more natural and flow better in the ${preferences.arabic_dialect} dialect. Rephrase it from the perspective of the user.`;
+		return systemMessage;
+	}
+
+	if (firstName) {
+		systemMessage += `You are here to converse with ${firstName}. make sure you include their name in your initial greeting.`;
+	}
+
+	systemMessage += `Offer engaging topics of conversation based on the user's interests and personality traits. Speak in ${preferences.arabic_dialect} dialect and at a ${preferences.assistant_language_level} language level. Your responses should be ${preferences.assistant_tone} and provide ${preferences.assistant_detail_level} level of detail. `;
+
+	if (preferences.user_interests.length > 0) {
+		systemMessage += `Consider the user's interests such as ${preferences.user_interests.join(
+			", "
+		)} when choosing topics. `;
+	}
+
+	if (preferences.user_personality_traits.length > 0) {
+		systemMessage += `Adapt your interaction style to match personality traits like ${preferences.user_personality_traits.join(
+			", "
+		)}.`;
+	}
+
+	return systemMessage;
+};
+
+// TODO: add max_tokens, temperature, streaming and other options to all completion calls
+const openAIChatCompletion = async ({
+	systemMessage,
+	messages,
+}: {
+	systemMessage: string;
+	messages: OpenAIMessage[];
+}) => {
+	console.log("creating chat completion...", messages);
+
+	const startTime = Date.now();
+
+	const completion = await openai.chat.completions.create({
+		messages: [
+			{
+				role: "system",
+				content: systemMessage,
+			},
+			...messages,
+		],
+		model: "gpt-4-turbo-preview",
+	});
+
+	const completionMessage = completion.choices[0].message;
+
+	const duration = (Date.now() - startTime) / 1000;
+
+	console.log(
+		`[DURATION = ${duration}s] completion complete`,
+		completionMessage
+	);
+
+	return { completionMessage };
+};
+
 export async function POST(req: Request, res: Response) {
 	try {
 		const { userId } = auth();
@@ -39,192 +116,90 @@ export async function POST(req: Request, res: Response) {
 		const { messageHistory, mode, firstName, preferences }: RequestBody =
 			await req.json();
 
-		const messageHistoryWithoutLatest = messageHistory.slice(
-			0,
-			messageHistory.length - 1
-		);
+		const systemMessage = getSystemMessage({ mode, preferences, firstName });
 
-		const latestMessage = messageHistory[messageHistory.length - 1];
+		console.log("systemMessage", systemMessage);
 
-		if (mode === "translate") {
-			const { translatedMessage } = await openAITranslateMessage({
-				message: latestMessage,
-				preferences,
-			});
+		// TODO: dialect needs to be added on the message itself ?
 
-			const messages = [
-				...messageHistoryWithoutLatest,
-				{
-					role: latestMessage.role,
-					content: translatedMessage ?? "",
-				},
-			];
+		let messages: OpenAIMessage[];
 
-			return Response.json({ messages }, { status: 200 });
+		switch (mode) {
+			case "translate": {
+				const messageHistoryWithoutLatest = messageHistory.slice(
+					0,
+					messageHistory.length - 1
+				);
+
+				const latestMessage = messageHistory[messageHistory.length - 1];
+
+				console.log("translating message...", latestMessage);
+
+				const { completionMessage: translatedMessage } =
+					await openAIChatCompletion({
+						systemMessage,
+						messages: [latestMessage],
+					});
+
+				messages = [
+					...messageHistoryWithoutLatest,
+					{
+						role: latestMessage.role,
+						content: translatedMessage.content ?? "",
+					},
+				];
+
+				break;
+			}
+			case "rephrase": {
+				const messageHistoryWithoutLatest = messageHistory.slice(
+					0,
+					messageHistory.length - 1
+				);
+
+				const latestMessage = messageHistory[messageHistory.length - 1];
+
+				console.log("rephrasing message...", latestMessage);
+
+				const { completionMessage: rephrasedMessage } =
+					await openAIChatCompletion({
+						systemMessage,
+						messages: [latestMessage],
+					});
+
+				messages = [
+					...messageHistoryWithoutLatest,
+					{
+						role: latestMessage.role,
+						content: rephrasedMessage.content ?? "",
+					},
+				];
+
+				break;
+			}
+			default: {
+				console.log("generating chat completion...");
+
+				const { completionMessage } = await openAIChatCompletion({
+					systemMessage,
+					messages: messageHistory,
+				});
+
+				messages = [
+					...messageHistory,
+					{
+						role: completionMessage.role,
+						content: completionMessage.content ?? "",
+					},
+				];
+			}
 		}
-
-		if (mode === "rephrase") {
-			const { rephrasedMessage } = await openAIRephraseMessage({
-				message: latestMessage,
-				preferences,
-			});
-
-			const messages = [
-				...messageHistoryWithoutLatest,
-				{
-					role: latestMessage.role,
-					content: rephrasedMessage ?? "",
-				},
-			];
-
-			return Response.json({ messages }, { status: 200 });
-		}
-
-		const { completionMessage } = await openAIGetCompletionMessage({
-			messageHistory,
-			firstName,
-			preferences,
-		});
-
-		const messages = [
-			...messageHistoryWithoutLatest,
-			{
-				role: completionMessage.role,
-				content: completionMessage.content,
-			},
-		];
 
 		return Response.json({ messages }, { status: 200 });
 	} catch (error) {
 		console.error("Error connection to OpenAI", error);
 		return Response.error();
 	}
-}
-
-const openAITranslateMessage = async ({
-	message,
-	preferences,
-}: {
-	message: OpenAIMessage;
-	preferences: { arabic_dialect: IPreferences["arabic_dialect"] };
-}) => {
-	console.log("translating message...", message);
-
-	// TODO: dialect needs to be added on the message itself
-	const systemMessage = `You are 'ArabyBuddy', a friendly Arabic language tutor. our goal is to help the user learn Arabic and have engaging conversations. You should translate the last message from the ${preferences.arabic_dialect} dialect into english.`;
-
-	console.log("systemMessage", systemMessage);
-
-	const completion = await openai.chat.completions.create({
-		messages: [
-			{
-				role: "system",
-				content: systemMessage,
-			},
-			message,
-		],
-		model: "gpt-4-turbo-preview",
-	});
-
-	const translatedMessage = completion.choices[0].message.content;
-
-	console.log("translatedMessage", translatedMessage);
-
-	return { translatedMessage };
-};
-
-const openAIRephraseMessage = async ({
-	message,
-	preferences,
-}: {
-	message: OpenAIMessage;
-	preferences: { arabic_dialect: IPreferences["arabic_dialect"] };
-}) => {
-	console.log("rephrasing message...", message);
-
-	const systemMessage = `You are 'ArabyBuddy', a friendly Arabic language tutor. our goal is to help the user learn Arabic and have engaging conversations. You should rephrase the last message to make it sound more natural and flow better in the ${preferences.arabic_dialect} dialect. Rephrase it from the perspective of the user.`;
-
-	console.log("systemMessage", systemMessage);
-
-	const completion = await openai.chat.completions.create({
-		messages: [
-			{
-				role: "system",
-				content: systemMessage,
-			},
-			message,
-		],
-		model: "gpt-4-turbo-preview",
-	});
-
-	const rephrasedMessage = completion.choices[0].message.content;
-
-	console.log("rephrasedMessage", rephrasedMessage);
-
-	return { rephrasedMessage };
-};
-
-const openAIGetCompletionMessage = async ({
-	messageHistory,
-	firstName,
-	preferences,
-}: Pick<RequestBody, "firstName" | "messageHistory" | "preferences">) => {
-	console.log("");
-
-	const systemMessage = createAssistantInstructions(firstName, preferences);
-
-	console.log("systemMessage", systemMessage);
-
-	const completion = await openai.chat.completions.create({
-		messages: [
-			{
-				role: "system",
-				content: systemMessage,
-			},
-			...messageHistory,
-		],
-		model: "gpt-4-turbo-preview",
-	});
-
-	const completionMessage = completion.choices[0].message;
-
-	console.log("completionMessage", completionMessage);
-
-	return { completionMessage };
-};
-
-function createAssistantInstructions(
-	firstName: string | undefined,
-	preferences: {
-		arabic_dialect: IPreferences["arabic_dialect"];
-		assistant_language_level: IPreferences["assistant_language_level"];
-		assistant_tone: IPreferences["assistant_tone"];
-		assistant_detail_level: IPreferences["assistant_detail_level"];
-		user_interests: IPreferences["user_interests"];
-		user_personality_traits: IPreferences["user_personality_traits"];
-	}
-) {
-	let instructions = "You are 'ArabyBuddy', a friendly Arabic language tutor. ";
-
-	if (firstName) {
-		instructions += `You are here to converse with ${firstName}. make sure you include their name in your initial greeting.`;
-	}
-
-	instructions += `Offer engaging topics of conversation based on the user's interests and personality traits. Speak in ${preferences.arabic_dialect} dialect and at a ${preferences.assistant_language_level} language level. Your responses should be ${preferences.assistant_tone} and provide ${preferences.assistant_detail_level} level of detail. `;
-
-	if (preferences.user_interests.length > 0) {
-		instructions += `Consider the user's interests such as ${preferences.user_interests.join(
-			", "
-		)} when choosing topics. `;
-	}
-
-	if (preferences.user_personality_traits.length > 0) {
-		instructions += `Adapt your interaction style to match personality traits like ${preferences.user_personality_traits.join(
-			", "
-		)}.`;
-	}
-
-	return instructions;
 }
 
 // const openAIAddChatMessageAndAwaitResponse = async ({

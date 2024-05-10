@@ -1,6 +1,6 @@
 import React from "react";
 
-const Translate = (props: any) => {
+const TranslateIcon = (props: any) => {
 	return (
 		<svg
 			xmlns="http://www.w3.org/2000/svg"
@@ -26,4 +26,4 @@ const Translate = (props: any) => {
 	);
 };
 
-export { Translate };
+export { TranslateIcon };

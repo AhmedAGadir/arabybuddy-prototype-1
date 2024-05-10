@@ -4,6 +4,10 @@ import { IPreferences } from "@/lib/database/models/preferences.model";
 import { ArabicDialect } from "@/types/types";
 import { auth } from "@clerk/nextjs/server";
 
+export const config = {
+	runtime: "edge",
+};
+
 // for every 1000 characters above your usage, they charge you $0.30
 const elevenlabs = new ElevenLabsClient({
 	apiKey: process.env.ELEVENLABS_API_KEY,
@@ -157,12 +161,15 @@ const elevenLabsTextToSpeech = async ({
 		voice_settings
 	);
 
+	const startTime = Date.now();
+
 	const audio = await elevenlabs.generate(
 		{
 			model_id: "eleven_multilingual_v2",
 			voice,
 			voice_settings,
 			text: content,
+			stream: true,
 			// output_format: "mp3_22050_32",
 			// // TODO: add streaming
 			// stream,
@@ -177,7 +184,9 @@ const elevenLabsTextToSpeech = async ({
 		}
 	);
 
-	console.log("audio received from elevenlabs");
+	const duration = (Date.now() - startTime) / 1000;
+
+	console.log(`[DURATION = ${duration}s] text to speech complete`);
 
 	return { audio };
 };

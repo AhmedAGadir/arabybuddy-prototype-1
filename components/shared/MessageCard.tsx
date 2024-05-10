@@ -87,7 +87,7 @@ Purple to blue
 		>
 			<CardHeader className="p-4 sm:p-6">{topBarContent}</CardHeader>
 			<CardContent className="p-4 pt-0 sm:p-6 sm:pt-0 bg-opacity-50 overflow-y-scroll">
-				<p
+				<div
 					className={cn(
 						"text-lg leading-loose sm:text-xl sm:leading-loose font-normal   min-w-[130px] lg:min-w-[250px]",
 						cairo.className
@@ -95,7 +95,7 @@ Purple to blue
 					style={{ direction: "rtl" }}
 				>
 					{content}
-				</p>
+				</div>
 				{showLoadingOverlay && (
 					<div className="absolute inset-0 w-full h-full bg-white bg-opacity-60 flex items-center justify-center"></div>
 				)}

@@ -22,7 +22,16 @@ export async function POST(req: Request, res: Response) {
 			audio: { base64Audio, type },
 		} = await req.json();
 
+		const startTime = Date.now();
+
 		const { transcription } = await openAISpeechToText(base64Audio, type);
+
+		const duration = (Date.now() - startTime) / 1000;
+
+		console.log(
+			`[DURATION = ${duration}s] transcription complete`,
+			transcription
+		);
 
 		return Response.json(
 			{
