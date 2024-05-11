@@ -8,10 +8,13 @@ import {
 	OpenAIMessage,
 	completionMode,
 } from "@/lib/api/assistant";
+import { useServerlessRequest } from "./useServerlessRequest";
 
 const useChatService = () => {
 	const logger = useLogger({ label: "ChatService", color: "#fe7de9" });
-	const controllerRef = useRef<AbortController>();
+
+	const { makeServerlessRequest, abortRequest: abortMakeChatCompletion } =
+		useServerlessRequest();
 
 	const { user } = useUser();
 
@@ -48,19 +51,9 @@ const useChatService = () => {
 							DEFAULT_USER_PREFERENCES.user_personality_traits,
 					},
 				};
-				const controller = new AbortController();
-				controllerRef.current = controller;
-				const { signal } = controller;
 
 				logger.log("making request to: /api/chat/assistant...", params);
-				const res = await fetch("/api/chat/assistant", {
-					method: "POST",
-					headers: {
-						"Content-Type": "application/json",
-					},
-					body: JSON.stringify(params),
-					signal,
-				});
+				const res = await makeServerlessRequest("/api/chat/assistant", params);
 
 				if (!res.ok) {
 					throw new Error(`HTTP error status: ${res.status}`);
@@ -72,6 +65,7 @@ const useChatService = () => {
 
 				for await (const chunk of res.body as any) {
 					const decodedChunk = decoder.decode(chunk, { stream: true });
+					console.log("completion chunk", decodedChunk);
 					content += decodedChunk;
 				}
 
@@ -114,14 +108,8 @@ const useChatService = () => {
 				throw error;
 			}
 		},
-		[logger, preferences, user?.firstName]
+		[logger, makeServerlessRequest, preferences, user]
 	);
-
-	const abortMakeChatCompletion = useCallback(() => {
-		logger.log("aborting request");
-		controllerRef.current?.abort();
-		controllerRef.current = undefined;
-	}, [logger]);
 
 	return { makeChatCompletion, abortMakeChatCompletion };
 };

@@ -1,7 +1,6 @@
 import { base64ToBlob } from "@/lib/utils";
 import { useState, useRef } from "react";
 import { useLogger } from "./useLogger";
-import { set } from "lodash";
 
 const useAudioPlayer = () => {
 	const logger = useLogger({ label: "useAudioPlayer", color: "#b98eff" });
@@ -39,8 +38,7 @@ const useAudioPlayer = () => {
 			const onAudioEnded = () => {
 				setIsPlaying(false);
 				logger.log("Audio ended");
-				URL.revokeObjectURL(audioSrcRef.current ?? "");
-				audioSrcRef.current = null;
+				cleanup();
 				audioRef.current?.removeEventListener("ended", onAudioEnded);
 				resolve();
 			};
@@ -55,6 +53,7 @@ const useAudioPlayer = () => {
 				// audioRef.current.muted = false;
 			} catch (err) {
 				reject(new Error("Failed to play audio"));
+				cleanup();
 			}
 		});
 
@@ -98,6 +97,11 @@ const useAudioPlayer = () => {
 		setIsPlaying(false);
 	};
 
+	const cleanup = () => {
+		URL.revokeObjectURL(audioSrcRef.current ?? "");
+		audioSrcRef.current = null;
+	};
+
 	const audioElementInitialized = audioRef.current !== undefined;
 
 	return {
@@ -107,6 +111,7 @@ const useAudioPlayer = () => {
 		audioElementInitialized,
 		stopPlaying,
 		pausePlaying,
+		audioElement: audioRef.current,
 	};
 };
 

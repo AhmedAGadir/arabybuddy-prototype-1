@@ -28,10 +28,20 @@ const useAudioService = () => {
 				};
 
 				logger.log("making request to: /api/chat/speech-to-text...", params);
-				const { transcription } = await makeServerlessRequestSpeechToText(
+				const res = await makeServerlessRequestSpeechToText(
 					"/api/chat/speech-to-text",
 					{ ...params }
 				);
+
+				const data = await res.json();
+
+				if (res.status !== 200) {
+					throw (
+						data.error || new Error(`Request failed with status ${res.status}`)
+					);
+				}
+
+				const { transcription } = data;
 
 				logger.log("transcription", transcription);
 
@@ -77,14 +87,25 @@ const useAudioService = () => {
 
 				logger.log("making request to: /api/chat/text-to-speech...", params);
 
-				const { base64Audio } = await makeServerlessRequestTextToSpeech(
+				const res = await makeServerlessRequestTextToSpeech(
 					"/api/chat/text-to-speech",
 					{ ...params }
 				);
 
-				logger.log("base64Audio", `${base64Audio.slice(0, 10)}...`);
+				if (!res.ok) {
+					throw new Error(`HTTP error status: ${res.status}`);
+				}
 
-				return { base64Audio };
+				const decoder = new TextDecoder();
+
+				for await (const chunk of res.body as any) {
+					const decodedChunk = decoder.decode(chunk, { stream: true });
+					console.log("decodedChunk", decodedChunk);
+				}
+
+				throw new Error("Not implemented");
+
+				// return { base64Audio };
 			} catch (error) {
 				logger.error("Failed to convert text to speech", error);
 				throw error;

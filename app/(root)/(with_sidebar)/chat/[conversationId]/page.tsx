@@ -1065,29 +1065,26 @@ const ConversationIdPage = ({
 
 	const menuContent = useMemo(() => {
 		if (isPlaying) {
-			// <SpeakerWaveIcon
-			// 	className={cn(
-			// 		"w-6 h-6 text-slate-400 hidden transition ease-in-out",
-			// 		isPlaying && "block"
-			// 	)}
-			// />
 			return (
-				<ScaleLoader
-					color="#b5bac4"
-					loading
-					height={20}
-					cssOverride={{
-						display: "block",
-						margin: "0",
-					}}
-					speedMultiplier={1.5}
-					aria-label="Loading Spinner"
-					data-testid="loader"
-				/>
+				<SpeakerWaveIcon className="w-6 h-6 text-slate-400 transition ease-in-out" />
 			);
 		}
-
-		return <span />;
+		return <div></div>;
+		// return (
+		// 	<ScaleLoader
+		// 		color="#b5bac4"
+		// 		loading
+		// 		height={20}
+		// 		cssOverride={{
+		// 			display: "block",
+		// 			margin: "0",
+		// 		}}
+		// 		speedMultiplier={1.5}
+		// 		aria-label="Loading Spinner"
+		// 		data-testid="loader"
+		// 	/>
+		// );
+		// }
 	}, [isPlaying]);
 
 	const isShowingTranslation =

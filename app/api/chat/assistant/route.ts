@@ -11,9 +11,7 @@ import {
 
 export const maxDuration = 60; // seconds
 
-export const config = {
-	runtime: "edge",
-};
+// export const runtime = "edge";
 
 // remember API calls wont work if the account balance is 0
 const openai = new OpenAI({
