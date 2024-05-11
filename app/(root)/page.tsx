@@ -185,7 +185,7 @@ export default function Home() {
 							today! 🌎 ☕
 						</p>
 						<div className=" w-full md:w-fit">{formContent}</div>
-						<div className="block md:hidden w-full pt-8">{authContent}</div>
+						<div className="block md:hidden w-full">{authContent}</div>
 					</div>
 				</main>
 				<footer aria-labelledby="footer-heading">
