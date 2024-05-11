@@ -126,13 +126,14 @@ export const elevenLabsTextToSpeech = async ({
 
 	const startTime = Date.now();
 
-	const audio = await elevenlabs.generate(
+	const audioStream = await elevenlabs.generate(
 		{
 			model_id: "eleven_multilingual_v2",
 			voice,
 			voice_settings,
 			text: content,
 			stream: true,
+			// optimize_streaming_latency: 0,
 			// output_format: "mp3_22050_32",
 			// // TODO: add streaming
 			// stream,
@@ -150,11 +151,11 @@ export const elevenLabsTextToSpeech = async ({
 	const encoder = new TextEncoder();
 
 	async function* makeIterator() {
-		for await (const chunk of audio as any) {
+		for await (const chunk of audioStream as any) {
 			console.log("//////////////////// chunk", chunk);
-			const base64Audio = await streamToBase64(chunk);
+			// const base64Audio = await streamToBase64(chunk);
 			// const base64Audio = await streamToBase64(audio);
-			yield encoder.encode(base64Audio as string);
+			yield encoder.encode(chunk);
 		}
 	}
 
@@ -180,3 +181,76 @@ export const elevenLabsTextToSpeech = async ({
 
 	return stream;
 };
+
+// // **** without streaming
+// const DEPRECATED_elevenLabsTextToSpeech = async ({
+// 	elevenlabs,
+// 	content,
+// 	voice_customization: {
+// 		arabic_dialect,
+// 		assistant_gender,
+// 		voice_similarity_boost,
+// 		voice_stability,
+// 		voice_style,
+// 		voice_use_speaker_boost,
+// 	},
+// }: {
+// 	elevenlabs: ElevenLabsClient;
+// 	content: string;
+// 	voice_customization: {
+// 		arabic_dialect: IPreferences["arabic_dialect"];
+// 		assistant_gender: IPreferences["assistant_gender"];
+// 		voice_stability: IPreferences["voice_stability"];
+// 		voice_similarity_boost: IPreferences["voice_similarity_boost"];
+// 		voice_style: IPreferences["voice_style"];
+// 		voice_use_speaker_boost: IPreferences["voice_use_speaker_boost"];
+// 	};
+// }) => {
+// 	const voice = voices[arabic_dialect][assistant_gender].voiceId;
+
+// 	const voice_settings = {
+// 		stability: voice_stability,
+// 		similarity_boost: voice_similarity_boost,
+// 		style: voice_style,
+// 		use_speaker_boost: voice_use_speaker_boost,
+// 	};
+
+// 	console.log(
+// 		"sending text to elevenlabs...",
+// 		"voice",
+// 		voice,
+// 		"voice_settings",
+// 		voice_settings
+// 	);
+
+// 	const startTime = Date.now();
+
+// 	const audio = await elevenlabs.generate(
+// 		{
+// 			model_id: "eleven_multilingual_v2",
+// 			voice,
+// 			voice_settings,
+// 			text: content,
+// 			stream: true,
+// 			// output_format: "mp3_22050_32",
+// 			// // TODO: add streaming
+// 			// stream,
+// 			// optimize_streaming_latency,
+// 			// output_format,
+// 			// pronunciation_dictionary_locators
+// 		},
+
+// 		{
+// 			// timeoutInSeconds?: number;
+// 			// maxRetries?: number;
+// 		}
+// 	);
+
+// 	const duration = (Date.now() - startTime) / 1000;
+
+// 	console.log(`[DURATION = ${duration}s] text to speech complete`);
+
+// 	const base64Audio = await streamToBase64(audio);
+
+// 	return { audio: base64Audio };
+// };

@@ -39,7 +39,6 @@ import DialectContext, { useDialect } from "@/context/dialectContext";
 import { ArabicDialect, ARABIC_DIALECTS } from "@/types/types";
 
 import { useMediaQuery } from "@react-hooks-hub/use-media-query";
-import Background from "@/components/shared/Background";
 
 const formSchema = z.object({
 	arabicDialect: z.string().min(2).max(50),
@@ -170,7 +169,7 @@ export default function Home() {
 					<div className="hidden md:flex justify-end w-full py-3">
 						{authContent}
 					</div>
-					<div className="flex-1 text-center flex flex-col items-center justify-center mt-8 md:mt-0">
+					<div className="flex-1 text-center flex flex-col items-center justify-center space-y-6 md:space-y-8 mt-8 md:mt-0">
 						<Image
 							src="/assets/arabybuddy.svg"
 							alt="logo"
@@ -178,16 +177,16 @@ export default function Home() {
 							height={logoSize}
 							className="mx-auto mb-2"
 						/>
-						<h1 className="my-4 text-4xl font-extrabold leading-none tracking-tight text-gray-900 md:text-5xl lg:text-6xl dark:text-white">
+						<h1 className="text-4xl font-extrabold leading-none tracking-tight text-gray-900 md:text-5xl lg:text-6xl dark:text-white">
 							Your AI Arabic Language Tutor
 						</h1>
 						<p className="text-lg font-normal text-gray-500 lg:text-xl sm:px-16 xl:px-48 dark:text-gray-400">
 							Try out our AI language buddy and learn a new Arabic dialect
 							today! 🌎 ☕
 						</p>
-						<div className="mt-10 w-full md:w-fit">{formContent}</div>
+						<div className=" w-full md:w-fit">{formContent}</div>
+						<div className="block md:hidden w-full pt-8">{authContent}</div>
 					</div>
-					<div className="block md:hidden w-full">{authContent}</div>
 				</main>
 				<footer aria-labelledby="footer-heading">
 					<div className="mt-4 border-t border-white/10 pt-8 pb-4 md:mt-20 md:flex md:items-center md:justify-between lg:mt-24">

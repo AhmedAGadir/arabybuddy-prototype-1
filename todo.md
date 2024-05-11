@@ -1,5 +1,27 @@
 ## immediate
 
+- quiz to see level,
+- add a window mockup from daisy UI on the homepage showing off the app
+
+- market to kids
+
+countdown after credits run out until credits reload
+
+mute audio options ??
+
+- company list for social proof on homepage, testimonial messages etc, they all help conversions.
+
+- see list of phone and consolidate all of this
+
+- refactor services to use react query?? will this remove the need for active tasks?
+
+- [ ] use react suspense boundaries and skeleton loaders to render fallback button for anything that takes long, e.g:
+
+  - authentication buttons on home screen
+  - messages on existing conversations
+  - conversation list
+  - preferences (long so probably not)
+
 - [ ] create lib/actions files for conversations, messages etc so that when a user deletes their account we remove their messages from our DB
 
 - [ ] streaming?
@@ -40,7 +62,7 @@
 - [ ] databases, authentication and payments
 - [ ] some viral element - leaderboard, sharing with friends etc
 - [ ] analytics
-- [ ] adds, kickstarter, tiktok sponsors (talk to mohab 16)
+- [ ] adds, kickstarter, tiktok sponsors (talk to mohab 16), product hunt etc
 - [ ] notification for connected/disconnect to internet (like codecademy)
 - [ ] option for type a response back instead?
 

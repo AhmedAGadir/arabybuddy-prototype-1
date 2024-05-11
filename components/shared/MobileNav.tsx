@@ -49,7 +49,7 @@ export default function MobileNav() {
 									</div>
 								</SheetTrigger>
 								<SheetContent className="p-0">
-									<Sidebar hideLogo logOutButton />
+									<Sidebar />
 								</SheetContent>
 							</Sheet>
 						</div>
