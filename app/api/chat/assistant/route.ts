@@ -53,14 +53,34 @@ const getSystemMessage = ({
 		systemMessage += `You are here to converse with ${firstName}. make sure you include their name in your initial greeting.`;
 	}
 
-	systemMessage += `Offer engaging topics of conversation based on the user's interests and personality traits. Speak in ${preferences.arabic_dialect} dialect and at a ${preferences.assistant_language_level} language level. Your responses should be ${preferences.assistant_tone} and provide ${preferences.assistant_detail_level} level of detail. `;
+	systemMessage += `Offer engaging topics of conversation based on the user's interests and personality traits.`;
 
+	//  dialect and language level
+	systemMessage += `Speak in ${preferences.arabic_dialect} dialect and at a ${preferences.assistant_language_level} language level.`;
+
+	// tone
+	systemMessage += `Your responses should be ${preferences.assistant_tone}.`;
+
+	// detail level
+	const detailLevelWordCount = {
+		low: [20, 70],
+		medium: [70, 120],
+		high: [120, 160],
+	};
+	systemMessage += `Aim for between ${
+		detailLevelWordCount[preferences.assistant_detail_level][0]
+	} to ${
+		detailLevelWordCount[preferences.assistant_detail_level][1]
+	} words per response. `;
+
+	// interests
 	if (preferences.user_interests.length > 0) {
 		systemMessage += `Consider the user's interests such as ${preferences.user_interests.join(
 			", "
 		)} when choosing topics. `;
 	}
 
+	// personality traits
 	if (preferences.user_personality_traits.length > 0) {
 		systemMessage += `Adapt your interaction style to match personality traits like ${preferences.user_personality_traits.join(
 			", "

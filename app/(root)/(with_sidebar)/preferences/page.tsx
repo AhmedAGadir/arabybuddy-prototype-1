@@ -347,12 +347,14 @@ const PreferencesPage = () => {
 				title: "Preferences saved",
 				description: "Your preferences have been saved successfully",
 				className: "success-toast",
+				duration: 5000,
 			});
 		} catch (error) {
 			toast({
 				title: "Error saving preferences",
 				description: "An error occurred while saving your preferences",
 				className: "error-toast",
+				duration: 5000,
 			});
 			logger.error("Error saving preferences", error);
 		}
