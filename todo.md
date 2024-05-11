@@ -1,5 +1,7 @@
 ## immediate
 
+- [ ] create lib/actions files for conversations, messages etc so that when a user deletes their account we remove their messages from our DB
+
 - [ ] streaming?
 - [ ] set up email support forwarding - did the same thing for azza school
 - [ ] bar of conversation topics

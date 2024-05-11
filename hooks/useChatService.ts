@@ -1,17 +1,17 @@
-import { useCallback } from "react";
+import { useCallback, useRef } from "react";
 import { useLogger } from "./useLogger";
-import { useServerlessRequest } from "./useServerlessRequest";
-import { IMessage } from "@/lib/database/models/message.model";
 import { usePreferences } from "./usePreferences";
 import { DEFAULT_USER_PREFERENCES } from "@/lib/database/models/preferences.model";
 import { useUser } from "@clerk/nextjs";
-import { OpenAIMessage } from "@/app/api/chat/assistant/route";
+import {
+	CompletionMode,
+	OpenAIMessage,
+	completionMode,
+} from "@/lib/api/assistant";
 
 const useChatService = () => {
 	const logger = useLogger({ label: "ChatService", color: "#fe7de9" });
-
-	const { makeServerlessRequest, abortRequest: abortMakeChatCompletion } =
-		useServerlessRequest();
+	const controllerRef = useRef<AbortController>();
 
 	const { user } = useUser();
 
@@ -20,12 +20,12 @@ const useChatService = () => {
 	const makeChatCompletion = useCallback(
 		async (
 			messageHistory: OpenAIMessage[],
-			options: { mode: "regenerate" | "rephrase" | "translate" } | undefined
+			options: { mode: CompletionMode }
 		) => {
 			try {
 				const params = {
 					messageHistory,
-					mode: options?.mode,
+					mode: options.mode,
 					firstName: user?.firstName,
 					preferences: {
 						arabic_dialect:
@@ -48,32 +48,80 @@ const useChatService = () => {
 							DEFAULT_USER_PREFERENCES.user_personality_traits,
 					},
 				};
+				const controller = new AbortController();
+				controllerRef.current = controller;
+				const { signal } = controller;
+
 				logger.log("making request to: /api/chat/assistant...", params);
-				const { messages: updatedMessages } = await makeServerlessRequest(
-					"/api/chat/assistant",
-					{ ...params }
-				);
+				const res = await fetch("/api/chat/assistant", {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+					},
+					body: JSON.stringify(params),
+					signal,
+				});
 
-				logger.log("updatedMessages", updatedMessages);
+				if (!res.ok) {
+					throw new Error(`HTTP error status: ${res.status}`);
+				}
 
-				return { messages: updatedMessages as IMessage[] };
+				const decoder = new TextDecoder();
+
+				let content = "";
+
+				for await (const chunk of res.body as any) {
+					const decodedChunk = decoder.decode(chunk, { stream: true });
+					content += decodedChunk;
+				}
+
+				const latestMessage = messageHistory[messageHistory.length - 1];
+
+				let role: "assistant" | "user";
+
+				if (
+					options.mode === completionMode.TRANSLATE ||
+					options.mode === completionMode.REPHRASE
+				) {
+					role = latestMessage.role;
+				} else {
+					role = "assistant";
+				}
+
+				const completionMessage: OpenAIMessage = {
+					role,
+					content,
+				};
+
+				return { completionMessage };
+
+				// alternative way to read the response body
+				// const reader = res.body?.getReader() as ReadableStreamDefaultReader<Uint8Array>;
+				// const decoder = new TextDecoder();
+				// const loopRunner = true;
+
+				// while (loopRunner) {
+				// 	// Here we start reading the stream, until its done.
+				// 	const { value, done } = await reader.read();
+				// 	if (done) {
+				// 		break;
+				// 	}
+				// 	const decodedChunk = decoder.decode(value, { stream: true });
+				// 	// do something
+				// }
 			} catch (error) {
 				logger.error("Failed to add chat message", error);
 				throw error;
 			}
 		},
-		[
-			logger,
-			makeServerlessRequest,
-			preferences?.arabic_dialect,
-			preferences?.assistant_detail_level,
-			preferences?.assistant_language_level,
-			preferences?.assistant_tone,
-			preferences?.user_interests,
-			preferences?.user_personality_traits,
-			user?.firstName,
-		]
+		[logger, preferences, user?.firstName]
 	);
+
+	const abortMakeChatCompletion = useCallback(() => {
+		logger.log("aborting request");
+		controllerRef.current?.abort();
+		controllerRef.current = undefined;
+	}, [logger]);
 
 	return { makeChatCompletion, abortMakeChatCompletion };
 };

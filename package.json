@@ -35,6 +35,7 @@
 		"class-variance-authority": "^0.7.0",
 		"clsx": "^2.1.0",
 		"elevenlabs": "^0.2.2",
+		"eventsource-parser": "^1.1.2",
 		"framer-motion": "^11.0.28",
 		"inline-worker": "^1.1.0",
 		"lodash": "^4.17.21",

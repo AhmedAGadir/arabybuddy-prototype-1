@@ -92,8 +92,12 @@ import { Badge } from "@/components/ui/badge";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useCyclingText } from "@/hooks/useCyclingText";
 import { nonWordCharactersRegExp } from "@/lib/constants";
-import { OpenAIMessage } from "@/app/api/chat/assistant/route";
 import useTimestamp from "@/hooks/useTimestamp";
+import {
+	CompletionMode,
+	OpenAIMessage,
+	completionMode,
+} from "@/lib/api/assistant";
 
 const status = {
 	IDLE: "IDLE",
@@ -419,31 +423,30 @@ const ConversationIdPage = ({
 	const handleMakeChatCompletion = useCallback(
 		async (
 			messageHistory: OpenAIMessage[],
-			options?: { mode: "regenerate" | "rephrase" | "translate" }
+			options: { mode: CompletionMode } = {
+				mode: completionMode.DEFAULT,
+			}
 		) => {
-			switch (options?.mode) {
-				case "regenerate":
+			switch (options.mode) {
+				case completionMode.REGENERATE:
 					setActiveTask(task.ASSISTANT_REGENERATE);
 					break;
-				case "rephrase":
+				case completionMode.REPHRASE:
 					setActiveTask(task.ASSISTANT_REPHRASE);
 					break;
-				case "translate":
+				case completionMode.TRANSLATE:
 					setActiveTask(task.ASSISTANT_TRANSLATE);
 					break;
 				default:
 					setActiveTask(task.ASSISTANT);
 			}
 
-			const { messages: updatedMessages } = await makeChatCompletion(
+			const { completionMessage } = await makeChatCompletion(
 				messageHistory,
 				options
 			);
 			setActiveTask(null);
-			const completionMessage = _.last(updatedMessages) as Pick<
-				IMessage,
-				"role" | "content"
-			>;
+
 			return { completionMessage };
 		},
 		[makeChatCompletion, setActiveTask]
@@ -595,7 +598,9 @@ const ConversationIdPage = ({
 	}, [completeTyping, isPlaying, stopPlaying]);
 
 	const redoCompletionHandler = useCallback(
-		async (options: { mode: "regenerate" | "rephrase" }) => {
+		async (options: {
+			mode: typeof completionMode.REGENERATE | typeof completionMode.REPHRASE;
+		}) => {
 			try {
 				setProgressBarValue(25);
 
@@ -641,8 +646,10 @@ const ConversationIdPage = ({
 			} catch (error) {
 				logger.error("redoCompletion", error);
 				const errorMessages = {
-					regenerate: "There was a problem regenerating this message",
-					rephrase: "There was a problem rephrasing this message",
+					[completionMode.REGENERATE]:
+						"There was a problem regenerating this message",
+					[completionMode.REPHRASE]:
+						"There was a problem rephrasing this message",
 				};
 
 				handleError(error, errorMessages[options.mode]);
@@ -677,7 +684,7 @@ const ConversationIdPage = ({
 						content: displayedMessage.content,
 					},
 				],
-				{ mode: "translate" }
+				{ mode: completionMode.TRANSLATE }
 			);
 
 			setProgressBarValue(75);
@@ -826,7 +833,8 @@ const ConversationIdPage = ({
 							// icon: MagicWandIcon,
 							icon: SparklesIcon,
 							new: true,
-							onClick: () => redoCompletionHandler({ mode: "rephrase" }),
+							onClick: () =>
+								redoCompletionHandler({ mode: completionMode.REPHRASE }),
 							disabled: !displayedMessage || !isIdle,
 						},
 				  ]
@@ -834,7 +842,8 @@ const ConversationIdPage = ({
 						{
 							label: "Regenerate",
 							icon: ArrowPathIcon,
-							onClick: () => redoCompletionHandler({ mode: "regenerate" }),
+							onClick: () =>
+								redoCompletionHandler({ mode: completionMode.REGENERATE }),
 							disabled: !displayedMessage || !isIdle,
 						},
 				  ]),
@@ -912,7 +921,7 @@ const ConversationIdPage = ({
 						return (
 							<TooltipProvider key={item.label} delayDuration={0}>
 								<Tooltip>
-									<TooltipTrigger asChild>
+									<TooltipTrigger>
 										<>
 											{item.toggle && (
 												<Toggle

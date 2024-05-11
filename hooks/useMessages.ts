@@ -5,8 +5,7 @@ import { useUser } from "@clerk/nextjs";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLogger } from "./useLogger";
 import { useTypewriter } from "./useTypewriter";
-import { update } from "lodash";
-import { OpenAIMessage } from "@/app/api/chat/assistant/route";
+import { OpenAIMessage } from "@/lib/api/assistant";
 
 const useMessages = ({ conversationId }: { conversationId: string }) => {
 	const logger = useLogger({ label: "useMessages", color: "#a5ff90" });
