@@ -138,17 +138,6 @@ const useAudioService = () => {
 		async (text: string) => {
 			try {
 				// logger.log("making request to: /api/chat/text-to-speech...", params);
-
-				// TODO: use variable voiceId
-				// const voiceId =
-				// 	voices[preferences.arabic_dialect][preferences.assistant_gender]
-				// 		.voiceId;
-				// TODO: use this model
-				// const modelId = "eleven_multilingual_v2";
-
-				const voiceId = "mRdG9GYEjJmIzqbYTidv"; // Sana
-				const modelId = "eleven_turbo_v2";
-
 				const voice_settings = {
 					stability:
 						preferences.voice_stability ??
@@ -162,6 +151,11 @@ const useAudioService = () => {
 						preferences.voice_use_speaker_boost ??
 						DEFAULT_USER_PREFERENCES.voice_use_speaker_boost,
 				};
+
+				const voiceId =
+					voices[preferences.arabic_dialect][preferences.assistant_gender]
+						.voiceId;
+				const modelId = "eleven_multilingual_v2";
 
 				const wsUrl = `wss://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream-input?model_id=${modelId}`;
 				const socket = new WebSocket(wsUrl);
