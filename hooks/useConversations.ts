@@ -14,7 +14,6 @@ const useConversations = () => {
 	const { isPending, error, data, refetch } = useQuery({
 		queryKey: ["conversations", user?.id],
 		refetchOnWindowFocus: true,
-		initialData: [],
 		queryFn: async () => {
 			logger.log("fetching conversations...");
 			const response = await fetch("/api/conversations");
@@ -146,7 +145,7 @@ const useConversations = () => {
 		return await updateConversationMutation.mutateAsync(updatedConversation);
 	};
 
-	const conversations = data.conversations as IConversation[];
+	const conversations = data?.conversations as IConversation[];
 
 	return {
 		isPending,
