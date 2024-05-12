@@ -19,13 +19,13 @@ export async function POST(req: Request, res: Response) {
 
 		const { content, voice_customization } = await req.json();
 
-		const stream = await elevenLabsTextToSpeech({
+		const { base64Audio } = await elevenLabsTextToSpeech({
 			content,
 			voice_customization,
 			elevenlabs,
 		});
 
-		return new Response(stream);
+		return Response.json({ base64Audio }, { status: 200 });
 	} catch (error) {
 		console.error("Error converting text to speech:", error);
 		return Response.error();

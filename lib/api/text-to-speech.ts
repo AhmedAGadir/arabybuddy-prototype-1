@@ -1,6 +1,7 @@
 import { ArabicDialect } from "@/types/types";
 import { IPreferences } from "../database/models/preferences.model";
 import { ElevenLabsClient } from "elevenlabs";
+import PusherServer from "pusher";
 import { streamToBase64 } from "../utils";
 
 type AssistantGender = IPreferences["assistant_gender"];
@@ -12,7 +13,7 @@ type VoiceMap = {
 };
 
 // TODO: add voice support for other dialects
-const voiceLibrary = {
+export const voiceLibrary = {
 	rachel: { name: "Rachel", voiceId: "JOoOS0ygQqJknGa2C14N" },
 	joey: {
 		name: "Joey - Youthful and Energetic",
@@ -22,7 +23,7 @@ const voiceLibrary = {
 	sana: { name: "Sana", voiceId: "mRdG9GYEjJmIzqbYTidv" },
 };
 
-const voices: VoiceMap = {
+export const voices: VoiceMap = {
 	"Modern Standard Arabic": {
 		young_female: voiceLibrary.rachel,
 		young_male: voiceLibrary.joey,
@@ -72,7 +73,7 @@ const voices: VoiceMap = {
 		old_female: voiceLibrary.sana,
 	},
 };
-
+// // **** without streaming
 export const elevenLabsTextToSpeech = async ({
 	elevenlabs,
 	content,
@@ -126,14 +127,13 @@ export const elevenLabsTextToSpeech = async ({
 
 	const startTime = Date.now();
 
-	const audioStream = await elevenlabs.generate(
+	const audio = await elevenlabs.generate(
 		{
 			model_id: "eleven_multilingual_v2",
 			voice,
 			voice_settings,
 			text: content,
-			stream: true,
-			// optimize_streaming_latency: 0,
+			// stream: true,
 			// output_format: "mp3_22050_32",
 			// // TODO: add streaming
 			// stream,
@@ -148,109 +148,11 @@ export const elevenLabsTextToSpeech = async ({
 		}
 	);
 
-	const encoder = new TextEncoder();
+	const duration = (Date.now() - startTime) / 1000;
 
-	async function* makeIterator() {
-		for await (const chunk of audioStream as any) {
-			console.log("//////////////////// chunk", chunk);
-			// const base64Audio = await streamToBase64(chunk);
-			// const base64Audio = await streamToBase64(audio);
-			yield encoder.encode(chunk);
-		}
-	}
+	console.log(`[DURATION = ${duration}s] text to speech complete`);
 
-	// https://developer.mozilla.org/docs/Web/API/ReadableStream#convert_async_iterator_to_stream
-	function iteratorToStream(iterator: any) {
-		return new ReadableStream({
-			async pull(controller) {
-				const { value, done } = await iterator.next();
+	const base64Audio = await streamToBase64(audio);
 
-				if (done) {
-					const duration = (Date.now() - startTime) / 1000;
-					console.log(`[DURATION = ${duration}s] text-to-speech complete`);
-					controller.close();
-				} else {
-					controller.enqueue(value);
-				}
-			},
-		});
-	}
-
-	const iterator = makeIterator();
-	const stream = iteratorToStream(iterator);
-
-	return stream;
+	return { base64Audio };
 };
-
-// // **** without streaming
-// const DEPRECATED_elevenLabsTextToSpeech = async ({
-// 	elevenlabs,
-// 	content,
-// 	voice_customization: {
-// 		arabic_dialect,
-// 		assistant_gender,
-// 		voice_similarity_boost,
-// 		voice_stability,
-// 		voice_style,
-// 		voice_use_speaker_boost,
-// 	},
-// }: {
-// 	elevenlabs: ElevenLabsClient;
-// 	content: string;
-// 	voice_customization: {
-// 		arabic_dialect: IPreferences["arabic_dialect"];
-// 		assistant_gender: IPreferences["assistant_gender"];
-// 		voice_stability: IPreferences["voice_stability"];
-// 		voice_similarity_boost: IPreferences["voice_similarity_boost"];
-// 		voice_style: IPreferences["voice_style"];
-// 		voice_use_speaker_boost: IPreferences["voice_use_speaker_boost"];
-// 	};
-// }) => {
-// 	const voice = voices[arabic_dialect][assistant_gender].voiceId;
-
-// 	const voice_settings = {
-// 		stability: voice_stability,
-// 		similarity_boost: voice_similarity_boost,
-// 		style: voice_style,
-// 		use_speaker_boost: voice_use_speaker_boost,
-// 	};
-
-// 	console.log(
-// 		"sending text to elevenlabs...",
-// 		"voice",
-// 		voice,
-// 		"voice_settings",
-// 		voice_settings
-// 	);
-
-// 	const startTime = Date.now();
-
-// 	const audio = await elevenlabs.generate(
-// 		{
-// 			model_id: "eleven_multilingual_v2",
-// 			voice,
-// 			voice_settings,
-// 			text: content,
-// 			stream: true,
-// 			// output_format: "mp3_22050_32",
-// 			// // TODO: add streaming
-// 			// stream,
-// 			// optimize_streaming_latency,
-// 			// output_format,
-// 			// pronunciation_dictionary_locators
-// 		},
-
-// 		{
-// 			// timeoutInSeconds?: number;
-// 			// maxRetries?: number;
-// 		}
-// 	);
-
-// 	const duration = (Date.now() - startTime) / 1000;
-
-// 	console.log(`[DURATION = ${duration}s] text to speech complete`);
-
-// 	const base64Audio = await streamToBase64(audio);
-
-// 	return { audio: base64Audio };
-// };

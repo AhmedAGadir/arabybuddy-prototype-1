@@ -23,11 +23,20 @@ const useChatService = () => {
 	const makeChatCompletion = useCallback(
 		async (
 			messageHistory: OpenAIMessage[],
+			// TODO: add streaminig option
 			options: { mode: CompletionMode }
 		) => {
 			try {
+				const latestMessage = messageHistory[messageHistory.length - 1];
+
+				const messages =
+					options.mode === completionMode.TRANSLATE ||
+					options.mode === completionMode.REPHRASE
+						? [latestMessage]
+						: messageHistory;
+
 				const params = {
-					messageHistory,
+					messages,
 					mode: options.mode,
 					firstName: user?.firstName,
 					preferences: {
@@ -69,8 +78,6 @@ const useChatService = () => {
 					content += decodedChunk;
 				}
 
-				const latestMessage = messageHistory[messageHistory.length - 1];
-
 				let role: "assistant" | "user";
 
 				if (
@@ -108,7 +115,7 @@ const useChatService = () => {
 				throw error;
 			}
 		},
-		[logger, makeServerlessRequest, preferences, user]
+		[logger, makeServerlessRequest, user, preferences]
 	);
 
 	return { makeChatCompletion, abortMakeChatCompletion };

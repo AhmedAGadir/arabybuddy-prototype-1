@@ -20,7 +20,7 @@ const openai = new OpenAI({
 });
 
 type RequestBody = {
-	messageHistory: OpenAIMessage[];
+	messages: OpenAIMessage[];
 	mode: CompletionMode;
 	firstName: string | undefined;
 	preferences: {
@@ -41,7 +41,7 @@ export async function POST(req: Request, res: Response) {
 			throw new Error("User not authenticated");
 		}
 
-		const { messageHistory, mode, firstName, preferences }: RequestBody =
+		const { messages, mode, firstName, preferences }: RequestBody =
 			await req.json();
 
 		console.log(`completion mode: ${mode}`);
@@ -51,13 +51,6 @@ export async function POST(req: Request, res: Response) {
 		console.log("systemMessage:", systemMessage);
 
 		// TODO: dialect needs to be added on the message itself ?
-
-		const latestMessage = messageHistory[messageHistory.length - 1];
-
-		const messages =
-			mode === completionMode.TRANSLATE || mode === completionMode.REPHRASE
-				? [latestMessage]
-				: messageHistory;
 
 		const stream = await openAiChatCompletionStream({
 			systemMessage,

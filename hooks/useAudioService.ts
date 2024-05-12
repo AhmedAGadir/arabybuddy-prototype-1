@@ -1,5 +1,5 @@
 import { blobToBase64 } from "@/lib/utils";
-import { useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useLogger } from "./useLogger";
 import { useServerlessRequest } from "./useServerlessRequest";
 import { usePreferences } from "./usePreferences";
@@ -59,6 +59,47 @@ const useAudioService = () => {
 		abortRequest: abortTextToSpeechRequest,
 	} = useServerlessRequest();
 
+	// const socket = io();
+
+	// socket.on("connect", () => {
+	// 	console.log("Connected to WebSocket server");
+	// });
+
+	// socket.disconnect();
+
+	// const [ws, setWs] = useState<WebSocket | null>(null);
+
+	// useEffect(() => {
+	// 	// Construct the WebSocket URL
+	// 	const wsUrl = `wss://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream-input?model_id=${modelId}`;
+
+	// 	// Create a WebSocket connection
+	// 	const socket = new WebSocket(wsUrl);
+
+	// 	// Connection opened
+	// 	socket.addEventListener('open', (event) => {
+	// 	  console.log('WebSocket is now open.');
+	// 	});
+
+	// 	// Listen for messages
+	// 	socket.addEventListener('message', (event) => {
+	// 	  console.log('Message from server: ', event.data);
+	// 	  // Handle the received audio data here
+	// 	});
+
+	// 	// Connection closed
+	// 	socket.addEventListener('close', (event) => {
+	// 	  console.log('WebSocket is closed now.');
+	// 	});
+
+	// 	// Set the WebSocket instance
+	// 	setWs(socket);
+
+	// 	// Clean up on component unmount
+	// 	return () => {
+	// 	  socket.close();
+	// 	};
+
 	const textToSpeech = useCallback(
 		async (content: string) => {
 			try {
@@ -87,25 +128,14 @@ const useAudioService = () => {
 
 				logger.log("making request to: /api/chat/text-to-speech...", params);
 
-				const res = await makeServerlessRequestTextToSpeech(
+				const { base64Audio } = await makeServerlessRequestTextToSpeech(
 					"/api/chat/text-to-speech",
 					{ ...params }
 				);
 
-				if (!res.ok) {
-					throw new Error(`HTTP error status: ${res.status}`);
-				}
+				logger.log("base64Audio", `${base64Audio.slice(0, 10)}...`);
 
-				const decoder = new TextDecoder();
-
-				for await (const chunk of res.body as any) {
-					const decodedChunk = decoder.decode(chunk, { stream: true });
-					console.log("decodedChunk", decodedChunk);
-				}
-
-				throw new Error("Not implemented");
-
-				// return { base64Audio };
+				return { base64Audio };
 			} catch (error) {
 				logger.error("Failed to convert text to speech", error);
 				throw error;
@@ -113,6 +143,50 @@ const useAudioService = () => {
 		},
 		[logger, makeServerlessRequestTextToSpeech, preferences]
 	);
+
+	// const DEPRECATED_textToSpeech = useCallback(
+	// 	async (content: string) => {
+	// 		try {
+	// 			const params = {
+	// 				content,
+	// 				voice_customization: {
+	// 					arabic_dialect:
+	// 						preferences.arabic_dialect ??
+	// 						DEFAULT_USER_PREFERENCES.arabic_dialect,
+	// 					assistant_gender:
+	// 						preferences.assistant_gender ??
+	// 						DEFAULT_USER_PREFERENCES.assistant_gender,
+	// 					voice_stability:
+	// 						preferences.voice_stability ??
+	// 						DEFAULT_USER_PREFERENCES.voice_stability,
+	// 					voice_similarity_boost:
+	// 						preferences.voice_similarity_boost ??
+	// 						DEFAULT_USER_PREFERENCES.voice_similarity_boost,
+	// 					voice_style:
+	// 						preferences.voice_style ?? DEFAULT_USER_PREFERENCES.voice_style,
+	// 					voice_use_speaker_boost:
+	// 						preferences.voice_use_speaker_boost ??
+	// 						DEFAULT_USER_PREFERENCES.voice_use_speaker_boost,
+	// 				},
+	// 			};
+
+	// 			logger.log("making request to: /api/chat/text-to-speech...", params);
+
+	// 			const { base64Audio } = await makeServerlessRequestTextToSpeech(
+	// 				"/api/chat/text-to-speech",
+	// 				{ ...params }
+	// 			);
+
+	// 			logger.log("base64Audio", `${base64Audio.slice(0, 10)}...`);
+
+	// 			return { base64Audio };
+	// 		} catch (error) {
+	// 			logger.error("Failed to convert text to speech", error);
+	// 			throw error;
+	// 		}
+	// 	},
+	// 	[logger, makeServerlessRequestTextToSpeech, preferences]
+	// );
 
 	return {
 		speechToText,

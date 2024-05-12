@@ -1,5 +1,8 @@
 ## immediate
 
+- set message index in the query params
+- make chat completions and text-to-speech streamable or not (Add to options: stream prop)
+
 - quiz to see level,
 - add a window mockup from daisy UI on the homepage showing off the app
 
