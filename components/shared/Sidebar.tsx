@@ -19,7 +19,7 @@ import {
 	TrashIcon,
 	ArrowRightStartOnRectangleIcon,
 } from "@heroicons/react/24/outline";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "../ui/button";
 import { useConversations } from "@/hooks/useConversations";
@@ -43,9 +43,9 @@ const accountNavigation = [
 export default function Sidebar() {
 	const { user } = useUser();
 
-	const pathname = usePathname();
-
 	const router = useRouter();
+	const pathname = usePathname();
+	const searchParams = useSearchParams();
 
 	const { toast } = useToast();
 
@@ -125,10 +125,15 @@ export default function Sidebar() {
 			<ul role="list" className="space-y-1">
 				{conversations.map(({ _id, lastMessage, label }) => {
 					const isActive = `/chat/${_id}` === pathname;
+
+					const href = isActive
+						? `/chat/${_id}?${searchParams.toString()}`
+						: `/chat/${_id}`;
+
 					return (
 						<li key={_id}>
 							<Link
-								href={`/chat/${_id}`}
+								href={href}
 								className={cn(
 									isActive
 										? "bg-gray-50 text-indigo-600"
@@ -156,7 +161,7 @@ export default function Sidebar() {
 				})}
 			</ul>
 		);
-	}, [conversations, error, isPending, pathname]);
+	}, [conversations, error, isPending, pathname, searchParams]);
 
 	const authContent = useMemo(() => {
 		return (

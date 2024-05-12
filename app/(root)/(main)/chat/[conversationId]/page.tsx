@@ -89,7 +89,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { text } from "stream/consumers";
 import { Minus, Plus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCyclingText } from "@/hooks/useCyclingText";
 import { nonWordCharactersRegExp } from "@/lib/constants";
 import useTimestamp from "@/hooks/useTimestamp";
@@ -221,28 +221,44 @@ const ConversationIdPage = ({
 		}
 	}, [isPending, error, refetch, toast]);
 
-	const [displayedMessageInd, setDisplayedMessageInd] = useState<number>(0);
+	const router = useRouter();
+	const pathname = usePathname();
+	const searchParams = useSearchParams();
+
+	const displayedMessageInd =
+		searchParams.get("ind") !== null ? Number(searchParams.get("ind")) : null;
+
+	const updateDisplayedMessageInd = useCallback(
+		(newIndex: number) => {
+			const createQueryString = (name: string, value: string) => {
+				const params = new URLSearchParams(searchParams.toString());
+				params.set(name, value);
+
+				return params.toString();
+			};
+
+			router.replace(
+				pathname + "?" + createQueryString("ind", newIndex.toString())
+			);
+		},
+		[pathname, router, searchParams]
+	);
 
 	useEffect(() => {
-		if (updatingMessageRef.current) return;
-		setDisplayedMessageInd(messages.length - 1);
+		if (searchParams.get("ind") === null && messages.length > 0) {
+			// init to most recent message
+			logger.log("init displayedMessageInd to last message index");
+			updateDisplayedMessageInd(messages.length - 1);
+		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [messages]);
 
-	const displayedMessage = useMemo(
-		() => messages[displayedMessageInd],
-		[displayedMessageInd, messages]
-	);
-
-	// TODO: FIX - a hack to stop changing the displayed message when the user is updating a message
-	const [updatingMessage, setUpdatingMessage] = useState(false);
-	const updatingMessageRef = useRef<boolean>();
-	updatingMessageRef.current = updatingMessage;
-
-	useEffect(() => {
-		logger.log("updatingMessage", updatingMessage);
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [updatingMessage]);
+	const displayedMessage = useMemo(() => {
+		if (displayedMessageInd === null) {
+			return null;
+		}
+		return messages[displayedMessageInd];
+	}, [displayedMessageInd, messages]);
 
 	// const pathname = usePathname();
 	// const searchParams = useSearchParams();
@@ -499,8 +515,12 @@ const ConversationIdPage = ({
 					content,
 				}));
 
+				let latestMessageInd = messageHistory.length - 1;
+
 				// update database with user message in the foreground (optimistic update)
 				await createMessage({ role: "user", content: transcription });
+				latestMessageInd++;
+				updateDisplayedMessageInd(latestMessageInd);
 
 				// // 2. add user transcription to chat completion
 				const { completionMessage } = await handleMakeChatCompletion([
@@ -520,6 +540,9 @@ const ConversationIdPage = ({
 				setProgressBarValue(100);
 				// update database with user message in the background (optimistic update)
 				createMessage(completionMessage);
+				latestMessageInd++;
+				updateDisplayedMessageInd(latestMessageInd);
+
 				await handlePlayAudio(base64Audio);
 
 				// update latest conversation in sidebar
@@ -543,6 +566,7 @@ const ConversationIdPage = ({
 						.map(({ _id }) => _id);
 
 					await deleteMessages(allMessageIdsAfterTimestamp);
+					// TODO: update index
 					setTimestamp(null);
 				}
 
@@ -563,6 +587,7 @@ const ConversationIdPage = ({
 			handleError,
 			deleteMessages,
 			timestamp,
+			updateDisplayedMessageInd,
 		]
 	);
 
@@ -602,6 +627,8 @@ const ConversationIdPage = ({
 			mode: typeof completionMode.REGENERATE | typeof completionMode.REPHRASE;
 		}) => {
 			try {
+				if (!displayedMessage) return;
+
 				setProgressBarValue(25);
 
 				const messageHistory = messages
@@ -609,7 +636,7 @@ const ConversationIdPage = ({
 						role,
 						content,
 					}))
-					.slice(0, displayedMessageInd);
+					.slice(0, displayedMessageInd ?? 0);
 
 				const { completionMessage } = await handleMakeChatCompletion(
 					[
@@ -628,15 +655,11 @@ const ConversationIdPage = ({
 					completionMessage.content
 				);
 
-				setUpdatingMessage(true);
-
 				updateMessage({
 					...displayedMessage,
 					...completionMessage,
 				});
 				await handlePlayAudio(base64Audio);
-
-				setUpdatingMessage(false);
 
 				updateConversation({
 					_id: conversationId,
@@ -674,6 +697,8 @@ const ConversationIdPage = ({
 
 	const translateBtnHandler = useCallback(async () => {
 		try {
+			if (!displayedMessage) return;
+
 			setShowTranslation(true);
 			setProgressBarValue(25);
 
@@ -693,8 +718,6 @@ const ConversationIdPage = ({
 				completionMessage.content
 			);
 
-			setUpdatingMessage(true);
-
 			updateMessage(
 				{
 					...displayedMessage,
@@ -705,11 +728,6 @@ const ConversationIdPage = ({
 				}
 			);
 			await handlePlayAudio(base64Audio);
-
-			// TODO: FIX - hack to stop updating message index after translating
-			setTimeout(() => {
-				setUpdatingMessage(false);
-			}, 2000);
 
 			setProgressBarValue(0);
 		} catch (error) {
@@ -784,7 +802,8 @@ const ConversationIdPage = ({
 				label: "Previous",
 				// icon: ChevronLeftIcon,
 				icon: () => <span>Prev</span>,
-				onClick: () => setDisplayedMessageInd((prevInd) => prevInd - 1),
+				onClick: () =>
+					updateDisplayedMessageInd((displayedMessageInd ?? 0) - 1),
 				disabled:
 					!displayedMessage ||
 					displayedMessageInd === 0 ||
@@ -886,7 +905,8 @@ const ConversationIdPage = ({
 				label: "Next",
 				// icon: ChevronRightIcon,
 				icon: () => <span>Next</span>,
-				onClick: () => setDisplayedMessageInd((prevInd) => prevInd + 1),
+				onClick: () =>
+					updateDisplayedMessageInd((displayedMessageInd ?? 0) + 1),
 				disabled:
 					!displayedMessage ||
 					displayedMessageInd === messages.length - 1 ||
@@ -911,6 +931,7 @@ const ConversationIdPage = ({
 		translateBtnHandler,
 		messages.length,
 		redoCompletionHandler,
+		updateDisplayedMessageInd,
 	]);
 
 	const panelItemsContent = (
@@ -1092,52 +1113,54 @@ const ConversationIdPage = ({
 		displayedMessage?.translation &&
 		(!dictionaryMode || isPlaying);
 
-	const messageCardContent = messages.length > 0 && (
-		<MessageCard
-			className={cn(
-				"h-full bg-white text-slate-900 dark:text-white"
-				// isPlaying &&
-				// 	"text-transparent bg-clip-text bg-gradient-to-r to-indigo-500 from-sky-500 shadow-blue-500/50"
-			)}
-			name={messageCardDetails.name}
-			avatarSrc={messageCardDetails.avatarSrc}
-			avatarAlt={messageCardDetails.avatarAlt}
-			// glow={isPlaying}
-			showLoadingOverlay={STATUS === status.PROCESSING}
-			menuContent={menuContent}
-			content={
-				false ? (
-					<PulseLoader
-						color="black"
-						loading
-						cssOverride={{
-							display: "block",
-							margin: "0",
-							width: 250,
-						}}
-						size={6}
-						aria-label="Loading Spinner"
-						data-testid="loader"
-						speedMultiplier={0.75}
-					/>
-				) : (
-					<div
-						style={{
-							direction: isShowingTranslation ? "ltr" : "rtl",
-						}}
-					>
-						{displayedMessageContent}
-					</div>
-				)
-			}
-		/>
-	);
+	const messageCardContent = messages.length > 0 &&
+		displayedMessageInd !== null && (
+			<MessageCard
+				className={cn(
+					"h-full bg-white text-slate-900 dark:text-white"
+					// isPlaying &&
+					// 	"text-transparent bg-clip-text bg-gradient-to-r to-indigo-500 from-sky-500 shadow-blue-500/50"
+				)}
+				name={messageCardDetails.name}
+				avatarSrc={messageCardDetails.avatarSrc}
+				avatarAlt={messageCardDetails.avatarAlt}
+				// glow={isPlaying}
+				showLoadingOverlay={STATUS === status.PROCESSING}
+				menuContent={menuContent}
+				content={
+					false ? (
+						<PulseLoader
+							color="black"
+							loading
+							cssOverride={{
+								display: "block",
+								margin: "0",
+								width: 250,
+							}}
+							size={6}
+							aria-label="Loading Spinner"
+							data-testid="loader"
+							speedMultiplier={0.75}
+						/>
+					) : (
+						<div
+							style={{
+								direction: isShowingTranslation ? "ltr" : "rtl",
+							}}
+						>
+							{displayedMessageContent}
+						</div>
+					)
+				}
+			/>
+		);
 
-	const messageIndexContent = messages.length > 0 && (
-		<div className="text-slate-400 mt-1 w-full flex justify-end px-4 text-sm">
-			{displayedMessageInd + 1} / {messages.length}
-		</div>
-	);
+	const messageIndexContent = messages.length > 0 &&
+		displayedMessageInd !== null && (
+			<div className="text-slate-400 mt-1 w-full flex justify-end px-4 text-sm">
+				{displayedMessageInd + 1} / {messages.length}
+			</div>
+		);
 
 	const drawerContent = (
 		<Drawer
