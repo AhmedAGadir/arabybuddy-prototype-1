@@ -1,5 +1,10 @@
 ## immediate
 
+- [] add hotkeys, space for start/stop recording
+
+- [ ] show loading spinner when creating new conversation in sidebar.
+      this may cause a big refactor where we return each mutation instead of mutation.mutateAsync so that we can have access to mutation states (isPending etc).
+
 - set message index in the query params
 - make chat completions and text-to-speech streamable or not (Add to options: stream prop)
 

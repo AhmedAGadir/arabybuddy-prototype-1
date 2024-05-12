@@ -17,6 +17,8 @@ import { useAudioPlayer } from "@/hooks/useAudioPlayer";
 import { useRecording } from "@/hooks/useRecording";
 import { useMessages } from "@/hooks/useMessages";
 import { useConversations } from "@/hooks/useConversations";
+import { ObjectId } from "mongodb";
+import { nanoid } from "nanoid";
 
 import { Button } from "@/components/ui/button";
 
@@ -70,7 +72,7 @@ import {
 	DrawerTrigger,
 } from "@/components/ui/drawer";
 
-import _ from "lodash";
+import _, { set } from "lodash";
 import { Transition } from "@headlessui/react";
 
 import { cn } from "@/lib/utils";
@@ -180,6 +182,7 @@ const ConversationIdPage = ({
 		completeTyping,
 		deleteMessages,
 		refetch,
+		upsertMessageInCache,
 	} = useMessages({
 		conversationId,
 	});
@@ -245,8 +248,8 @@ const ConversationIdPage = ({
 	);
 
 	useEffect(() => {
+		// initialise to last message index
 		if (searchParams.get("ind") === null && messages.length > 0) {
-			// init to most recent message
 			logger.log("init displayedMessageInd to last message index");
 			updateDisplayedMessageInd(messages.length - 1);
 		}
@@ -254,9 +257,12 @@ const ConversationIdPage = ({
 	}, [messages]);
 
 	const displayedMessage = useMemo(() => {
-		if (displayedMessageInd === null) {
-			return null;
-		}
+		// first load
+		if (displayedMessageInd === null) return null;
+
+		// if search params are out of bounds
+		if (messages[displayedMessageInd] === undefined) return null;
+
 		return messages[displayedMessageInd];
 	}, [displayedMessageInd, messages]);
 
@@ -439,31 +445,31 @@ const ConversationIdPage = ({
 	const handleMakeChatCompletion = useCallback(
 		async (
 			messageHistory: OpenAIMessage[],
-			options: { mode: CompletionMode } = {
-				mode: completionMode.DEFAULT,
-			}
+			options: { mode: CompletionMode }
 		) => {
-			switch (options.mode) {
-				case completionMode.REGENERATE:
-					setActiveTask(task.ASSISTANT_REGENERATE);
-					break;
-				case completionMode.REPHRASE:
-					setActiveTask(task.ASSISTANT_REPHRASE);
-					break;
-				case completionMode.TRANSLATE:
-					setActiveTask(task.ASSISTANT_TRANSLATE);
-					break;
-				default:
-					setActiveTask(task.ASSISTANT);
-			}
+			throw new Error("Not implemented");
 
-			const { completionMessage } = await makeChatCompletion(
-				messageHistory,
-				options
-			);
-			setActiveTask(null);
+			// switch (options.mode) {
+			// 	case completionMode.REGENERATE:
+			// 		setActiveTask(task.ASSISTANT_REGENERATE);
+			// 		break;
+			// 	case completionMode.REPHRASE:
+			// 		setActiveTask(task.ASSISTANT_REPHRASE);
+			// 		break;
+			// 	case completionMode.TRANSLATE:
+			// 		setActiveTask(task.ASSISTANT_TRANSLATE);
+			// 		break;
+			// 	default:
+			// 		setActiveTask(task.ASSISTANT);
+			// }
 
-			return { completionMessage };
+			// const { completionMessage } = await makeChatCompletion(
+			// 	messageHistory,
+			// 	options
+			// );
+			// setActiveTask(null);
+
+			// return { completionMessage };
 		},
 		[makeChatCompletion, setActiveTask]
 	);
@@ -502,14 +508,11 @@ const ConversationIdPage = ({
 					throw new Error("Audio is too long");
 				}
 
-				// 1. transcribe the user audio
 				setProgressBarValue(1);
-				const { transcription } = await handleSpeechToText(audioBlob);
 
 				// TODO: sanitize transcription, no input should be empty
+				const { transcription } = await handleSpeechToText(audioBlob);
 
-				setProgressBarValue(25);
-				// copy messages before updating the db
 				const messageHistory = messages.map(({ role, content }) => ({
 					role,
 					content,
@@ -517,13 +520,19 @@ const ConversationIdPage = ({
 
 				let latestMessageInd = messageHistory.length - 1;
 
-				// update database with user message in the foreground (optimistic update)
-				await createMessage({ role: "user", content: transcription });
+				await upsertMessageInCache({
+					role: "user",
+					content: transcription,
+				});
+
 				latestMessageInd++;
 				updateDisplayedMessageInd(latestMessageInd);
 
-				// // 2. add user transcription to chat completion
-				const { completionMessage } = await handleMakeChatCompletion([
+				setProgressBarValue(25);
+
+				setActiveTask(task.ASSISTANT);
+
+				const stream = await makeChatCompletion([
 					...messageHistory,
 					{
 						role: "user",
@@ -531,29 +540,57 @@ const ConversationIdPage = ({
 					},
 				]);
 
-				// 3. convert the assistants response to audio
-				setProgressBarValue(75);
-				const { base64Audio } = await handleTextToSpeech(
-					completionMessage.content
-				);
-				// 4. play assistants response and update message database
-				setProgressBarValue(100);
-				// update database with user message in the background (optimistic update)
-				createMessage(completionMessage);
+				const dateStr = new Date().toISOString();
+
+				const completionMessage = {
+					_id: nanoid(),
+					clerkId: user!.id,
+					conversationId,
+					createdAt: dateStr,
+					updatedAt: dateStr,
+				} as IMessage;
+
 				latestMessageInd++;
 				updateDisplayedMessageInd(latestMessageInd);
 
-				await handlePlayAudio(base64Audio);
+				for await (const data of stream) {
+					completionMessage.content = data.content;
+					completionMessage.role = data.role;
 
-				// update latest conversation in sidebar
-				updateConversation({
-					_id: conversationId,
-					lastMessage: completionMessage.content,
-				});
-				setProgressBarValue(0);
-				setTimestamp(null);
+					await upsertMessageInCache({ ...completionMessage });
+				}
+
+				// now actually update the message in the database
+				// await createMessage(completionMessage);
+
+				setActiveTask(null);
 
 				return { success: true };
+
+				// throw new Error("not implemented");
+
+				// // 3. convert the assistants response to audio
+				// setProgressBarValue(75);
+				// const { base64Audio } = await handleTextToSpeech(
+				// 	completionMessage.content
+				// );
+				// // 4. play assistants response and update message database
+				// setProgressBarValue(100);
+				// createMessage(completionMessage);
+				// latestMessageInd++;
+				// updateDisplayedMessageInd(latestMessageInd);
+
+				// await handlePlayAudio(base64Audio);
+
+				// // update latest conversation in sidebar
+				// updateConversation({
+				// 	_id: conversationId,
+				// 	lastMessage: completionMessage.content,
+				// });
+				// setProgressBarValue(0);
+				// setTimestamp(null);
+
+				// return { success: true };
 			} catch (error) {
 				logger.error("onRecordingComplete failed", error);
 
@@ -565,7 +602,7 @@ const ConversationIdPage = ({
 						.filter(({ updatedAt }) => new Date(updatedAt) > timestamp)
 						.map(({ _id }) => _id);
 
-					await deleteMessages(allMessageIdsAfterTimestamp);
+					// await deleteMessages(allMessageIdsAfterTimestamp);
 					// TODO: update index
 					setTimestamp(null);
 				}
@@ -574,20 +611,17 @@ const ConversationIdPage = ({
 			}
 		},
 		[
-			setTimestamp,
 			handleSpeechToText,
 			messages,
-			createMessage,
-			handleMakeChatCompletion,
-			handleTextToSpeech,
-			handlePlayAudio,
-			updateConversation,
+			updateDisplayedMessageInd,
+			makeChatCompletion,
+			user,
 			conversationId,
+			upsertMessageInCache,
 			logger,
 			handleError,
-			deleteMessages,
 			timestamp,
-			updateDisplayedMessageInd,
+			setTimestamp,
 		]
 	);
 
@@ -724,7 +758,7 @@ const ConversationIdPage = ({
 					translation: completionMessage.content,
 				},
 				{
-					translate: true,
+					mode: completionMode.TRANSLATE,
 				}
 			);
 			await handlePlayAudio(base64Audio);
@@ -993,43 +1027,13 @@ const ConversationIdPage = ({
 		</Card>
 	);
 
-	const displayedMessageContent = useMemo(() => {
-		if (!displayedMessage) return null;
-
-		if (dictionaryMode && STATUS === status.IDLE) {
-			return (
-				<div className="flex flex-wrap gap-2">
-					{_.words(
-						displayedMessage?.content.replace(nonWordCharactersRegExp, "")
-					).map((word, i) => (
-						<Badge
-							key={`${word}_${i}`}
-							variant="secondary"
-							className="text-lg cursor-pointer hover:bg-primary hover:text-white"
-							onClick={() => setDrawerOpen(true)}
-						>
-							{word}
-						</Badge>
-					))}
-				</div>
-			);
-		}
-
-		const textToDisplay =
-			showTranslation && displayedMessage?.translation
-				? displayedMessage?.translation
-				: displayedMessage?.content;
-
-		return textToDisplay;
-	}, [STATUS, dictionaryMode, displayedMessage, showTranslation]);
-
 	const instructionContent = (
 		<Transition
 			className={cn(
 				cairo.className,
 				// "font-extrabold text-2xl md:text-3xl tracking-tight",
 				"text-lg sm:text-xl tracking-tight",
-				"text-transparent bg-clip-text bg-gradient-to-r to-araby-purple from-araby-blue py-4 text-gray-600"
+				"text-transparent bg-clip-text bg-gradient-to-r to-araby-purple from-araby-blue py-4 text-gray-500"
 			)}
 			show={showInstruction}
 			enter="transition-all ease-in-out duration-500 delay-200"
@@ -1108,13 +1112,27 @@ const ConversationIdPage = ({
 		// }
 	}, [isPlaying]);
 
-	const isShowingTranslation =
-		showTranslation &&
-		displayedMessage?.translation &&
-		(!dictionaryMode || isPlaying);
+	// needed for streaming updates in the messageCard component
+	const displayedMessageText = useMemo(() => {
+		if (!displayedMessage) return null;
+		if (showTranslation && displayedMessage.translation) {
+			return displayedMessage.translation;
+		}
 
-	const messageCardContent = messages.length > 0 &&
-		displayedMessageInd !== null && (
+		return displayedMessage.content;
+		// NOTE: displayedMessage?.content must be included in the deps array
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [displayedMessage, displayedMessage?.content, showTranslation]);
+
+	const messageCardContent = useMemo(() => {
+		if (!displayedMessage) return null;
+
+		const isShowingTranslation =
+			showTranslation &&
+			displayedMessage?.translation &&
+			(!dictionaryMode || isPlaying);
+
+		return (
 			<MessageCard
 				className={cn(
 					"h-full bg-white text-slate-900 dark:text-white"
@@ -1148,19 +1166,53 @@ const ConversationIdPage = ({
 								direction: isShowingTranslation ? "ltr" : "rtl",
 							}}
 						>
-							{displayedMessageContent}
+							{dictionaryMode && STATUS === status.IDLE && (
+								<div className="flex flex-wrap gap-2">
+									{_.words(
+										displayedMessage?.content.replace(
+											nonWordCharactersRegExp,
+											""
+										)
+									).map((word, i) => (
+										<Badge
+											key={`${word}_${i}`}
+											variant="secondary"
+											className="text-lg cursor-pointer hover:bg-primary hover:text-white"
+											onClick={() => setDrawerOpen(true)}
+										>
+											{word}
+										</Badge>
+									))}
+								</div>
+							)}
+							{!dictionaryMode && displayedMessageText}
 						</div>
 					)
 				}
 			/>
 		);
+	}, [
+		STATUS,
+		dictionaryMode,
+		displayedMessage,
+		displayedMessageText,
+		isPlaying,
+		menuContent,
+		messageCardDetails.avatarAlt,
+		messageCardDetails.avatarSrc,
+		messageCardDetails.name,
+		showTranslation,
+	]);
 
-	const messageIndexContent = messages.length > 0 &&
-		displayedMessageInd !== null && (
-			<div className="text-slate-400 mt-1 w-full flex justify-end px-4 text-sm">
-				{displayedMessageInd + 1} / {messages.length}
-			</div>
-		);
+	const messageIndexContent = useMemo(
+		() =>
+			displayedMessageText && (
+				<div className="text-slate-400 mt-1 w-full flex justify-end px-4 text-sm">
+					{(displayedMessageInd ?? 0) + 1} / {messages.length}
+				</div>
+			),
+		[displayedMessageInd, displayedMessageText, messages.length]
+	);
 
 	const drawerContent = (
 		<Drawer

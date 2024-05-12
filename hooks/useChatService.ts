@@ -8,117 +8,169 @@ import {
 	OpenAIMessage,
 	completionMode,
 } from "@/lib/api/assistant";
-import { useServerlessRequest } from "./useServerlessRequest";
 
 const useChatService = () => {
 	const logger = useLogger({ label: "ChatService", color: "#fe7de9" });
-
-	const { makeServerlessRequest, abortRequest: abortMakeChatCompletion } =
-		useServerlessRequest();
-
 	const { user } = useUser();
-
 	const { preferences } = usePreferences();
+	const controllerRef = useRef<AbortController>();
 
-	const makeChatCompletion = useCallback(
-		async (
-			messageHistory: OpenAIMessage[],
-			// TODO: add streaming option
-			options: { mode: CompletionMode }
-		) => {
-			try {
-				const latestMessage = messageHistory[messageHistory.length - 1];
+	async function* makeChatCompletionGenerator(
+		messageHistory: OpenAIMessage[],
+		options: { mode: CompletionMode }
+	) {
+		try {
+			const latestMessage = messageHistory[messageHistory.length - 1];
 
-				const messages =
-					options.mode === completionMode.TRANSLATE ||
-					options.mode === completionMode.REPHRASE
-						? [latestMessage]
-						: messageHistory;
+			const messages =
+				options.mode === completionMode.TRANSLATE ||
+				options.mode === completionMode.REPHRASE
+					? [latestMessage]
+					: messageHistory;
 
-				const params = {
-					messages,
-					mode: options.mode,
-					firstName: user?.firstName,
-					preferences: {
-						arabic_dialect:
-							preferences.arabic_dialect ??
-							DEFAULT_USER_PREFERENCES.arabic_dialect,
-						assistant_language_level:
-							preferences.assistant_language_level ??
-							DEFAULT_USER_PREFERENCES.assistant_language_level,
-						assistant_tone:
-							preferences.assistant_tone ??
-							DEFAULT_USER_PREFERENCES.assistant_tone,
-						assistant_detail_level:
-							preferences.assistant_detail_level ??
-							DEFAULT_USER_PREFERENCES.assistant_detail_level,
-						user_interests:
-							preferences.user_interests ??
-							DEFAULT_USER_PREFERENCES.user_interests,
-						user_personality_traits:
-							preferences.user_personality_traits ??
-							DEFAULT_USER_PREFERENCES.user_personality_traits,
-					},
-				};
+			const params = {
+				messages,
+				mode: options.mode,
+				firstName: user?.firstName,
+				preferences: {
+					arabic_dialect:
+						preferences.arabic_dialect ??
+						DEFAULT_USER_PREFERENCES.arabic_dialect,
+					assistant_language_level:
+						preferences.assistant_language_level ??
+						DEFAULT_USER_PREFERENCES.assistant_language_level,
+					assistant_tone:
+						preferences.assistant_tone ??
+						DEFAULT_USER_PREFERENCES.assistant_tone,
+					assistant_detail_level:
+						preferences.assistant_detail_level ??
+						DEFAULT_USER_PREFERENCES.assistant_detail_level,
+					user_interests:
+						preferences.user_interests ??
+						DEFAULT_USER_PREFERENCES.user_interests,
+					user_personality_traits:
+						preferences.user_personality_traits ??
+						DEFAULT_USER_PREFERENCES.user_personality_traits,
+				},
+			};
 
-				logger.log("making request to: /api/chat/assistant...", params);
-				const res = await makeServerlessRequest("/api/chat/assistant", params);
+			const controller = new AbortController();
+			controllerRef.current = controller;
+			const { signal } = controller;
 
-				if (!res.ok) {
-					throw new Error(`HTTP error status: ${res.status}`);
-				}
+			logger.log("making request to: /api/chat/assistant...", params);
 
-				let content = "";
+			const res = await fetch("/api/chat/assistant", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify(params),
+				signal,
+			});
 
-				// const decoder = new TextDecoder();
-				// for await (const chunk of res.body as any) {
-				// 	const decodedChunk = decoder.decode(chunk, { stream: true });
-				// 	console.log("completion chunk", decodedChunk);
-				// 	content += decodedChunk;
-				// }
+			if (!res.ok) {
+				throw new Error(`HTTP error status: ${res.status}`);
+			}
 
-				// alternative way to read the response body
-				const reader =
-					res.body?.getReader() as ReadableStreamDefaultReader<Uint8Array>;
-				const decoder = new TextDecoder();
-				const loopRunner = true;
+			let role: "assistant" | "user";
 
-				while (loopRunner) {
-					// Here we start reading the stream, until its done.
-					const { value, done } = await reader.read();
-					if (done) {
-						break;
-					}
-					const decodedChunk = decoder.decode(value, { stream: true });
-					content += decodedChunk;
-				}
+			if (
+				options.mode === completionMode.TRANSLATE ||
+				options.mode === completionMode.REPHRASE
+			) {
+				role = latestMessage.role;
+			} else {
+				role = "assistant";
+			}
 
-				let role: "assistant" | "user";
+			const reader =
+				res.body?.getReader() as ReadableStreamDefaultReader<Uint8Array>;
+			const decoder = new TextDecoder();
 
-				if (
-					options.mode === completionMode.TRANSLATE ||
-					options.mode === completionMode.REPHRASE
-				) {
-					role = latestMessage.role;
-				} else {
-					role = "assistant";
-				}
+			let content = "";
+
+			while (true) {
+				const { value, done } = await reader.read();
+				if (done) break;
+				const text = decoder.decode(value, { stream: true });
+				content += text;
 
 				const completionMessage: OpenAIMessage = {
 					role,
 					content,
 				};
 
-				return { completionMessage };
-			} catch (error) {
-				logger.error("Failed to add chat message", error);
-				throw error;
+				yield completionMessage;
 			}
-		},
-		[logger, makeServerlessRequest, user, preferences]
-	);
+		} catch (error) {
+			logger.error("Failed to make chat completion", error);
+			throw error;
+		}
+	}
+
+	const makeChatCompletion = async (
+		messageHistory: OpenAIMessage[],
+		options: { mode: CompletionMode } = {
+			mode: completionMode.DEFAULT,
+		}
+	) => makeChatCompletionGenerator(messageHistory, options);
+
+	const abortMakeChatCompletion = useCallback(() => {
+		logger.log("aborting makeChatCompletion request");
+		controllerRef.current?.abort();
+		controllerRef.current = undefined;
+	}, [logger]);
 
 	return { makeChatCompletion, abortMakeChatCompletion };
+
+	// const DEPRECATED_makeChatCompletion = useCallback(
+	// 	async (
+	// 		messageHistory: OpenAIMessage[],
+	// 		options: { mode: "regenerate" | "rephrase" | "translate" } | undefined
+	// 	) => {
+	// 		try {
+	// 			const params = {
+	// 				messageHistory,
+	// 				mode: options?.mode,
+	// 				firstName: user?.firstName,
+	// 				preferences: {
+	// 					arabic_dialect:
+	// 						preferences.arabic_dialect ??
+	// 						DEFAULT_USER_PREFERENCES.arabic_dialect,
+	// 					assistant_language_level:
+	// 						preferences.assistant_language_level ??
+	// 						DEFAULT_USER_PREFERENCES.assistant_language_level,
+	// 					assistant_tone:
+	// 						preferences.assistant_tone ??
+	// 						DEFAULT_USER_PREFERENCES.assistant_tone,
+	// 					assistant_detail_level:
+	// 						preferences.assistant_detail_level ??
+	// 						DEFAULT_USER_PREFERENCES.assistant_detail_level,
+	// 					user_interests:
+	// 						preferences.user_interests ??
+	// 						DEFAULT_USER_PREFERENCES.user_interests,
+	// 					user_personality_traits:
+	// 						preferences.user_personality_traits ??
+	// 						DEFAULT_USER_PREFERENCES.user_personality_traits,
+	// 				},
+	// 			};
+	// 			logger.log("making request to: /api/chat/assistant...", params);
+	// 			const { messages: updatedMessages } = await makeServerlessRequest(
+	// 				"/api/chat/assistant",
+	// 				{ ...params }
+	// 			);
+
+	// 			logger.log("updatedMessages", updatedMessages);
+
+	// 			return { messages: updatedMessages as IMessage[] };
+	// 		} catch (error) {
+	// 			logger.error("Failed to add chat message", error);
+	// 			throw error;
+	// 		}
+	// 	},
+	// 	[logger, makeServerlessRequest, preferences, user]
+	// );
 };
 
 export { useChatService };

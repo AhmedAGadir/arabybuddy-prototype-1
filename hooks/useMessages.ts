@@ -5,7 +5,7 @@ import { useUser } from "@clerk/nextjs";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLogger } from "./useLogger";
 import { useTypewriter } from "./useTypewriter";
-import { OpenAIMessage } from "@/lib/api/assistant";
+import { CompletionMode, completionMode } from "@/lib/api/assistant";
 
 const useMessages = ({ conversationId }: { conversationId: string }) => {
 	const logger = useLogger({ label: "useMessages", color: "#a5ff90" });
@@ -16,8 +16,10 @@ const useMessages = ({ conversationId }: { conversationId: string }) => {
 
 	const { completeTyping, typewriter } = useTypewriter();
 
+	const queryKey = ["messages", user?.id, conversationId];
+
 	const { isPending, error, data, refetch } = useQuery({
-		queryKey: ["messages", user?.id, conversationId],
+		queryKey,
 		refetchOnWindowFocus: true,
 		initialData: [],
 		queryFn: async () => {
@@ -32,7 +34,7 @@ const useMessages = ({ conversationId }: { conversationId: string }) => {
 	});
 
 	const createMessageMutation = useMutation({
-		mutationFn: async ({ content, role }: OpenAIMessage) => {
+		mutationFn: async (message: Partial<IMessage>) => {
 			logger.log("creating message...");
 			const response = await fetch(
 				`/api/conversations/${conversationId}/messages`,
@@ -41,7 +43,7 @@ const useMessages = ({ conversationId }: { conversationId: string }) => {
 					headers: {
 						"Content-Type": "application/json",
 					},
-					body: JSON.stringify({ content, role }),
+					body: JSON.stringify(message),
 				}
 			);
 			if (!response.ok) {
@@ -51,29 +53,23 @@ const useMessages = ({ conversationId }: { conversationId: string }) => {
 			logger.log("messaged created", data);
 			return data;
 		},
-		// When mutate is called:
-		onMutate: async ({ content, role }: OpenAIMessage) => {
-			// Cancel any outgoing refetches
-			// (so they don't overwrite our optimistic update)
-			await queryClient.cancelQueries({
-				queryKey: ["messages", user?.id, conversationId],
-			});
+		onMutate: async (message) => {
+			await queryClient.cancelQueries({ queryKey });
 
 			// Snapshot the previous value
-			const previousMessages =
-				queryClient.getQueryData(["messages", user?.id, conversationId]) ?? [];
+			const previousMessages = queryClient.getQueryData(queryKey) ?? [];
 
 			// Optimistically update to the new value
 			logger.log("optimistically updating messages...");
-			queryClient.setQueryData(
-				["messages", user?.id, conversationId],
-				(old: IMessage[] = []) => [...old, { content, role }]
-			);
+			queryClient.setQueryData(queryKey, (old: IMessage[] = []) => [
+				...old,
+				message,
+			]);
 
 			// const setTypedContent = (value: string) => {
 			// 	queryClient.setQueryData(
-			// 		["messages", user?.id, conversationId],
-			// 		(old: IMessage[] = []) => [...old, { content: value, role }]
+			// 		queryKey,
+			// 		(old: IMessage[] = []) => [...old, message]
 			// 	);
 			// };
 
@@ -82,25 +78,19 @@ const useMessages = ({ conversationId }: { conversationId: string }) => {
 			// Return a context object with the snapshotted value
 			return { previousMessages };
 		},
-		// If the mutation fails,
-		// use the context returned from onMutate to roll back
 		onError: (err, newMessage, context) => {
-			queryClient.setQueryData(
-				["messages", user?.id, conversationId],
-				context?.previousMessages ?? []
-			);
+			queryClient.setQueryData(queryKey, context?.previousMessages ?? []);
 		},
-		// Always refetch after error or success:
 		onSettled: () => {
 			logger.log("message created, invalidating cache....");
 			queryClient.invalidateQueries({
-				queryKey: ["messages", user?.id, conversationId],
+				queryKey,
 			});
 		},
 	});
 
-	const createMessage = async ({ content, role }: OpenAIMessage) => {
-		return await createMessageMutation.mutateAsync({ content, role });
+	const createMessage = async (message: Partial<IMessage>) => {
+		return await createMessageMutation.mutateAsync(message);
 	};
 
 	const deleteMessagesMutation = useMutation({
@@ -126,7 +116,7 @@ const useMessages = ({ conversationId }: { conversationId: string }) => {
 		onSettled: () => {
 			logger.log("messages deleted, invalidating cache...");
 			queryClient.invalidateQueries({
-				queryKey: ["messages", user?.id, conversationId],
+				queryKey,
 			});
 		},
 	});
@@ -140,7 +130,7 @@ const useMessages = ({ conversationId }: { conversationId: string }) => {
 			message,
 		}: {
 			message: Pick<IMessage, "_id" | "content"> & Partial<IMessage>;
-			options: { translate?: boolean };
+			options: { mode: CompletionMode };
 		}) => {
 			logger.log("updating message...", message);
 			const response = await fetch(
@@ -164,40 +154,30 @@ const useMessages = ({ conversationId }: { conversationId: string }) => {
 			logger.error("Error updating message:", err);
 			return err;
 		},
-		onMutate: async ({
-			message,
-			options,
-		}: {
-			message: Pick<IMessage, "_id" | "content"> & Partial<IMessage>;
-			options: { translate?: boolean };
-		}) => {
-			// Cancel any outgoing refetches
+		onMutate: async ({ message, options }) => {
 			await queryClient.cancelQueries({
-				queryKey: ["messages", user?.id, conversationId],
+				queryKey,
 			});
 
 			// Snapshot the previous value
-			const previousMessages =
-				queryClient.getQueryData(["messages", user?.id, conversationId]) ?? [];
+			const previousMessages = queryClient.getQueryData(queryKey) ?? [];
 
-			const isTranslating = options.translate;
+			const isTranslating = options.mode === completionMode.TRANSLATE;
 
 			// Optimistically update to the new value
 			logger.log("optimistically updating messages...");
-			queryClient.setQueryData(
-				["messages", user?.id, conversationId],
-				(old: IMessage[] = []) =>
-					old.map((m) =>
-						m._id === message._id
-							? {
-									...m,
-									translation: isTranslating
-										? message.translation
-										: m.translation,
-									content: isTranslating ? m.content : message.content,
-							  }
-							: m
-					)
+			queryClient.setQueryData(queryKey, (old: IMessage[] = []) =>
+				old.map((m) =>
+					m._id === message._id
+						? {
+								...m,
+								translation: isTranslating
+									? message.translation
+									: m.translation,
+								content: isTranslating ? m.content : message.content,
+						  }
+						: m
+				)
 			);
 
 			// const isTranslating = options.translate;
@@ -208,7 +188,7 @@ const useMessages = ({ conversationId }: { conversationId: string }) => {
 
 			// const setTypedContent = (value: string) => {
 			// 	queryClient.setQueryData(
-			// 		["messages", user?.id, conversationId],
+			// 		queryKey,
 			// 		(old: IMessage[] = []) =>
 			// 			old.map((m) =>
 			// 				m._id === message._id
@@ -230,16 +210,49 @@ const useMessages = ({ conversationId }: { conversationId: string }) => {
 		onSettled: () => {
 			logger.log("message updated, invalidating cache...");
 			queryClient.invalidateQueries({
-				queryKey: ["messages", user?.id, conversationId],
+				queryKey,
 			});
 		},
 	});
 
 	const updateMessage = async (
 		message: Pick<IMessage, "_id" | "content"> & Partial<IMessage>,
-		options: { translate?: boolean } = {}
+		options: { mode: CompletionMode } = { mode: completionMode.DEFAULT }
 	) => {
 		return await updateMessageMutation.mutateAsync({ message, options });
+	};
+
+	const upsertInCacheMutation = useMutation({
+		// we dont need a mutationFn here since we are just updating the cache
+		mutationFn: async () => {},
+		onMutate: async (message: Partial<IMessage>) => {
+			await queryClient.cancelQueries({ queryKey });
+
+			// Snapshot the previous value
+			const previousMessages =
+				queryClient.getQueryData<IMessage[]>(queryKey) ?? [];
+
+			const messageInd = previousMessages.findIndex(
+				(m) => m._id === message._id
+			);
+
+			const updatedMessages =
+				messageInd === -1
+					? [...previousMessages, message]
+					: previousMessages.map((m) => (m._id === message._id ? message : m));
+
+			queryClient.setQueryData(queryKey, updatedMessages);
+
+			// Return a context object with the snapshotted value
+			return { previousMessages };
+		},
+		onError: (err, message, context) => {
+			queryClient.setQueryData(queryKey, context?.previousMessages ?? []);
+		},
+	});
+
+	const upsertMessageInCache = async (message: Partial<IMessage>) => {
+		return await upsertInCacheMutation.mutateAsync(message);
 	};
 
 	return {
@@ -251,6 +264,7 @@ const useMessages = ({ conversationId }: { conversationId: string }) => {
 		updateMessage,
 		completeTyping,
 		deleteMessages,
+		upsertMessageInCache,
 	};
 };
 

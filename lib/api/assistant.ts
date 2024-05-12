@@ -112,15 +112,16 @@ export const openAiChatCompletionStream = async ({
 		stream: true,
 	});
 
+	// ***** NEXTJS GUIDE ON STREAMING: https://nextjs.org/docs/app/building-your-application/routing/route-handlers#streaming
 	const encoder = new TextEncoder();
 
 	async function* makeIterator() {
 		for await (const chunk of completion as any) {
-			yield encoder.encode(chunk.choices[0]?.delta?.content);
+			const content = chunk.choices[0]?.delta?.content ?? "";
+			yield encoder.encode(content);
 		}
 	}
 
-	// https://developer.mozilla.org/docs/Web/API/ReadableStream#convert_async_iterator_to_stream
 	function iteratorToStream(iterator: any) {
 		return new ReadableStream({
 			async pull(controller) {

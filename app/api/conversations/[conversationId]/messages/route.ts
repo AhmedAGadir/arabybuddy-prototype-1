@@ -53,13 +53,14 @@ export async function POST(
 
 		await connectToDatabase();
 
-		const { content, role } = await req.json();
+		const { content, role, _id } = await req.json();
 
 		console.log("creating new message - conversationId:", conversationId);
 
 		const newMessage = await Message.create({
 			clerkId: userId,
 			conversationId,
+			...(_id ? { _id } : {}),
 			role,
 			content,
 		});
