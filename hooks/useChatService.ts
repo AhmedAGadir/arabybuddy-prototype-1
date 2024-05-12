@@ -23,7 +23,7 @@ const useChatService = () => {
 	const makeChatCompletion = useCallback(
 		async (
 			messageHistory: OpenAIMessage[],
-			// TODO: add streaminig option
+			// TODO: add streaming option
 			options: { mode: CompletionMode }
 		) => {
 			try {
@@ -68,13 +68,28 @@ const useChatService = () => {
 					throw new Error(`HTTP error status: ${res.status}`);
 				}
 
-				const decoder = new TextDecoder();
-
 				let content = "";
 
-				for await (const chunk of res.body as any) {
-					const decodedChunk = decoder.decode(chunk, { stream: true });
-					console.log("completion chunk", decodedChunk);
+				// const decoder = new TextDecoder();
+				// for await (const chunk of res.body as any) {
+				// 	const decodedChunk = decoder.decode(chunk, { stream: true });
+				// 	console.log("completion chunk", decodedChunk);
+				// 	content += decodedChunk;
+				// }
+
+				// alternative way to read the response body
+				const reader =
+					res.body?.getReader() as ReadableStreamDefaultReader<Uint8Array>;
+				const decoder = new TextDecoder();
+				const loopRunner = true;
+
+				while (loopRunner) {
+					// Here we start reading the stream, until its done.
+					const { value, done } = await reader.read();
+					if (done) {
+						break;
+					}
+					const decodedChunk = decoder.decode(value, { stream: true });
 					content += decodedChunk;
 				}
 
@@ -95,21 +110,6 @@ const useChatService = () => {
 				};
 
 				return { completionMessage };
-
-				// alternative way to read the response body
-				// const reader = res.body?.getReader() as ReadableStreamDefaultReader<Uint8Array>;
-				// const decoder = new TextDecoder();
-				// const loopRunner = true;
-
-				// while (loopRunner) {
-				// 	// Here we start reading the stream, until its done.
-				// 	const { value, done } = await reader.read();
-				// 	if (done) {
-				// 		break;
-				// 	}
-				// 	const decodedChunk = decoder.decode(value, { stream: true });
-				// 	// do something
-				// }
 			} catch (error) {
 				logger.error("Failed to add chat message", error);
 				throw error;

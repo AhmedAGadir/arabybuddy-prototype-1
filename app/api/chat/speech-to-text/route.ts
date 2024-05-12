@@ -31,7 +31,7 @@ export async function POST(req: Request, res: Response) {
 		const duration = (Date.now() - startTime) / 1000;
 
 		console.log(
-			`[DURATION = ${duration}s] transcription complete`,
+			`[⌛ DURATION = ${duration}s] transcription complete`,
 			transcription
 		);
 

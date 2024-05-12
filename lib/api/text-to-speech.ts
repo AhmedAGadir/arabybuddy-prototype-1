@@ -149,7 +149,7 @@ export const elevenLabsTextToSpeech = async ({
 
 	const duration = (Date.now() - startTime) / 1000;
 
-	console.log(`[DURATION = ${duration}s] text to speech complete`);
+	console.log(`[⌛ DURATION = ${duration}s] text to speech complete`);
 
 	const base64Audio = await streamToBase64(audio);
 

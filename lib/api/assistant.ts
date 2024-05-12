@@ -129,7 +129,7 @@ export const openAiChatCompletionStream = async ({
 				if (done) {
 					const duration = (Date.now() - startTime) / 1000;
 					console.log(
-						`[DURATION = ${duration}s] completion streaming complete`
+						`[⌛ DURATION = ${duration}s] completion streaming complete`
 					);
 					controller.close();
 				} else {
@@ -173,7 +173,7 @@ export const openAiChatCompletionStream = async ({
 // 	const duration = (Date.now() - startTime) / 1000;
 
 // 	console.log(
-// 		`[DURATION = ${duration}s] completion complete`,
+// 		`[⌛ DURATION = ${duration}s] completion complete`,
 // 		completionMessage
 // 	);
 
