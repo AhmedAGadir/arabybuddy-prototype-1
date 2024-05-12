@@ -432,16 +432,6 @@ const ConversationIdPage = ({
 		[isPlaying, stopPlaying, toast]
 	);
 
-	const handleSpeechToText = useCallback(
-		async (audioBlob: Blob) => {
-			setActiveTask(task.SPEECH_TO_TEXT);
-			const { transcription } = await speechToText(audioBlob);
-			setActiveTask(null);
-			return { transcription };
-		},
-		[speechToText]
-	);
-
 	const handleMakeChatCompletion = useCallback(
 		async (
 			messageHistory: OpenAIMessage[],
@@ -511,7 +501,9 @@ const ConversationIdPage = ({
 				setProgressBarValue(1);
 
 				// TODO: sanitize transcription, no input should be empty
-				const { transcription } = await handleSpeechToText(audioBlob);
+				setActiveTask(task.SPEECH_TO_TEXT);
+
+				const { transcription } = await speechToText(audioBlob);
 
 				const messageHistory = messages.map(({ role, content }) => ({
 					role,
@@ -556,24 +548,21 @@ const ConversationIdPage = ({
 				for await (const data of stream) {
 					completionMessage.content = data.content;
 					completionMessage.role = data.role;
-
 					await upsertMessageInCache({ ...completionMessage });
 				}
 
-				// now actually update the message in the database
-				// await createMessage(completionMessage);
+				setProgressBarValue(75);
 
-				setActiveTask(null);
+				setActiveTask(task.TEXT_TO_SPEECH);
+
+				await textToSpeech(completionMessage.content);
+
+				// // const { base64Audio } = await textToSpeech(completionMessage.content);
+
+				// setActiveTask(null);
 
 				return { success: true };
 
-				// throw new Error("not implemented");
-
-				// // 3. convert the assistants response to audio
-				// setProgressBarValue(75);
-				// const { base64Audio } = await handleTextToSpeech(
-				// 	completionMessage.content
-				// );
 				// // 4. play assistants response and update message database
 				// setProgressBarValue(100);
 				// createMessage(completionMessage);
@@ -611,13 +600,14 @@ const ConversationIdPage = ({
 			}
 		},
 		[
-			handleSpeechToText,
+			speechToText,
 			messages,
+			upsertMessageInCache,
 			updateDisplayedMessageInd,
 			makeChatCompletion,
 			user,
 			conversationId,
-			upsertMessageInCache,
+			textToSpeech,
 			logger,
 			handleError,
 			timestamp,

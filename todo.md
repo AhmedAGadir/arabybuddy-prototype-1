@@ -1,5 +1,11 @@
 ## immediate
 
+- [ ] add copy word/message feature
+
+- [ ] big general refactor needed
+
+- [ ] get rid of useServerlessRequest
+
 - [] add hotkeys, space for start/stop recording
 
 - [ ] show loading spinner when creating new conversation in sidebar.
