@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 import React, { useMemo } from "react";
 import { useMediaQuery } from "@react-hooks-hub/use-media-query";
-import { Status } from "@/app/(root)/(with_sidebar)/chat/[conversationId]/page";
+import { Status } from "@/app/(root)/(main)/chat/[conversationId]/page";
 
 const blobDValues = [
 	"M64.7,-37.8C78.4,-13.5,80.5,17.1,67.8,39.3C55.1,61.5,27.5,75.2,0.1,75.2C-27.4,75.2,-54.8,61.3,-69.2,38.2C-83.5,15.1,-84.8,-17.3,-71.1,-41.6C-57.4,-65.9,-28.7,-82.1,-1.6,-81.2C25.5,-80.3,50.9,-62.2,64.7,-37.8Z",
