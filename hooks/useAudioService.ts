@@ -128,10 +128,20 @@ const useAudioService = () => {
 
 				logger.log("making request to: /api/chat/text-to-speech...", params);
 
-				const { base64Audio } = await makeServerlessRequestTextToSpeech(
+				const res = await makeServerlessRequestTextToSpeech(
 					"/api/chat/text-to-speech",
 					{ ...params }
 				);
+
+				const data = await res.json();
+
+				if (res.status !== 200) {
+					throw (
+						data.error || new Error(`Request failed with status ${res.status}`)
+					);
+				}
+
+				const { base64Audio } = data;
 
 				logger.log("base64Audio", `${base64Audio.slice(0, 10)}...`);
 
