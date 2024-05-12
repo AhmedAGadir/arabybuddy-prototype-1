@@ -20,13 +20,11 @@ export async function POST(req: Request, res: Response) {
 
 		const { content, voice_customization } = await req.json();
 
-		const { audio } = await elevenLabsTextToSpeech({
+		const { base64Audio } = await elevenLabsTextToSpeech({
 			content,
 			voice_customization,
 			elevenlabs,
 		});
-
-		const base64Audio = await streamToBase64(audio);
 
 		return Response.json(
 			{

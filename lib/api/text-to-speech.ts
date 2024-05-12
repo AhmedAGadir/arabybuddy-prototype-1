@@ -1,7 +1,6 @@
 import { ArabicDialect } from "@/types/types";
 import { IPreferences } from "../database/models/preferences.model";
 import { ElevenLabsClient } from "elevenlabs";
-import PusherServer from "pusher";
 import { streamToBase64 } from "../utils";
 
 type AssistantGender = IPreferences["assistant_gender"];
@@ -152,5 +151,7 @@ export const elevenLabsTextToSpeech = async ({
 
 	console.log(`[DURATION = ${duration}s] text to speech complete`);
 
-	return { audio };
+	const base64Audio = await streamToBase64(audio);
+
+	return { base64Audio };
 };

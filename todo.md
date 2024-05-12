@@ -10,7 +10,7 @@
 
 countdown after credits run out until credits reload
 
-mute audio options ??
+mute audio options ?? allow users to cross out microphone and keep it there always - color it in while playing
 
 - company list for social proof on homepage, testimonial messages etc, they all help conversions.
 
