@@ -7,11 +7,9 @@ export async function PUT(
 	{ params }: { params: { conversationId: string; messageId: string } }
 ) {
 	try {
-		const { userId } = auth();
+		const { userId, protect } = auth();
 
-		if (!userId) {
-			throw new Error("User not authenticated");
-		}
+		protect();
 
 		await connectToDatabase();
 

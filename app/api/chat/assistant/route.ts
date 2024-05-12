@@ -35,11 +35,7 @@ type RequestBody = {
 
 export async function POST(req: Request, res: Response) {
 	try {
-		const { userId } = auth();
-
-		if (!userId) {
-			throw new Error("User not authenticated");
-		}
+		auth().protect();
 
 		const { messages, mode, firstName, preferences }: RequestBody =
 			await req.json();

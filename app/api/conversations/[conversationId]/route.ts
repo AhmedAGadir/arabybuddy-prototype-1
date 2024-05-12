@@ -7,11 +7,9 @@ export async function DELETE(
 	{ params }: { params: { conversationId: string } }
 ) {
 	try {
-		const { userId } = auth();
+		const { userId, protect } = auth();
 
-		if (!userId) {
-			throw new Error("User not authenticated");
-		}
+		protect();
 
 		await connectToDatabase();
 
@@ -39,11 +37,9 @@ export async function DELETE(
 
 export async function PUT(req: Request) {
 	try {
-		const { userId } = auth();
+		const { userId, protect } = auth();
 
-		if (!userId) {
-			throw new Error("User not authenticated");
-		}
+		protect();
 
 		const { conversation } = await req.json();
 

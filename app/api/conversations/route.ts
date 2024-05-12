@@ -4,11 +4,9 @@ import { auth } from "@clerk/nextjs/server";
 
 export async function GET(req: Request, res: Response) {
 	try {
-		const { userId } = auth();
+		const { userId, protect } = auth();
 
-		if (!userId) {
-			throw new Error("User not authenticated");
-		}
+		protect();
 
 		await connectToDatabase();
 
@@ -32,11 +30,9 @@ export async function GET(req: Request, res: Response) {
 
 export async function POST(req: Request) {
 	try {
-		const { userId } = auth();
+		const { userId, protect } = auth();
 
-		if (!userId) {
-			throw new Error("User not authenticated");
-		}
+		protect();
 
 		await connectToDatabase();
 

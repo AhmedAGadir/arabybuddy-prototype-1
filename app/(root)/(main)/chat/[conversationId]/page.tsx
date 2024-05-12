@@ -1064,12 +1064,12 @@ const ConversationIdPage = ({
 	}, [displayedMessage?.role, user?.imageUrl]);
 
 	const menuContent = useMemo(() => {
-		if (true) {
+		if (isPlaying) {
 			return (
 				<SpeakerWaveIcon className="w-5 h-5 sm:w-6 sm:h-6 text-slate-400 transition ease-in-out" />
 			);
 		}
-		return <div></div>;
+		return <div />;
 		// return (
 		// 	<ScaleLoader
 		// 		color="#b5bac4"

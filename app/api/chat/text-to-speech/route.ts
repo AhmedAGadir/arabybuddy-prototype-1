@@ -12,11 +12,7 @@ const elevenlabs = new ElevenLabsClient({
 
 export async function POST(req: Request, res: Response) {
 	try {
-		const { userId } = auth();
-
-		if (!userId) {
-			throw new Error("User not authenticated");
-		}
+		auth().protect();
 
 		const { content, voice_customization } = await req.json();
 

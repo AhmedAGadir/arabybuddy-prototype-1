@@ -14,11 +14,7 @@ const openai = new OpenAI({
 
 export async function POST(req: Request, res: Response) {
 	try {
-		const { userId } = auth();
-
-		if (!userId) {
-			throw new Error("User not authenticated");
-		}
+		auth().protect();
 
 		const {
 			audio: { base64Audio, type },

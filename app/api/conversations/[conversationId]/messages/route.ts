@@ -8,11 +8,9 @@ export async function GET(
 	{ params }: { params: { conversationId: string } }
 ) {
 	try {
-		const { userId } = auth();
+		const { userId, protect } = auth();
 
-		if (!userId) {
-			throw new Error("User not authenticated");
-		}
+		protect();
 
 		await connectToDatabase();
 
@@ -47,11 +45,9 @@ export async function POST(
 	{ params }: { params: { conversationId: string } }
 ) {
 	try {
-		const { userId } = auth();
+		const { userId, protect } = auth();
 
-		if (!userId) {
-			throw new Error("User not authenticated");
-		}
+		protect();
 
 		const { conversationId } = params;
 
@@ -87,11 +83,9 @@ export async function DELETE(
 	{ params }: { params: { conversationId: string; messageId: string } }
 ) {
 	try {
-		const { userId } = auth();
+		const { userId, protect } = auth();
 
-		if (!userId) {
-			throw new Error("User not authenticated");
-		}
+		protect();
 
 		const { conversationId } = params;
 

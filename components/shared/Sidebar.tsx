@@ -41,7 +41,7 @@ const accountNavigation = [
 ];
 
 export default function Sidebar() {
-	const { isLoaded, user } = useUser();
+	const { user } = useUser();
 
 	const pathname = usePathname();
 
