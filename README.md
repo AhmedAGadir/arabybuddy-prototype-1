@@ -1,25 +1,37 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+PROJECT START DATE: Sun Mar 31 23:56:39 2024 +0100
+launch date at: 31 May 2024
 
-## Notes
+ArabyBuddy is a voice-based arabic tutor chat app that supports 8 different arabic dialects.
+
+### Features
+
+- personalization - 8 arabic dialects, language level, assistant persona, voice, speaking style and response length.
+- familiarity - setting user interests and personality
+- voice recording and responses
+- regenerating responses
+- rephrasing our messages
+- replaying a message
+- translating a message
+- dictionary word look up / definition generation
 
 ### 3 AI APIS:
 
-1. transcription (speech-to-text)
+1. Open AI Whisper
+   - transcription (speech-to-text)
    - uses serverless functions
-   - provider: Open AI Whisper
-2. completions (text-to-text)
+2. Open AI GPT Completions
+   - completions (text-to-text)
+   - was previously done with Open AI GPT Assistant API but it was too slow
    - uses serverless functions
    - streaming with Server-Side Events
-   - provider: Open AI GPT Completions (was previously done with Open AI GPT Assistant API but it was too slow)
-3. generating response audio (text-to-speech)
-   - uses serverless functions
-   - using WebSockets with **\*\*\***
-   - provider: ElevenLabs
+     3.ElevenLabs
+   - generating audio (text-to-speech)
+   - uses websocket connection to a provided websocket connection
 
 ### Other tech:
 
 - Next JS App Router
-- Tanstack Query - API calls (not all of them, just for CRUD operations with database - this may change)
+- Tanstack Query - connecting with DB
 - TypeScript
 - Clerk (Auth)
 - Stripe (Payments)
@@ -41,7 +53,8 @@ This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next
 - Open AI API
 - ElevenLabs pro plan
 - Vercel pro plan
--
+
+This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
 
 ## Getting Started
 

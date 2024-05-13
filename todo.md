@@ -1,122 +1,113 @@
-## immediate
+# IMPORTANT NOTE TO SELF
 
+- This is for MVP, the project can be worked on infinitely but we dont want to waste time
+- Still make it good and provide more value than everything out there, but dont geek out on features
+- features should be business driven
+
+## PROJECT START DATE: Sun Mar 31 23:56:39 2024 +0100. PROJECT LAUNCH DATE: 31 May 2024
+
+## Business HAT:
+
+**_ spend some time working ON the business, not IN the business _**
+
+- what problem are we solving?
+- are these features enough?
+- is this a grand slam offer?
+- consider upgrading openAI membership tier, it may reduce latency - but look into this first
+
+## Developer HAT:
+
+### FOR MVP:
+
+### Feature requests (high priority)
+
+- [ ] sync audio streaming to text
+- [ ] make database transactions all pass or all fail (atomic)
+- [ ] add dictionary feature - mono/biligual, generator or almaany lookup
+- [ ] credits: implement credits + payments + transactions
+- [ ] credits: implement modal with/without countdown for credits run out
+- [ ] its not obvious how to use arabybuddy or what it does - implement guided tour? modal slice-based guide? information button? - copy chat GPT - it has 4 button suggestions and says how can i help you.
+- [ ] implement profile page
+- [ ] train/fine-tune models for different dialects
+- [ ] some viral element - leaderboard, sharing with friends etc
+- [ ] instead of regular chat, have a list of different personalities we can pick to talk to (restuarant waiter, talking dog, person in street etc - each has an avatar and a number of different states - later on they can create their own) -
+
+### Feature requests (low priority)
+
+- [ ] set up email support forwarding - did the same thing for azza school
+- [ ] use skeleton loaders
+- [ ] add scroll to top/bottom buttons on messages
+- [ ] use suspense boundaries
+- [ ] experiment with optimising ai api calls (speed latency for eleven labs, other stuff for openai whisper/gpt?)
 - [ ] add copy word/message feature
+- [ ] add share message feature
+- [ ] add delete message feature
+- [ ] dark mode
+- [ ] make panelControls expandable (elipses menu with more options)
+- [ ] add hotkeys
+- [ ] mute audio option (via messageCard - speaker icon can be crossed out when muted)
+- [ ] bar of conversation topics?
+- [ ] create ArabyBuddy mascot (5-6 expressions) and can toggle between messageCard and mascot in bottom left of screen (on mobile) and top right (on desktop)
+- [ ] autorestart recording
+- [ ] migrate from serverless functions to a seperate nodejs render backend, then unsubscribe to vercels pro plan
+- [ ] type/edit messages
+- [ ] notification for connected/disconnect to internet (like codecademy)
+- [ ] take a picture and explain to me what it is
+- [ ] translate a PDF
+- [ ] checks pronunciation
+- [ ] save audio to s3 and use later?
+- [ ] download translations with every message (no)
+- [ ] word of the day? (no)
+- [ ] Show word root etc in dictionary?
 
-- [ ] big general refactor needed
+### Bug fixes
 
-- [ ] get rid of useServerlessRequest
-
-- [] add hotkeys, space for start/stop recording
-
+- [ ] sanitize user input everywhere
+- [ ] throw better errors, see communications service (unknown error catch all - maybe wrap useQuery and have some general checks there - it would need to be skippable though)
+- [ ] handle aborting properly in fetch api calls (pass it to backend and use correctly)
+- [ ] delete empty chats when navigating away
+- [ ] add microphone polyfills, make sure microphone volume settings work well (See below)
+- [ ] better handle error/loading states
+- [ ] delete messages when failing requests? (think more about how we want to deal with failing requests - perhaps deleting everything isnt good UX - database transactions should be atomic)
 - [ ] show loading spinner when creating new conversation in sidebar.
       this may cause a big refactor where we return each mutation instead of mutation.mutateAsync so that we can have access to mutation states (isPending etc).
+- [ ] close mobile nav after clicking a button
+- [ ] open save preferences navigating when navigating away (dirty state with zod?)
+- [ ] create lib actions for everything important so that when a user deletes their account we remove their messages, conversations, preferences etc.
+- [ ] change images to use webp format and load faster
+- [ ] look into adding security headers before launch - (helmet, etc - see codecademy course) - - ask AI how they can be used in my project
+- [ ] advanced features - rate limiting, server side cache, preload, etc
+- [ ] kill everything when you navigate to another page
+- [ ] set maximum lengths for stuff, max token usage etc, response timeouts, retries etc
 
-- set message index in the query params
-- make chat completions and text-to-speech streamable or not (Add to options: stream prop)
+### Refactor
 
-- quiz to see level,
-- add a window mockup from daisy UI on the homepage showing off the app
+- [ ] get rid of useServerlessRequest
+- [ ] refactor services to use react query? may remove need for active tasks
+- [ ] look into preloading and what it is
 
-- market to kids
+### Security
 
-countdown after credits run out until credits reload
+- [ ] Add helmet for security headers (11/15 are done automatically), Validation library (express-validation / validation npm package)
+- [ ] look into sessions/cookies etc - ask AI how they can be used in my project
 
-mute audio options ?? allow users to cross out microphone and keep it there always - color it in while playing
+### prelaunch
 
-- company list for social proof on homepage, testimonial messages etc, they all help conversions.
-
-- see list of phone and consolidate all of this
-
-- refactor services to use react query?? will this remove the need for active tasks?
-
-- [ ] use react suspense boundaries and skeleton loaders to render fallback button for anything that takes long, e.g:
-
-  - authentication buttons on home screen
-  - messages on existing conversations
-  - conversation list
-  - preferences (long so probably not)
-
-- [ ] create lib/actions files for conversations, messages etc so that when a user deletes their account we remove their messages from our DB
-
-- [ ] streaming?
-- [ ] set up email support forwarding - did the same thing for azza school
-- [ ] bar of conversation topics
-- [ ] mascot with 5-6 different expressions
-- [ ] pagespeed insights - google performance before launch
-
-- [ ] https://stackoverflow.com/questions/78030722/how-to-resolve-task-timed-out-after-10-01-seconds-in-a-next-js-application-dep
-- [ ] https://vercel.com/changelog/serverless-functions-can-now-run-up-to-5-minutes
-- [ ] auto start recording toggle
-- [ ] stream text to speech
-- [ ] webhooks?
-- [ ] topics of conversation and voices settings
-- [ ] automatically starting recording after response plays
-- [ ] moving instructions to fade in ontop of the record button
-- [ ] look up words in almaany
-- [ ] react query - loading / error state
-- [ ] pause/cancel requests
-- [ ] monitor input for being NSFW
-- [ ] advanced features - rate limiting, server side cache, etc - just learn
-- [ ] continue conversation when first loading, or start new
-- [ ] dark mode
-- [ ] check for no content in the recording, and if not, then just turn off the mic
+- [ ] README-AI to generate readme
+- [ ] pagespeed insights
 - [ ] change eslint config file back when done with mobile debugging
-- [ ] language support, dialect support - if not then diasble options on home page
-- [ ] toggle between previous and next messages
-- [ ] rephrase a message
-- [ ] migrate from serverless functions to a seperate nodejs render backend, then unsubscribe to vercels pro plan
+- [ ] turn on vercel analytics
+- [ ] add in app boilerlate (privacy policy, terms and conditions, refunds etc)
+- [ ] add a window mockup (daisy UI) on the homepage showing off the app (mobile and desktop)
 
-# Features for MVP
+### Changelog
 
-- [ ] only chat
-- [ ] dialects (Start)
-- [ ] 2 voices
-- [ ] rephrase mode
-- [ ] looking up words in almaany
-- [ ] databases, authentication and payments
-- [ ] some viral element - leaderboard, sharing with friends etc
-- [ ] analytics
-- [ ] adds, kickstarter, tiktok sponsors (talk to mohab 16), product hunt etc
-- [ ] notification for connected/disconnect to internet (like codecademy)
-- [ ] option for type a response back instead?
+- [x] fixed home screen auth buttons
+- [x] created protected routes with clerk
+- [x] set message index in the query params
+- [x] stream openai completions (using async generators and updating react query cache)
 
-# Features
-
-- pages
-
-  - chat (voice)
-  - chat (text)
-  - settings
-
-  - monolingual vs bilingual mode
-
-  - translate a PDF
-  - translate a PDF and read it to me
-  - camera - picture mode (what is that ? ma hatha)
-  - repeat after me mode (checks)
-
-# Tech
-
-## Tech Stack
-
-- README-AI to generate readme
-- fetching data (react query)
-- AI - elevenlabs and openai (GPT4 and Whisper)
-- database (mongo)
-- auth (clerk)
-- payments (stripe)
-- React query vs server components?
-  https://tkdodo.eu/blog/you-might-not-need-react-query
-- websockets for streaming data?
-
-# ToDo
-
-- [ ] set up analytics (google analytics is good but events-based product is better (mix panel?). Pick 5-10 metrics).
-- [ ] reduce latency
-- [ ] build in authentication and payments
-- [ ] add all boilerplate-ish pages and components (privacy policy, refunds,header, footer, sidebar etc etc)
-
-### Todo (Microphone)
+"Microphone polyfill notes:
 
 - [ ] add polyfills for supporting diff browsers MediaRecorder
       (already implemented but doesn't really work so its commented out - see useMediaRecorderPolyfill) https://www.npmjs.com/package/opus-media-recorder
@@ -128,3 +119,21 @@ mute audio options ?? allow users to cross out microphone and keep it there alwa
       help reddit: https://www.reddit.com/r/AskProgramming/comments/1bxn68l/mediarecorder_api_call_requestdata_multiple_times/
       help stackoverflow: https://stackoverflow.com/questions/78285997/mediarecorder-api-call-requestdata-multiple-times-to-create-multiple-audio-bl
       help freecodecamp: https://forum.freecodecamp.org/t/how-to-record-audio-without-repeatedly-asking-for-permission-to-use-microphone/684057
+
+## After MVP:
+
+### things to learn
+
+- [ ] UML, Miro, Databases
+-
+
+## Marketing HAT:
+
+- [ ] create BETA group? talk to users
+- [ ] create quiz for people to test their arabic level
+- [ ] think of a way to market to kids
+- [ ] think about influencer marketing
+- [ ] company list for social proof on homepage, testimonial messages etc, they all help conversions.
+- [ ] observe vercel analytics
+- [ ] maybe add google analytics
+- [ ] kickstarter, producthunt, appsumo, (talk to mohab 16).

@@ -7,7 +7,7 @@ import {
 	DEFAULT_USER_PREFERENCES,
 	IPreferences,
 } from "@/lib/database/models/preferences.model";
-import io from "Socket.IO-client";
+// import io from "Socket.IO-client";
 import { ArabicDialect } from "@/types/types";
 
 type AssistantGender = IPreferences["assistant_gender"];
@@ -165,7 +165,7 @@ const useAudioService = () => {
 					const bosMessage = {
 						text,
 						voice_settings,
-						xi_api_key: MY_API_KEY,
+						// xi_api_key: MY_API_KEY,
 						try_trigger_generation: true,
 					};
 					socket.send(JSON.stringify(bosMessage));
