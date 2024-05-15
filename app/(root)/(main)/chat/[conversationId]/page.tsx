@@ -187,13 +187,10 @@ const ConversationIdPage = ({
 		conversationId,
 	});
 
-	const { makeChatCompletion, abortMakeChatCompletion } = useChatService();
-	const {
-		speechToText,
-		textToSpeech,
-		abortSpeechToTextRequest,
-		abortTextToSpeechRequest,
-	} = useAudioService();
+	const { makeChatCompletionStream, abortMakeChatCompletionStream } =
+		useChatService();
+	const { speechToText, textToSpeech, abortSpeechToText, abortTextToSpeech } =
+		useAudioService();
 
 	const {
 		playAudio,
@@ -381,25 +378,25 @@ const ConversationIdPage = ({
 		if (!isProcessing) return;
 		switch (activeTask) {
 			case task.SPEECH_TO_TEXT:
-				abortSpeechToTextRequest();
+				abortSpeechToText();
 				break;
 			case task.TEXT_TO_SPEECH:
 			case task.TEXT_TO_SPEECH_REPLAY:
-				abortTextToSpeechRequest();
+				abortTextToSpeech();
 				break;
 			case task.ASSISTANT:
 			case task.ASSISTANT_REGENERATE:
 			case task.ASSISTANT_REPHRASE:
 			case task.ASSISTANT_TRANSLATE:
-				abortMakeChatCompletion();
+				abortMakeChatCompletionStream();
 				break;
 			default:
 				break;
 		}
 	}, [
-		abortMakeChatCompletion,
-		abortSpeechToTextRequest,
-		abortTextToSpeechRequest,
+		abortMakeChatCompletionStream,
+		abortSpeechToText,
+		abortTextToSpeech,
 		activeTask,
 		isProcessing,
 	]);
@@ -461,7 +458,7 @@ const ConversationIdPage = ({
 
 			// return { completionMessage };
 		},
-		[makeChatCompletion, setActiveTask]
+		[]
 	);
 
 	const handleTextToSpeech = useCallback(
@@ -524,7 +521,7 @@ const ConversationIdPage = ({
 
 				setActiveTask(task.ASSISTANT);
 
-				const stream = await makeChatCompletion([
+				const completionStream = await makeChatCompletionStream([
 					...messageHistory,
 					{
 						role: "user",
@@ -545,7 +542,7 @@ const ConversationIdPage = ({
 				latestMessageInd++;
 				updateDisplayedMessageInd(latestMessageInd);
 
-				for await (const data of stream) {
+				for await (const data of completionStream) {
 					completionMessage.content = data.content;
 					completionMessage.role = data.role;
 					await upsertMessageInCache({ ...completionMessage });
@@ -555,7 +552,11 @@ const ConversationIdPage = ({
 
 				setActiveTask(task.TEXT_TO_SPEECH);
 
-				await textToSpeech(completionMessage.content);
+				logger.log("now doing text to speech ***************");
+
+				const completionAudioWithStartTimes = await textToSpeech(
+					completionMessage.content
+				);
 
 				// // const { base64Audio } = await textToSpeech(completionMessage.content);
 
@@ -604,7 +605,7 @@ const ConversationIdPage = ({
 			messages,
 			upsertMessageInCache,
 			updateDisplayedMessageInd,
-			makeChatCompletion,
+			makeChatCompletionStream,
 			user,
 			conversationId,
 			textToSpeech,

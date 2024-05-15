@@ -1,4 +1,3 @@
-import { useCallback, useRef } from "react";
 import { useLogger } from "./useLogger";
 import { usePreferences } from "./usePreferences";
 import { DEFAULT_USER_PREFERENCES } from "@/lib/database/models/preferences.model";
@@ -8,12 +7,15 @@ import {
 	OpenAIMessage,
 	completionMode,
 } from "@/lib/api/assistant";
+import { useServerlessRequest } from "./useServerlessRequest";
 
 const useChatService = () => {
 	const logger = useLogger({ label: "ChatService", color: "#fe7de9" });
 	const { user } = useUser();
 	const { preferences } = usePreferences();
-	const controllerRef = useRef<AbortController>();
+
+	const { makeServerlessRequest, abortRequest: abortMakeChatCompletionStream } =
+		useServerlessRequest();
 
 	async function* makeChatCompletionGenerator(
 		messageHistory: OpenAIMessage[],
@@ -54,20 +56,9 @@ const useChatService = () => {
 				},
 			};
 
-			const controller = new AbortController();
-			controllerRef.current = controller;
-			const { signal } = controller;
-
 			logger.log("making request to: /api/chat/assistant...", params);
 
-			const res = await fetch("/api/chat/assistant", {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-				},
-				body: JSON.stringify(params),
-				signal,
-			});
+			const res = await makeServerlessRequest("/api/chat/assistant", params);
 
 			if (!res.ok) {
 				throw new Error(`HTTP error status: ${res.status}`);
@@ -109,20 +100,14 @@ const useChatService = () => {
 		}
 	}
 
-	const makeChatCompletion = async (
+	const makeChatCompletionStream = async (
 		messageHistory: OpenAIMessage[],
 		options: { mode: CompletionMode } = {
 			mode: completionMode.DEFAULT,
 		}
 	) => makeChatCompletionGenerator(messageHistory, options);
 
-	const abortMakeChatCompletion = useCallback(() => {
-		logger.log("aborting makeChatCompletion request");
-		controllerRef.current?.abort();
-		controllerRef.current = undefined;
-	}, [logger]);
-
-	return { makeChatCompletion, abortMakeChatCompletion };
+	return { makeChatCompletionStream, abortMakeChatCompletionStream };
 
 	// const DEPRECATED_makeChatCompletion = useCallback(
 	// 	async (

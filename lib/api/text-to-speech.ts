@@ -1,79 +1,178 @@
-// DEPRECATED: this file is no longer used, it was replaced by the websocket implementation in useAudioService.ts
-
-// import { ArabicDialect } from "@/types/types";
-// import { IPreferences } from "../database/models/preferences.model";
-// import { ElevenLabsClient } from "elevenlabs";
+import { ArabicDialect } from "@/types/types";
+import { IPreferences } from "../database/models/preferences.model";
 // import { streamToBase64 } from "../utils";
 
-// type AssistantGender = IPreferences["assistant_gender"];
+type AssistantGender = IPreferences["assistant_gender"];
 
-// type VoiceMap = {
-// 	[D in ArabicDialect]: {
-// 		[K in AssistantGender]: { name: string; voiceId: string };
-// 	};
-// };
+type VoiceMap = {
+	[D in ArabicDialect]: {
+		[K in AssistantGender]: { name: string; voiceId: string };
+	};
+};
 
-// export const voiceLibrary = {
-// 	rachel: { name: "Rachel", voiceId: "JOoOS0ygQqJknGa2C14N" },
-// 	joey: {
-// 		name: "Joey - Youthful and Energetic",
-// 		voiceId: "bjL4GZJa40TcWjwdphFX",
-// 	},
-// 	mourad: { name: "Mourad", voiceId: "kERwN6X2cY8g1XbfzJsX" },
-// 	sana: { name: "Sana", voiceId: "mRdG9GYEjJmIzqbYTidv" },
-// };
+const voiceLibrary = {
+	rachel: { name: "Rachel", voiceId: "JOoOS0ygQqJknGa2C14N" },
+	joey: {
+		name: "Joey - Youthful and Energetic",
+		voiceId: "bjL4GZJa40TcWjwdphFX",
+	},
+	mourad: { name: "Mourad", voiceId: "kERwN6X2cY8g1XbfzJsX" },
+	sana: { name: "Sana", voiceId: "mRdG9GYEjJmIzqbYTidv" },
+};
 
-// export const voices: VoiceMap = {
-// 	"Modern Standard Arabic": {
-// 		young_female: voiceLibrary.rachel,
-// 		young_male: voiceLibrary.joey,
-// 		old_male: voiceLibrary.mourad,
-// 		old_female: voiceLibrary.sana,
-// 	},
-// 	Egyptian: {
-// 		young_female: voiceLibrary.rachel,
-// 		young_male: voiceLibrary.joey,
-// 		old_male: voiceLibrary.mourad,
-// 		old_female: voiceLibrary.sana,
-// 	},
-// 	Levantine: {
-// 		young_female: voiceLibrary.rachel,
-// 		young_male: voiceLibrary.joey,
-// 		old_male: voiceLibrary.mourad,
-// 		old_female: voiceLibrary.sana,
-// 	},
-// 	Gulf: {
-// 		young_female: voiceLibrary.rachel,
-// 		young_male: voiceLibrary.joey,
-// 		old_male: voiceLibrary.mourad,
-// 		old_female: voiceLibrary.sana,
-// 	},
-// 	Maghrebi: {
-// 		young_female: voiceLibrary.rachel,
-// 		young_male: voiceLibrary.joey,
-// 		old_male: voiceLibrary.mourad,
-// 		old_female: voiceLibrary.sana,
-// 	},
-// 	Sudanese: {
-// 		young_female: voiceLibrary.rachel,
-// 		young_male: voiceLibrary.joey,
-// 		old_male: voiceLibrary.mourad,
-// 		old_female: voiceLibrary.sana,
-// 	},
-// 	Iraqi: {
-// 		young_female: voiceLibrary.rachel,
-// 		young_male: voiceLibrary.joey,
-// 		old_male: voiceLibrary.mourad,
-// 		old_female: voiceLibrary.sana,
-// 	},
-// 	Yemeni: {
-// 		young_female: voiceLibrary.rachel,
-// 		young_male: voiceLibrary.joey,
-// 		old_male: voiceLibrary.mourad,
-// 		old_female: voiceLibrary.sana,
-// 	},
-// };
-// // // **** without streaming
+const voices: VoiceMap = {
+	"Modern Standard Arabic": {
+		young_female: voiceLibrary.rachel,
+		young_male: voiceLibrary.joey,
+		old_male: voiceLibrary.mourad,
+		old_female: voiceLibrary.sana,
+	},
+	Egyptian: {
+		young_female: voiceLibrary.rachel,
+		young_male: voiceLibrary.joey,
+		old_male: voiceLibrary.mourad,
+		old_female: voiceLibrary.sana,
+	},
+	Levantine: {
+		young_female: voiceLibrary.rachel,
+		young_male: voiceLibrary.joey,
+		old_male: voiceLibrary.mourad,
+		old_female: voiceLibrary.sana,
+	},
+	Gulf: {
+		young_female: voiceLibrary.rachel,
+		young_male: voiceLibrary.joey,
+		old_male: voiceLibrary.mourad,
+		old_female: voiceLibrary.sana,
+	},
+	Maghrebi: {
+		young_female: voiceLibrary.rachel,
+		young_male: voiceLibrary.joey,
+		old_male: voiceLibrary.mourad,
+		old_female: voiceLibrary.sana,
+	},
+	Sudanese: {
+		young_female: voiceLibrary.rachel,
+		young_male: voiceLibrary.joey,
+		old_male: voiceLibrary.mourad,
+		old_female: voiceLibrary.sana,
+	},
+	Iraqi: {
+		young_female: voiceLibrary.rachel,
+		young_male: voiceLibrary.joey,
+		old_male: voiceLibrary.mourad,
+		old_female: voiceLibrary.sana,
+	},
+	Yemeni: {
+		young_female: voiceLibrary.rachel,
+		young_male: voiceLibrary.joey,
+		old_male: voiceLibrary.mourad,
+		old_female: voiceLibrary.sana,
+	},
+};
+
+export const elevenLabsTextToSpeechStream = async ({
+	text,
+	voice_customization: {
+		arabic_dialect,
+		assistant_gender,
+		voice_similarity_boost,
+		voice_stability,
+		voice_style,
+		voice_use_speaker_boost,
+	},
+}: {
+	text: string;
+	voice_customization: {
+		arabic_dialect: IPreferences["arabic_dialect"];
+		assistant_gender: IPreferences["assistant_gender"];
+		voice_stability: IPreferences["voice_stability"];
+		voice_similarity_boost: IPreferences["voice_similarity_boost"];
+		voice_style: IPreferences["voice_style"];
+		voice_use_speaker_boost: IPreferences["voice_use_speaker_boost"];
+	};
+}) => {
+	// list of available voices
+	// elevenlabs.voices();
+
+	// * mp3_22050_32 - output format, mp3 with 22.05kHz sample rate at 32kbps.
+	// * mp3_44100_32 - output format, mp3 with 44.1kHz sample rate at 32kbps.
+	// * mp3_44100_64 - output format, mp3 with 44.1kHz sample rate at 64kbps.
+	// * mp3_44100_96 - output format, mp3 with 44.1kHz sample rate at 96kbps.
+	// * mp3_44100_128 - default output format, mp3 with 44.1kHz sample rate at 128kbps.
+	// * mp3_44100_192 - output format, mp3 with 44.1kHz sample rate at 192kbps. Requires you to be subscribed to Creator tier or above.
+	// output_format:
+
+	const voice = voices[arabic_dialect][assistant_gender].voiceId;
+
+	const voice_settings = {
+		stability: voice_stability,
+		similarity_boost: voice_similarity_boost,
+		style: voice_style,
+		use_speaker_boost: voice_use_speaker_boost,
+	};
+
+	console.log("streaming text-to-speech...");
+
+	const startTime = Date.now();
+
+	const res = await fetch(
+		`https://api.elevenlabs.io/v1/text-to-speech/${voice}/stream/with-timestamps`,
+		{
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				"xi-api-key": process.env.ELEVENLABS_API_KEY!,
+			},
+			body: JSON.stringify({
+				model_id: "eleven_multilingual_v2",
+				text,
+				voice_settings,
+			}),
+		}
+	);
+
+	if (!res.ok) {
+		throw new Error(`HTTP error status: ${res.status}`);
+	}
+
+	// ***** NEXTJS GUIDE ON STREAMING: https://nextjs.org/docs/app/building-your-application/routing/route-handlers#streaming
+	const encoder = new TextEncoder();
+
+	async function* makeIterator() {
+		for await (const chunk of res.body as any) {
+			console.log("chunk", chunk);
+			// const audioData = JSON.stringify(chunk);
+			// console.log("audioData", audioData);
+			yield chunk;
+		}
+	}
+
+	function iteratorToStream(iterator: any) {
+		return new ReadableStream({
+			async pull(controller) {
+				const { value, done } = await iterator.next();
+
+				if (done) {
+					const duration = (Date.now() - startTime) / 1000;
+					console.log(
+						`[⌛ DURATION = ${duration}s] text-to-speech stream complete`
+					);
+					controller.close();
+				} else {
+					controller.enqueue(value);
+				}
+			},
+		});
+	}
+
+	const iterator = makeIterator();
+	const stream = iteratorToStream(iterator);
+
+	return stream;
+};
+
+// // **** without streaming
 // export const elevenLabsTextToSpeech = async ({
 // 	elevenlabs,
 // 	content,

@@ -80,3 +80,14 @@ export const handleError = (error: unknown) => {
 		throw new Error(`Unknown error: ${JSON.stringify(error)}`);
 	}
 };
+
+export const concatArrayBuffers = (chunks: Uint8Array[]): Uint8Array => {
+	const totalLength = chunks.reduce((acc, current) => acc + current.length, 0);
+	const result = new Uint8Array(totalLength);
+	let offset = 0;
+	for (const chunk of chunks) {
+		result.set(chunk, offset);
+		offset += chunk.length;
+	}
+	return result;
+};
