@@ -198,6 +198,7 @@ const ConversationIdPage = ({
 		initAudioElement,
 		audioElementInitialized,
 		stopPlaying,
+		currentTime,
 	} = useAudioPlayer();
 
 	const { isRecording, startRecording, stopRecording, amplitude } =
@@ -294,8 +295,6 @@ const ConversationIdPage = ({
 
 	// 	// eslint-disable-next-line react-hooks/exhaustive-deps
 	// }, [pathname, searchParams, conversationId]);
-
-	const { timestamp, setTimestamp } = useTimestamp();
 
 	const [activeTask, setActiveTask] = useState<Task | null>(null);
 
@@ -429,6 +428,15 @@ const ConversationIdPage = ({
 		[isPlaying, stopPlaying, toast]
 	);
 
+	const wordTimestampsRef = useRef<
+		| {
+				word: string;
+				startTime: number;
+				endTime: number;
+		  }[]
+		| null
+	>(null);
+
 	const handleMakeChatCompletion = useCallback(
 		async (
 			messageHistory: OpenAIMessage[],
@@ -461,30 +469,6 @@ const ConversationIdPage = ({
 		[]
 	);
 
-	const handleTextToSpeech = useCallback(
-		async (text: string, options?: { replay: boolean }) => {
-			if (options?.replay) {
-				setActiveTask(task.TEXT_TO_SPEECH_REPLAY);
-			} else {
-				setActiveTask(task.TEXT_TO_SPEECH);
-			}
-			const { base64Audio } = await textToSpeech(text);
-			setActiveTask(null);
-			return { base64Audio };
-		},
-		[textToSpeech]
-	);
-
-	const handlePlayAudio = useCallback(
-		async (base64Audio: string) => {
-			if (!audioElementInitialized) {
-				initAudioElement();
-			}
-			await playAudio(base64Audio);
-		},
-		[audioElementInitialized, initAudioElement, playAudio]
-	);
-
 	const onRecordingComplete = useCallback(
 		async (audioBlob: Blob) => {
 			// await new Promise((resolve) => setTimeout(resolve, 3000));
@@ -509,13 +493,13 @@ const ConversationIdPage = ({
 
 				let latestMessageInd = messageHistory.length - 1;
 
-				await upsertMessageInCache({
+				latestMessageInd++;
+				updateDisplayedMessageInd(latestMessageInd);
+
+				await createMessage({
 					role: "user",
 					content: transcription,
 				});
-
-				latestMessageInd++;
-				updateDisplayedMessageInd(latestMessageInd);
 
 				setProgressBarValue(25);
 
@@ -545,57 +529,49 @@ const ConversationIdPage = ({
 				for await (const data of completionStream) {
 					completionMessage.content = data.content;
 					completionMessage.role = data.role;
-					await upsertMessageInCache({ ...completionMessage });
+					// update cache, well still need to update the database after
+					await upsertMessageInCache(completionMessage);
 				}
 
 				setProgressBarValue(75);
 
 				setActiveTask(task.TEXT_TO_SPEECH);
 
-				logger.log("now doing text to speech ***************");
-
-				const completionAudioWithStartTimes = await textToSpeech(
+				const { base64Audio, wordData } = await textToSpeech(
 					completionMessage.content
 				);
 
-				// // const { base64Audio } = await textToSpeech(completionMessage.content);
+				wordTimestampsRef.current = wordData;
 
-				// setActiveTask(null);
+				setProgressBarValue(100);
 
-				return { success: true };
+				if (!audioElementInitialized) {
+					initAudioElement();
+				}
+				await playAudio(base64Audio);
 
-				// // 4. play assistants response and update message database
-				// setProgressBarValue(100);
-				// createMessage(completionMessage);
-				// latestMessageInd++;
-				// updateDisplayedMessageInd(latestMessageInd);
+				wordTimestampsRef.current = null;
 
-				// await handlePlayAudio(base64Audio);
+				setActiveTask(null);
+
+				await createMessage({
+					role: completionMessage.role,
+					content: completionMessage.content,
+				});
 
 				// // update latest conversation in sidebar
-				// updateConversation({
-				// 	_id: conversationId,
-				// 	lastMessage: completionMessage.content,
-				// });
-				// setProgressBarValue(0);
-				// setTimestamp(null);
+				updateConversation({
+					_id: conversationId,
+					lastMessage: completionMessage.content,
+				});
 
-				// return { success: true };
+				setProgressBarValue(0);
+
+				return { success: true };
 			} catch (error) {
 				logger.error("onRecordingComplete failed", error);
 
 				handleError(error);
-
-				// TODO: fix, this is broken again
-				if (timestamp) {
-					const allMessageIdsAfterTimestamp = messages
-						.filter(({ updatedAt }) => new Date(updatedAt) > timestamp)
-						.map(({ _id }) => _id);
-
-					// await deleteMessages(allMessageIdsAfterTimestamp);
-					// TODO: update index
-					setTimestamp(null);
-				}
 
 				return { success: false };
 			}
@@ -603,16 +579,19 @@ const ConversationIdPage = ({
 		[
 			speechToText,
 			messages,
-			upsertMessageInCache,
 			updateDisplayedMessageInd,
+			createMessage,
 			makeChatCompletionStream,
 			user,
 			conversationId,
-			textToSpeech,
 			logger,
+			textToSpeech,
+			audioElementInitialized,
+			playAudio,
+			updateConversation,
+			upsertMessageInCache,
+			initAudioElement,
 			handleError,
-			timestamp,
-			setTimestamp,
 		]
 	);
 
@@ -621,21 +600,38 @@ const ConversationIdPage = ({
 			if (!displayedMessage) return;
 
 			setProgressBarValue(25);
-			const { base64Audio } = await handleTextToSpeech(
-				displayedMessage.content,
-				{ replay: true }
+
+			setActiveTask(task.TEXT_TO_SPEECH_REPLAY);
+
+			const { base64Audio, wordData } = await textToSpeech(
+				displayedMessage.content
 			);
+			setActiveTask(null);
+
+			wordTimestampsRef.current = wordData;
+
 			setProgressBarValue(100);
-			await handlePlayAudio(base64Audio);
+
+			if (!audioElementInitialized) {
+				initAudioElement();
+			}
+			await playAudio(base64Audio);
+
+			wordTimestampsRef.current = null;
+
+			setActiveTask(null);
+
 			setProgressBarValue(0);
 		} catch (error) {
 			logger.error("replayBtnHandler", error);
 			handleError(error, "There was a problem replaying this message");
 		}
 	}, [
-		handleTextToSpeech,
 		displayedMessage,
-		handlePlayAudio,
+		textToSpeech,
+		audioElementInitialized,
+		playAudio,
+		initAudioElement,
 		logger,
 		handleError,
 	]);
@@ -663,7 +659,13 @@ const ConversationIdPage = ({
 					}))
 					.slice(0, displayedMessageInd ?? 0);
 
-				const { completionMessage } = await handleMakeChatCompletion(
+				setActiveTask(
+					options.mode === completionMode.REGENERATE
+						? task.ASSISTANT_REGENERATE
+						: task.ASSISTANT_REPHRASE
+				);
+
+				const completionStream = await makeChatCompletionStream(
 					[
 						...messageHistory,
 						{
@@ -674,17 +676,52 @@ const ConversationIdPage = ({
 					options
 				);
 
+				const completionMessage = {
+					_id: displayedMessage._id,
+					clerkId: displayedMessage.clerkId,
+					conversationId: displayedMessage.conversationId,
+					translation: undefined,
+					createdAt: displayedMessage.createdAt,
+					updatedAt: new Date().toISOString(),
+				} as IMessage;
+
+				for await (const data of completionStream) {
+					completionMessage.content = data.content;
+					completionMessage.role = data.role;
+					// update cache, well still need to update the database after
+					await upsertMessageInCache(completionMessage);
+				}
+
 				setProgressBarValue(75);
 
-				const { base64Audio } = await handleTextToSpeech(
+				setActiveTask(task.TEXT_TO_SPEECH);
+
+				const { base64Audio, wordData } = await textToSpeech(
 					completionMessage.content
 				);
+
+				wordTimestampsRef.current = wordData;
+
+				setProgressBarValue(100);
+
+				if (!audioElementInitialized) {
+					initAudioElement();
+				}
+				await playAudio(base64Audio);
+
+				wordTimestampsRef.current = null;
+
+				setActiveTask(null);
+
+				await createMessage({
+					role: completionMessage.role,
+					content: completionMessage.content,
+				});
 
 				updateMessage({
 					...displayedMessage,
 					...completionMessage,
 				});
-				await handlePlayAudio(base64Audio);
 
 				updateConversation({
 					_id: conversationId,
@@ -704,17 +741,21 @@ const ConversationIdPage = ({
 			}
 		},
 		[
-			conversationId,
 			displayedMessage,
-			displayedMessageInd,
-			handleError,
-			logger,
 			messages,
-			updateConversation,
+			displayedMessageInd,
+			makeChatCompletionStream,
+			conversationId,
+			textToSpeech,
+			audioElementInitialized,
+			playAudio,
+			createMessage,
 			updateMessage,
-			handleMakeChatCompletion,
-			handlePlayAudio,
-			handleTextToSpeech,
+			updateConversation,
+			upsertMessageInCache,
+			initAudioElement,
+			logger,
+			handleError,
 		]
 	);
 
@@ -727,7 +768,9 @@ const ConversationIdPage = ({
 			setShowTranslation(true);
 			setProgressBarValue(25);
 
-			const { completionMessage } = await handleMakeChatCompletion(
+			setActiveTask(task.ASSISTANT_TRANSLATE);
+
+			const completionStream = await makeChatCompletionStream(
 				[
 					{
 						role: displayedMessage.role,
@@ -737,22 +780,51 @@ const ConversationIdPage = ({
 				{ mode: completionMode.TRANSLATE }
 			);
 
+			const completionMessage = {
+				_id: displayedMessage._id,
+				clerkId: displayedMessage.clerkId,
+				conversationId: displayedMessage.conversationId,
+				createdAt: displayedMessage.createdAt,
+				updatedAt: new Date().toISOString(),
+			} as IMessage;
+
+			for await (const data of completionStream) {
+				completionMessage.translation = data.content;
+				completionMessage.role = data.role;
+				// update cache, well still need to update the database after
+				await upsertMessageInCache(completionMessage);
+			}
+
 			setProgressBarValue(75);
 
-			const { base64Audio } = await handleTextToSpeech(
-				completionMessage.content
+			setActiveTask(task.TEXT_TO_SPEECH);
+
+			const { base64Audio, wordData } = await textToSpeech(
+				completionMessage.translation!
 			);
 
-			updateMessage(
+			wordTimestampsRef.current = wordData;
+
+			setProgressBarValue(100);
+
+			if (!audioElementInitialized) {
+				initAudioElement();
+			}
+			await playAudio(base64Audio);
+
+			wordTimestampsRef.current = null;
+
+			setActiveTask(null);
+
+			await updateMessage(
 				{
 					...displayedMessage,
-					translation: completionMessage.content,
+					translation: completionMessage.translation,
 				},
 				{
 					mode: completionMode.TRANSLATE,
 				}
 			);
-			await handlePlayAudio(base64Audio);
 
 			setProgressBarValue(0);
 		} catch (error) {
@@ -761,13 +833,16 @@ const ConversationIdPage = ({
 			handleError(error, "There was a problem translating this message");
 		}
 	}, [
+		audioElementInitialized,
 		displayedMessage,
 		handleError,
-		handleMakeChatCompletion,
-		handlePlayAudio,
-		handleTextToSpeech,
+		initAudioElement,
 		logger,
+		makeChatCompletionStream,
+		playAudio,
+		textToSpeech,
 		updateMessage,
+		upsertMessageInCache,
 	]);
 
 	const [drawerOpen, setDrawerOpen] = useState(false);
@@ -800,8 +875,6 @@ const ConversationIdPage = ({
 		}
 
 		if (!isRecording) {
-			setTimestamp(new Date());
-
 			if (!audioElementInitialized) {
 				initAudioElement();
 			}
@@ -815,7 +888,6 @@ const ConversationIdPage = ({
 		isPlaying,
 		isRecording,
 		onRecordingComplete,
-		setTimestamp,
 		startRecording,
 		stopPlaying,
 		stopRecording,
@@ -1048,34 +1120,17 @@ const ConversationIdPage = ({
 	);
 
 	const messageCardDetails = useMemo(() => {
-		let name: string, avatarSrc: string, avatarAlt: string;
-
-		const userDetails = {
+		if (displayedMessage?.role === "assistant") {
+			return {
+				name: "ArabyBuddy",
+				avatarSrc: "/assets/arabybuddy.svg",
+				avatarAlt: "ArabyBuddy avatar",
+			};
+		}
+		return {
 			name: "You",
 			avatarSrc: user?.imageUrl ?? "/assets/user.svg",
 			avatarAlt: "User avatar",
-		};
-
-		const arabyBuddyDetails = {
-			name: "ArabyBuddy",
-			avatarSrc: "/assets/arabybuddy.svg",
-			avatarAlt: "ArabyBuddy avatar",
-		};
-
-		if (displayedMessage?.role === "assistant") {
-			name = arabyBuddyDetails.name;
-			avatarSrc = arabyBuddyDetails.avatarSrc;
-			avatarAlt = arabyBuddyDetails.avatarAlt;
-		} else {
-			name = userDetails.name;
-			avatarSrc = userDetails.avatarSrc;
-			avatarAlt = userDetails.avatarAlt;
-		}
-
-		return {
-			name,
-			avatarSrc,
-			avatarAlt,
 		};
 	}, [displayedMessage?.role, user?.imageUrl]);
 
@@ -1105,23 +1160,135 @@ const ConversationIdPage = ({
 
 	// needed for streaming updates in the messageCard component
 	const displayedMessageText = useMemo(() => {
-		if (!displayedMessage) return null;
-		if (showTranslation && displayedMessage.translation) {
-			return displayedMessage.translation;
+		if (showTranslation && displayedMessage?.translation) {
+			return displayedMessage?.translation;
 		}
 
-		return displayedMessage.content;
+		return displayedMessage?.content;
 		// NOTE: displayedMessage?.content must be included in the deps array
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [displayedMessage, displayedMessage?.content, showTranslation]);
 
-	const messageCardContent = useMemo(() => {
-		if (!displayedMessage) return null;
-
+	const messageCardInnerContent = useMemo(() => {
 		const isShowingTranslation =
 			showTranslation &&
 			displayedMessage?.translation &&
 			(!dictionaryMode || isPlaying);
+
+		if (false) {
+			return (
+				<PulseLoader
+					color="black"
+					loading
+					cssOverride={{
+						display: "block",
+						margin: "0",
+						width: 250,
+					}}
+					size={6}
+					aria-label="Loading Spinner"
+					data-testid="loader"
+					speedMultiplier={0.75}
+				/>
+			);
+		}
+
+		if (dictionaryMode && STATUS === status.IDLE) {
+			return (
+				<div
+					style={{
+						direction: isShowingTranslation ? "ltr" : "rtl",
+					}}
+				>
+					<div className="flex flex-wrap gap-2">
+						{_.words(
+							displayedMessage?.content.replace(nonWordCharactersRegExp, "")
+						).map((word, i) => (
+							<Badge
+								key={`${word}_${i}`}
+								variant="secondary"
+								className="text-lg cursor-pointer hover:bg-primary hover:text-white"
+								onClick={() => setDrawerOpen(true)}
+							>
+								{word}
+							</Badge>
+						))}
+					</div>
+				</div>
+			);
+		}
+
+		const words = _.words(displayedMessageText);
+
+		if (isPlaying && wordTimestampsRef.current) {
+			return (
+				<div
+					style={{
+						direction: isShowingTranslation ? "ltr" : "rtl",
+					}}
+					className="p-1"
+				>
+					{words.map((word, ind) => {
+						if (
+							!wordTimestampsRef.current ||
+							wordTimestampsRef.current[ind] === undefined
+						) {
+							return null;
+						}
+
+						const {
+							word: timestampedWord,
+							startTime,
+							endTime,
+						} = wordTimestampsRef.current![ind];
+
+						const isLastWord = ind === words.length - 1;
+
+						const currentTimeMoreThanStartTime = currentTime >= startTime;
+
+						const nextWordStarted = isLastWord
+							? false
+							: currentTime >= wordTimestampsRef.current![ind + 1]?.startTime;
+
+						const isActive = currentTimeMoreThanStartTime && !nextWordStarted;
+
+						return (
+							<span
+								key={`${word}_${ind}`}
+								className={cn(
+									isActive && "bg-indigo-600 text-white",
+									"rounded-md p-1"
+								)}
+							>
+								{word}{" "}
+							</span>
+						);
+					})}
+				</div>
+			);
+		}
+
+		return (
+			<div
+				style={{
+					direction: isShowingTranslation ? "ltr" : "rtl",
+				}}
+			>
+				{displayedMessageText}
+			</div>
+		);
+	}, [
+		STATUS,
+		currentTime,
+		dictionaryMode,
+		displayedMessage,
+		displayedMessageText,
+		isPlaying,
+		showTranslation,
+	]);
+
+	const messageCardContent = useMemo(() => {
+		if (!displayedMessage) return null;
 
 		return (
 			<MessageCard
@@ -1136,63 +1303,17 @@ const ConversationIdPage = ({
 				// glow={isPlaying}
 				showLoadingOverlay={STATUS === status.PROCESSING}
 				menuContent={menuContent}
-				content={
-					false ? (
-						<PulseLoader
-							color="black"
-							loading
-							cssOverride={{
-								display: "block",
-								margin: "0",
-								width: 250,
-							}}
-							size={6}
-							aria-label="Loading Spinner"
-							data-testid="loader"
-							speedMultiplier={0.75}
-						/>
-					) : (
-						<div
-							style={{
-								direction: isShowingTranslation ? "ltr" : "rtl",
-							}}
-						>
-							{dictionaryMode && STATUS === status.IDLE && (
-								<div className="flex flex-wrap gap-2">
-									{_.words(
-										displayedMessage?.content.replace(
-											nonWordCharactersRegExp,
-											""
-										)
-									).map((word, i) => (
-										<Badge
-											key={`${word}_${i}`}
-											variant="secondary"
-											className="text-lg cursor-pointer hover:bg-primary hover:text-white"
-											onClick={() => setDrawerOpen(true)}
-										>
-											{word}
-										</Badge>
-									))}
-								</div>
-							)}
-							{!dictionaryMode && displayedMessageText}
-						</div>
-					)
-				}
+				content={messageCardInnerContent}
 			/>
 		);
 	}, [
-		STATUS,
-		dictionaryMode,
 		displayedMessage,
-		displayedMessageText,
-		isPlaying,
-		menuContent,
-		messageCardDetails.avatarAlt,
-		messageCardDetails.avatarSrc,
 		messageCardDetails.name,
-		showTranslation,
+		messageCardDetails.avatarSrc,
+		messageCardDetails.avatarAlt,
+		STATUS,
+		menuContent,
+		messageCardInnerContent,
 	]);
 
 	const messageIndexContent = useMemo(

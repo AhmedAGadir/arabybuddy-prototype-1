@@ -1,9 +1,10 @@
-import { blobToBase64, concatArrayBuffers } from "@/lib/utils";
+import { blobToBase64, concatBase64Strs, concatUint8Arrays } from "@/lib/utils";
 import { useCallback, useEffect, useState } from "react";
 import { useLogger } from "./useLogger";
 import { useServerlessRequest } from "./useServerlessRequest";
 import { usePreferences } from "./usePreferences";
 import { DEFAULT_USER_PREFERENCES } from "@/lib/database/models/preferences.model";
+import { useAudioPlayer } from "./useAudioPlayer";
 
 const useAudioService = () => {
 	const logger = useLogger({ label: "AudioService", color: "#87de74" });
@@ -105,53 +106,89 @@ const useAudioService = () => {
 					chunks.push(value);
 				}
 
-				const concatenatedBuffer = concatArrayBuffers(chunks);
+				const concatenatedBuffer = concatUint8Arrays(chunks);
 
 				const decodedBuffer = new TextDecoder().decode(concatenatedBuffer);
 
-				const base64Audios = [];
-				let characters: string[] = [];
-				let characterStartTimesSeconds: string[] = [];
-				let characterEndTimesSeconds: string[] = [];
+				const base64Audios: string[] = [];
+				const wordData: {
+					word: string;
+					startTime: number;
+					endTime: number;
+				}[] = [];
 
-				const jsonChunks = decodedBuffer
+				decodedBuffer
 					.split("\n\n")
 					.filter(Boolean)
-					.map((x) => JSON.parse(x));
+					.map((x) => JSON.parse(x))
+					.forEach(
+						(chunk: {
+							audio_base64?: string;
+							alignment?: {
+								characters: string[];
+								character_start_times_seconds: number[];
+								character_end_times_seconds: number[];
+							};
+						}) => {
+							const { alignment, audio_base64 } = chunk;
 
-				jsonChunks.map((chunk) => {
-					if (chunk.audio_base64) {
-						base64Audios.push(chunk.audio_base64);
-					}
+							if (audio_base64) {
+								base64Audios.push(audio_base64);
+							}
 
-					if (chunk.alignment) {
-						characters = [...characters, ...chunk.alignment.characters];
-						characterStartTimesSeconds = [
-							...characterStartTimesSeconds,
-							...chunk.alignment.character_start_times_seconds,
-						];
-						characterEndTimesSeconds = [
-							...characterEndTimesSeconds,
-							...chunk.alignment.character_end_times_seconds,
-						];
-					}
-				});
+							if (alignment) {
+								const {
+									characters,
+									character_start_times_seconds,
+									character_end_times_seconds,
+								} = alignment;
 
-				debugger;
+								let word = "";
+								let wordStartTimeSeconds = 0;
+								let wordEndTimeSeconds = 0;
 
-				console.log("**************************************************");
-				console.log("**************************************************");
-				console.log("**************************************************");
-				console.log("jsonChunks", jsonChunks);
-				console.log("**************************************************");
-				console.log("**************************************************");
-				console.log("**************************************************");
+								for (let i = 0; i < characters.length; i++) {
+									const character = characters[i];
+									const characterStartTimeSeconds =
+										character_start_times_seconds[i];
+									const characterEndTimeSeconds =
+										character_end_times_seconds[i];
 
-				// console.log("data", data);
+									if (character === " ") {
+										if (word) {
+											wordData.push({
+												word,
+												startTime: wordStartTimeSeconds,
+												endTime: wordEndTimeSeconds,
+											});
+										}
+										word = "";
+										wordStartTimeSeconds = 0;
+										wordEndTimeSeconds = 0;
+									} else {
+										if (!word) {
+											wordStartTimeSeconds = characterStartTimeSeconds;
+										}
+										wordEndTimeSeconds = characterEndTimeSeconds;
+										word += character;
 
-				return "foo";
-				// logger.log("base64Audio", `${base64Audio.slice(0, 10)}...`);
-				// return { base64Audio };
+										if (i === characters.length - 1) {
+											wordData.push({
+												word,
+												startTime: wordStartTimeSeconds,
+												endTime: wordEndTimeSeconds,
+											});
+										}
+									}
+								}
+							}
+						}
+					);
+
+				return {
+					base64Audio: concatBase64Strs(base64Audios),
+					wordData,
+				};
 			} catch (error) {
 				logger.error("Failed to convert text to speech", error);
 				throw error;
