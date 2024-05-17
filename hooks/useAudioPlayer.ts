@@ -9,6 +9,7 @@ const useAudioPlayer = () => {
 
 	const audioRef = useRef<HTMLAudioElement>();
 	const audioSrcRef = useRef<string | null>(null);
+	const [currentTime, setCurrentTime] = useState(0);
 
 	const playAudio = async (base64Audio: string) => {
 		const audioBlob = base64ToBlob(base64Audio, "audio/mp3");
@@ -35,10 +36,17 @@ const useAudioPlayer = () => {
 				return;
 			}
 
+			const onTimeUpdate = () => {
+				setCurrentTime(audioRef.current?.currentTime ?? 0);
+			};
+
+			audioRef.current.addEventListener("timeupdate", onTimeUpdate);
+
 			const onAudioEnded = () => {
 				setIsPlaying(false);
 				logger.log("Audio ended");
 				cleanup();
+				audioRef.current?.removeEventListener("timeupdate", onTimeUpdate);
 				audioRef.current?.removeEventListener("ended", onAudioEnded);
 				resolve();
 			};
@@ -100,6 +108,7 @@ const useAudioPlayer = () => {
 	const cleanup = () => {
 		URL.revokeObjectURL(audioSrcRef.current ?? "");
 		audioSrcRef.current = null;
+		setCurrentTime(0);
 	};
 
 	const audioElementInitialized = audioRef.current !== undefined;
@@ -112,6 +121,7 @@ const useAudioPlayer = () => {
 		stopPlaying,
 		pausePlaying,
 		audioElement: audioRef.current,
+		currentTime,
 	};
 };
 

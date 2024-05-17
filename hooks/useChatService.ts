@@ -64,6 +64,10 @@ const useChatService = () => {
 				throw new Error(`HTTP error status: ${res.status}`);
 			}
 
+			const reader =
+				res.body?.getReader() as ReadableStreamDefaultReader<Uint8Array>;
+			const decoder = new TextDecoder();
+
 			let role: "assistant" | "user";
 
 			if (
@@ -74,10 +78,6 @@ const useChatService = () => {
 			} else {
 				role = "assistant";
 			}
-
-			const reader =
-				res.body?.getReader() as ReadableStreamDefaultReader<Uint8Array>;
-			const decoder = new TextDecoder();
 
 			let content = "";
 

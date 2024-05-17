@@ -71,6 +71,7 @@ const voices: VoiceMap = {
 	},
 };
 
+// were using a stream instead now so we can get timestamps for each word
 export const elevenLabsTextToSpeechStream = async ({
 	text,
 	voice_customization: {
@@ -137,13 +138,9 @@ export const elevenLabsTextToSpeechStream = async ({
 	}
 
 	// ***** NEXTJS GUIDE ON STREAMING: https://nextjs.org/docs/app/building-your-application/routing/route-handlers#streaming
-	const encoder = new TextEncoder();
 
 	async function* makeIterator() {
 		for await (const chunk of res.body as any) {
-			console.log("chunk", chunk);
-			// const audioData = JSON.stringify(chunk);
-			// console.log("audioData", audioData);
 			yield chunk;
 		}
 	}

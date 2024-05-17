@@ -81,7 +81,7 @@ export const handleError = (error: unknown) => {
 	}
 };
 
-export const concatArrayBuffers = (chunks: Uint8Array[]): Uint8Array => {
+export const concatUint8Arrays = (chunks: Uint8Array[]): Uint8Array => {
 	const totalLength = chunks.reduce((acc, current) => acc + current.length, 0);
 	const result = new Uint8Array(totalLength);
 	let offset = 0;
@@ -90,4 +90,12 @@ export const concatArrayBuffers = (chunks: Uint8Array[]): Uint8Array => {
 		offset += chunk.length;
 	}
 	return result;
+};
+
+export const concatBase64Strs = (base64Strs: string[]) => {
+	const buffer = Buffer.concat(
+		base64Strs.map((base64Str) => Buffer.from(base64Str, "base64"))
+	);
+	const concatenatedBase64 = buffer.toString("base64");
+	return concatenatedBase64;
 };
