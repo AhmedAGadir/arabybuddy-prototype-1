@@ -713,14 +713,10 @@ const ConversationIdPage = ({
 
 				setActiveTask(null);
 
-				await createMessage({
-					role: completionMessage.role,
-					content: completionMessage.content,
-				});
-
 				updateMessage({
 					...displayedMessage,
-					...completionMessage,
+					role: completionMessage.role,
+					content: completionMessage.content,
 				});
 
 				updateConversation({
@@ -749,7 +745,6 @@ const ConversationIdPage = ({
 			textToSpeech,
 			audioElementInitialized,
 			playAudio,
-			createMessage,
 			updateMessage,
 			updateConversation,
 			upsertMessageInCache,
@@ -1218,8 +1213,6 @@ const ConversationIdPage = ({
 			);
 		}
 
-		const words = _.words(displayedMessageText);
-
 		if (isPlaying && wordTimestampsRef.current) {
 			return (
 				<div
@@ -1228,7 +1221,7 @@ const ConversationIdPage = ({
 					}}
 					className="p-1"
 				>
-					{words.map((word, ind) => {
+					{wordTimestampsRef.current.map((word, ind) => {
 						if (
 							!wordTimestampsRef.current ||
 							wordTimestampsRef.current[ind] === undefined
@@ -1242,7 +1235,7 @@ const ConversationIdPage = ({
 							endTime,
 						} = wordTimestampsRef.current![ind];
 
-						const isLastWord = ind === words.length - 1;
+						const isLastWord = ind === wordTimestampsRef.current!.length - 1;
 
 						const currentTimeMoreThanStartTime = currentTime >= startTime;
 
@@ -1260,7 +1253,7 @@ const ConversationIdPage = ({
 									"rounded-md p-1"
 								)}
 							>
-								{word}{" "}
+								{timestampedWord}{" "}
 							</span>
 						);
 					})}
