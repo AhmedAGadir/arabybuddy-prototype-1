@@ -713,14 +713,10 @@ const ConversationIdPage = ({
 
 				setActiveTask(null);
 
-				await createMessage({
-					role: completionMessage.role,
-					content: completionMessage.content,
-				});
-
 				updateMessage({
 					...displayedMessage,
-					...completionMessage,
+					role: completionMessage.role,
+					content: completionMessage.content,
 				});
 
 				updateConversation({
@@ -749,7 +745,6 @@ const ConversationIdPage = ({
 			textToSpeech,
 			audioElementInitialized,
 			playAudio,
-			createMessage,
 			updateMessage,
 			updateConversation,
 			upsertMessageInCache,

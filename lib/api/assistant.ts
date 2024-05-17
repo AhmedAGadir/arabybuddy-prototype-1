@@ -108,7 +108,7 @@ export const openAiChatCompletionStream = async ({
 			},
 			...messages,
 		],
-		model: "gpt-4-turbo-preview",
+		model: "gpt-4o",
 		stream: true,
 	});
 
