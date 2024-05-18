@@ -1,0 +1,281 @@
+import React, { useMemo } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { NewBadge } from "@/components/shared/NewBadge";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Toggle } from "@/components/ui/toggle";
+import { status, type Status } from "@/types/types";
+
+import {
+	ArrowPathIcon,
+	BookOpenIcon,
+	MicrophoneIcon as MicrophoneIconOutline,
+	PlayIcon,
+	SparklesIcon,
+} from "@heroicons/react/24/outline";
+
+import { StopIcon, XCircleIcon } from "@heroicons/react/20/solid";
+
+import { TranslateIcon } from "@/components/shared/icons/Translate";
+import { completionMode, type CompletionMode } from "@/lib/api/assistant";
+
+type IconType = React.FC<any> | (() => JSX.Element);
+
+interface BasePanelItem {
+	label: string;
+	disabled: boolean;
+	icon: IconType;
+	iconClasses?: string;
+	new?: boolean;
+}
+
+interface ButtonPanelItem extends BasePanelItem {
+	onClick: () => void;
+	toggle?: never;
+	pressed?: never;
+	onPressed?: never;
+}
+
+interface TogglePanelItem extends BasePanelItem {
+	toggle: boolean;
+	pressed: boolean;
+	onPressed: (pressed: boolean) => void;
+	onClick?: never;
+}
+
+type PanelItem = ButtonPanelItem | TogglePanelItem;
+
+const ChatPanel = ({
+	chatStatus,
+	previousMessageHandler,
+	nextMessageHandler,
+	isFirstMessage,
+	isLastMessage,
+	isMessage,
+	hasTranslation,
+	isUserMessage,
+	replayBtnHandler,
+	abortProcessingBtnHandler,
+	stopPlayingHandler,
+	redoCompletionHandler,
+	toggleRecordingHandler,
+	toggleDictionaryHandler,
+	toggleTranslationHandler,
+	translateBtnHandler,
+	dictionaryMode,
+	translationMode,
+}: {
+	chatStatus: Status;
+	previousMessageHandler: () => void;
+	nextMessageHandler: () => void;
+	isFirstMessage: boolean;
+	isLastMessage: boolean;
+	isMessage: boolean;
+	hasTranslation: boolean;
+	isUserMessage: boolean;
+	isAssistantMessage: boolean;
+	replayBtnHandler: () => void;
+	abortProcessingBtnHandler: () => void;
+	stopPlayingHandler: () => void;
+	redoCompletionHandler: (params: {
+		mode: typeof completionMode.REGENERATE | typeof completionMode.REPHRASE;
+	}) => Promise<void>;
+	toggleRecordingHandler: () => void;
+	toggleDictionaryHandler: () => void;
+	toggleTranslationHandler: () => void;
+	translateBtnHandler: () => void;
+	dictionaryMode: boolean;
+	translationMode: boolean;
+}) => {
+	const isIdle = chatStatus === status.IDLE;
+	const isRecording = chatStatus === status.RECORDING;
+	const isPlaying = chatStatus === status.PLAYING;
+	const isProcessing = chatStatus === status.PROCESSING;
+
+	const panelItems: PanelItem[] = useMemo(() => {
+		return [
+			{
+				label: "Previous",
+				icon: () => <span>Prev</span>,
+				onClick: previousMessageHandler,
+				disabled: !isMessage || isFirstMessage || isRecording || isPlaying,
+			},
+			...(isIdle || isRecording
+				? [
+						{
+							label: "Replay",
+							icon: PlayIcon,
+							onClick: replayBtnHandler,
+							disabled: !isMessage || !isIdle,
+						},
+				  ]
+				: []),
+			...(isProcessing
+				? [
+						{
+							label: "Cancel",
+							icon: XCircleIcon,
+							iconClasses: "text-white w-8 h-8",
+							toggle: true,
+							pressed: true,
+							onPressed: abortProcessingBtnHandler,
+							disabled: false,
+						},
+				  ]
+				: []),
+			...(isPlaying
+				? [
+						{
+							label: "Stop Playing",
+							icon: StopIcon,
+							iconClasses: "text-indigo-600 w-8 h-8",
+							onClick: stopPlayingHandler,
+							disabled: false,
+						},
+				  ]
+				: []),
+			...(isUserMessage
+				? [
+						{
+							label: "Rephrase",
+							icon: SparklesIcon,
+							new: true,
+							onClick: () =>
+								redoCompletionHandler({ mode: completionMode.REPHRASE }),
+							disabled: !isMessage || !isIdle,
+						},
+				  ]
+				: [
+						{
+							label: "Regenerate",
+							icon: ArrowPathIcon,
+							onClick: () =>
+								redoCompletionHandler({ mode: completionMode.REGENERATE }),
+							disabled: !isMessage || !isIdle,
+						},
+				  ]),
+			{
+				label: "Record",
+				toggle: true,
+				pressed: isRecording,
+				onPressed: toggleRecordingHandler,
+				icon: MicrophoneIconOutline,
+				disabled: isProcessing,
+			},
+			{
+				label: "Dictionary",
+				toggle: true,
+				pressed: dictionaryMode,
+				onPressed: toggleDictionaryHandler,
+				icon: BookOpenIcon,
+				disabled: !isMessage || !isIdle,
+			},
+			...(hasTranslation
+				? [
+						{
+							label: "Translate",
+							icon: TranslateIcon,
+							toggle: true,
+							pressed: translationMode,
+							onPressed: toggleTranslationHandler,
+							disabled: !isIdle,
+						},
+				  ]
+				: [
+						{
+							label: "Translate",
+							icon: TranslateIcon,
+							onClick: translateBtnHandler,
+							disabled: !isMessage || !isIdle,
+						},
+				  ]),
+			{
+				label: "Next",
+				icon: () => <span>Next</span>,
+				onClick: nextMessageHandler,
+				disabled: !isMessage || isLastMessage || isRecording || isPlaying,
+			},
+		];
+	}, [
+		isRecording,
+		isPlaying,
+		isIdle,
+		replayBtnHandler,
+		isProcessing,
+		abortProcessingBtnHandler,
+		stopPlayingHandler,
+		toggleRecordingHandler,
+		dictionaryMode,
+		toggleDictionaryHandler,
+		translationMode,
+		translateBtnHandler,
+		redoCompletionHandler,
+	]);
+
+	return (
+		<Card className="shadow-lg p-2">
+			<CardContent className="flex items-center p-0">
+				<div className="flex gap-2">
+					{panelItems.map((item) => {
+						return (
+							<TooltipProvider key={item.label} delayDuration={0}>
+								<Tooltip>
+									<TooltipTrigger>
+										<>
+											{item.toggle && (
+												<Toggle
+													size="default"
+													className={
+														cn(
+															"h-11 w-11 sm:h-14 sm:w-14 text-slate-500 dark:text-slate-400 hover:bg-slate-100",
+															"data-[state=on]:bg-primary data-[state=on]:text-white hover:data-[state=on]:bg-primary/80 px-2"
+															// "data-[state=on]:bg-slate-500 data-[state=on]:text-white hover:data-[state=on]:bg-slate-400 px-2 "
+														)
+														// "relative text-slate-500 dark:text-slate-400 hover:bg-slate-100",
+														// item.pressed && "bg-slate-400"
+													}
+													pressed={item.pressed}
+													onPressedChange={item.onPressed}
+													disabled={item.disabled}
+												>
+													<item.icon
+														className={cn("w-6 h-6", item.iconClasses)}
+													/>
+												</Toggle>
+											)}
+											{!item.toggle && (
+												<Button
+													size="icon"
+													variant="ghost"
+													className="relative h-11 w-11 sm:h-14 sm:w-14 text-slate-500 dark:text-slate-400 hover:bg-slate-100"
+													onClick={item.onClick}
+													disabled={item.disabled}
+												>
+													<item.icon
+														className={cn("w-6 h-6", item.iconClasses)}
+													/>
+												</Button>
+											)}
+										</>
+									</TooltipTrigger>
+									<TooltipContent side="bottom" align="start">
+										<span>{item.label}</span>
+										{item.new && <NewBadge className="ml-2" />}
+									</TooltipContent>
+								</Tooltip>
+							</TooltipProvider>
+						);
+					})}
+				</div>
+			</CardContent>
+		</Card>
+	);
+};
+
+export default ChatPanel;

@@ -53,8 +53,6 @@ import SupportCard from "@/components/shared/SupportCard";
 
 import { useMediaQuery } from "@react-hooks-hub/use-media-query";
 
-import { TranslateIcon } from "@/components/shared/icons/Translate";
-
 import {
 	Tooltip,
 	TooltipContent,
@@ -95,15 +93,8 @@ import {
 	completionMode,
 } from "@/lib/api/assistant";
 import { DictionaryDrawer } from "@/components/shared/DictionaryDrawer";
-
-const status = {
-	IDLE: "IDLE",
-	RECORDING: "RECORDING",
-	PLAYING: "PLAYING",
-	PROCESSING: "PROCESSING",
-} as const;
-
-export type Status = (typeof status)[keyof typeof status];
+import ChatPanel from "@/components/shared/ChatPanel";
+import { status, type Status } from "@/types/types";
 
 const task = {
 	SPEECH_TO_TEXT: "SPEECH_TO_TEXT",
@@ -116,43 +107,6 @@ const task = {
 } as const;
 
 export type Task = (typeof task)[keyof typeof task];
-
-const NewBadge = ({ className }: { className?: string }) => (
-	<span
-		className={cn(
-			"inline-flex items-center rounded-md bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20",
-			className
-		)}
-	>
-		New
-	</span>
-);
-
-type IconType = React.FC<any> | (() => JSX.Element);
-
-interface BasePanelItem {
-	label: string;
-	disabled: boolean;
-	icon: IconType;
-	iconClasses?: string;
-	new?: boolean;
-}
-
-interface ButtonPanelItem extends BasePanelItem {
-	onClick: () => void;
-	toggle?: never;
-	pressed?: never;
-	onPressed?: never;
-}
-
-interface TogglePanelItem extends BasePanelItem {
-	toggle: boolean;
-	pressed: boolean;
-	onPressed: (pressed: boolean) => void;
-	onClick?: never;
-}
-
-type PanelItem = ButtonPanelItem | TogglePanelItem;
 
 // try to keep business logic out of this page as its a presentation/view component
 const ConversationIdPage = ({
@@ -239,6 +193,12 @@ const ConversationIdPage = ({
 		},
 		[updateQueryStr]
 	);
+
+	const previousMessageHandler = () =>
+		updateDisplayedMessageInd((displayedMessageInd ?? 0) - 1);
+
+	const nextMessageHandler = () =>
+		updateDisplayedMessageInd((displayedMessageInd ?? 0) + 1);
 
 	useEffect(() => {
 		// initialise to last message index
@@ -757,13 +717,17 @@ const ConversationIdPage = ({
 		]
 	);
 
-	const [showTranslation, setShowTranslation] = useState(false);
+	const [translationMode, setTranslationMode] = useState(false);
+
+	const toggleTranslationHandler = () => {
+		setTranslationMode((prev) => !prev);
+	};
 
 	const translateBtnHandler = useCallback(async () => {
 		try {
 			if (!displayedMessage) return;
 
-			setShowTranslation(true);
+			setTranslationMode(true);
 			setProgressBarValue(25);
 
 			setActiveTask(task.ASSISTANT_TRANSLATE);
@@ -848,9 +812,9 @@ const ConversationIdPage = ({
 
 	const [dictionaryMode, setDictionaryMode] = useState(false);
 
-	const toggleDictionaryHandler = useCallback(() => {
+	const toggleDictionaryHandler = () => {
 		setDictionaryMode((prev) => !prev);
-	}, []);
+	};
 
 	const toggleRecordingHandler = useCallback(async () => {
 		hideInstruction();
@@ -891,203 +855,6 @@ const ConversationIdPage = ({
 		stopPlaying,
 		stopRecording,
 	]);
-
-	const panelItems: PanelItem[] = useMemo(() => {
-		return [
-			{
-				label: "Previous",
-				// icon: ChevronLeftIcon,
-				icon: () => <span>Prev</span>,
-				onClick: () =>
-					updateDisplayedMessageInd((displayedMessageInd ?? 0) - 1),
-				disabled:
-					!displayedMessage ||
-					displayedMessageInd === 0 ||
-					isRecording ||
-					isPlaying,
-			},
-			...(isIdle || isRecording
-				? [
-						{
-							label: "Replay",
-							icon: PlayIcon,
-							onClick: replayBtnHandler,
-							disabled: !displayedMessage || !isIdle,
-						},
-				  ]
-				: []),
-			...(isProcessing
-				? [
-						{
-							label: "Cancel",
-							icon: XCircleIcon,
-							iconClasses: "text-white w-8 h-8",
-							// onClick: abortProcessingBtnHandler,
-							toggle: true,
-							pressed: true,
-							onPressed: abortProcessingBtnHandler,
-							disabled: false,
-						},
-				  ]
-				: []),
-			...(isPlaying
-				? [
-						{
-							label: "Stop Playing",
-							icon: StopIcon,
-							iconClasses: "text-indigo-600 w-8 h-8",
-							onClick: stopPlayingHandler,
-							disabled: false,
-						},
-				  ]
-				: []),
-			...(displayedMessage && displayedMessage.role === "user"
-				? [
-						{
-							label: "Rephrase",
-							// icon: MagicWandIcon,
-							icon: SparklesIcon,
-							new: true,
-							onClick: () =>
-								redoCompletionHandler({ mode: completionMode.REPHRASE }),
-							disabled: !displayedMessage || !isIdle,
-						},
-				  ]
-				: [
-						{
-							label: "Regenerate",
-							icon: ArrowPathIcon,
-							onClick: () =>
-								redoCompletionHandler({ mode: completionMode.REGENERATE }),
-							disabled: !displayedMessage || !isIdle,
-						},
-				  ]),
-			{
-				label: "Record",
-				toggle: true,
-				pressed: isRecording,
-				onPressed: toggleRecordingHandler,
-				icon: MicrophoneIconOutline,
-				disabled: isProcessing,
-			},
-			{
-				label: "Dictionary",
-				toggle: true,
-				pressed: dictionaryMode,
-				onPressed: toggleDictionaryHandler,
-				icon: BookOpenIcon,
-				disabled: !displayedMessage || !isIdle,
-			},
-			...(displayedMessage && displayedMessage.translation
-				? [
-						{
-							label: "Translate",
-							icon: TranslateIcon,
-							toggle: true,
-							pressed: showTranslation,
-							onPressed: () => setShowTranslation((prev) => !prev),
-							disabled: !isIdle,
-						},
-				  ]
-				: [
-						{
-							label: "Translate",
-							icon: TranslateIcon,
-							onClick: translateBtnHandler,
-							disabled: !displayedMessage || !isIdle,
-						},
-				  ]),
-			{
-				label: "Next",
-				// icon: ChevronRightIcon,
-				icon: () => <span>Next</span>,
-				onClick: () =>
-					updateDisplayedMessageInd((displayedMessageInd ?? 0) + 1),
-				disabled:
-					!displayedMessage ||
-					displayedMessageInd === messages.length - 1 ||
-					isRecording ||
-					isPlaying,
-			},
-		];
-	}, [
-		displayedMessage,
-		displayedMessageInd,
-		isRecording,
-		isPlaying,
-		isIdle,
-		replayBtnHandler,
-		isProcessing,
-		abortProcessingBtnHandler,
-		stopPlayingHandler,
-		toggleRecordingHandler,
-		dictionaryMode,
-		toggleDictionaryHandler,
-		showTranslation,
-		translateBtnHandler,
-		messages.length,
-		redoCompletionHandler,
-		updateDisplayedMessageInd,
-	]);
-
-	const panelItemsContent = (
-		<Card className="shadow-lg p-2">
-			<CardContent className="flex items-center p-0">
-				<div className="flex gap-2">
-					{panelItems.map((item) => {
-						return (
-							<TooltipProvider key={item.label} delayDuration={0}>
-								<Tooltip>
-									<TooltipTrigger>
-										<>
-											{item.toggle && (
-												<Toggle
-													size="default"
-													className={
-														cn(
-															"h-11 w-11 sm:h-14 sm:w-14 text-slate-500 dark:text-slate-400 hover:bg-slate-100",
-															"data-[state=on]:bg-primary data-[state=on]:text-white hover:data-[state=on]:bg-primary/80 px-2"
-															// "data-[state=on]:bg-slate-500 data-[state=on]:text-white hover:data-[state=on]:bg-slate-400 px-2 "
-														)
-														// "relative text-slate-500 dark:text-slate-400 hover:bg-slate-100",
-														// item.pressed && "bg-slate-400"
-													}
-													pressed={item.pressed}
-													onPressedChange={item.onPressed}
-													disabled={item.disabled}
-												>
-													<item.icon
-														className={cn("w-6 h-6", item.iconClasses)}
-													/>
-												</Toggle>
-											)}
-											{!item.toggle && (
-												<Button
-													size="icon"
-													variant="ghost"
-													className="relative h-11 w-11 sm:h-14 sm:w-14 text-slate-500 dark:text-slate-400 hover:bg-slate-100"
-													onClick={item.onClick}
-													disabled={item.disabled}
-												>
-													<item.icon
-														className={cn("w-6 h-6", item.iconClasses)}
-													/>
-												</Button>
-											)}
-										</>
-									</TooltipTrigger>
-									<TooltipContent side="bottom" align="start">
-										<span>{item.label}</span>
-										{item.new && <NewBadge className="ml-2" />}
-									</TooltipContent>
-								</Tooltip>
-							</TooltipProvider>
-						);
-					})}
-				</div>
-			</CardContent>
-		</Card>
-	);
 
 	const instructionContent = (
 		<Transition
@@ -1159,14 +926,38 @@ const ConversationIdPage = ({
 
 	// needed for streaming updates in the messageCard component
 	const displayedMessageText = useMemo(() => {
-		if (showTranslation && displayedMessage?.translation) {
+		if (translationMode && displayedMessage?.translation) {
 			return displayedMessage?.translation;
 		}
 
 		return displayedMessage?.content;
 		// NOTE: displayedMessage?.content must be included in the deps array
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [displayedMessage, displayedMessage?.content, showTranslation]);
+	}, [displayedMessage, displayedMessage?.content, translationMode]);
+
+	const chatPanelContent = (
+		<ChatPanel
+			chatStatus={STATUS}
+			previousMessageHandler={previousMessageHandler}
+			nextMessageHandler={nextMessageHandler}
+			isFirstMessage={displayedMessageInd === 0}
+			isLastMessage={displayedMessageInd === messages.length - 1}
+			isMessage={displayedMessage !== null}
+			hasTranslation={displayedMessage?.translation !== undefined}
+			isUserMessage={displayedMessage?.role === "user"}
+			isAssistantMessage={displayedMessage?.role === "assistant"}
+			replayBtnHandler={replayBtnHandler}
+			abortProcessingBtnHandler={abortProcessingBtnHandler}
+			stopPlayingHandler={stopPlayingHandler}
+			redoCompletionHandler={redoCompletionHandler}
+			toggleRecordingHandler={toggleRecordingHandler}
+			toggleDictionaryHandler={toggleDictionaryHandler}
+			toggleTranslationHandler={toggleTranslationHandler}
+			translateBtnHandler={translateBtnHandler}
+			dictionaryMode={dictionaryMode}
+			translationMode={translationMode}
+		/>
+	);
 
 	const dictionaryWords = useMemo(() => {
 		if (!displayedMessage) return [];
@@ -1183,7 +974,7 @@ const ConversationIdPage = ({
 
 	const messageCardInnerContent = useMemo(() => {
 		const isShowingTranslation =
-			showTranslation &&
+			translationMode &&
 			displayedMessage?.translation &&
 			(!dictionaryMode || isPlaying);
 
@@ -1298,7 +1089,7 @@ const ConversationIdPage = ({
 		displayedMessage?.translation,
 		displayedMessageText,
 		isPlaying,
-		showTranslation,
+		translationMode,
 		updateQueryStr,
 	]);
 
@@ -1373,7 +1164,7 @@ const ConversationIdPage = ({
 			</div>
 			{/* wrapper */}
 			<div className="h-full flex flex-col items-center justify-between mx-auto gap-4 px-4 py-4 md:pt-6 md:pb-14">
-				<div className="hidden md:block">{panelItemsContent}</div>
+				<div className="hidden md:block">{chatPanelContent}</div>
 				{/* chat bubble and pagination wrapper */}
 				<div className="flex-1 min-h-0 basis-0 flex flex-col justify-center items-center w-full h-full max-w-2xl">
 					{/* message card container */}
@@ -1384,7 +1175,7 @@ const ConversationIdPage = ({
 				</div>
 				{recordingBlob}
 				<div className="h-12 w-full text-center">{instructionContent}</div>
-				<div className="md:hidden mb-8">{panelItemsContent}</div>
+				<div className="md:hidden mb-8">{chatPanelContent}</div>
 			</div>
 			<DictionaryDrawer
 				open={drawerOpen}
