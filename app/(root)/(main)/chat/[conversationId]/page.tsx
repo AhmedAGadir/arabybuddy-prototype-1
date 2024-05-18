@@ -863,7 +863,7 @@ const ConversationIdPage = ({
 		upsertMessageInCache,
 	]);
 
-	const [drawerOpen, setDrawerOpen] = useState(true);
+	const [drawerOpen, setDrawerOpen] = useState(false);
 
 	const [dictionaryMode, setDictionaryMode] = useState(false);
 
@@ -1342,7 +1342,7 @@ const ConversationIdPage = ({
 		[displayedMessageInd, displayedMessageText, messages.length]
 	);
 
-	const drawerContentA = (
+	const drawerContent = (
 		<Drawer
 			open={drawerOpen}
 			// open={true}
@@ -1366,7 +1366,7 @@ const ConversationIdPage = ({
 								<ChevronLeftIcon />
 							</Button>
 							<div className="flex-1 text-center">
-								<div className={cn("text-7xl m", cairo.className)}>شخصية</div>
+								<div className={cn("text-6xl m", cairo.className)}>شخصية</div>
 							</div>
 							<Button
 								variant="outline"
@@ -1390,7 +1390,7 @@ const ConversationIdPage = ({
 									defaultChecked={true}
 									onCheckedChange={() => {}}
 								/>
-								<TooltipProvider>
+								<TooltipProvider delayDuration={0}>
 									<Tooltip>
 										<TooltipTrigger>
 											<InformationCircleIcon className="w-6 h-6 text-gray-400 hover:text-gray-700" />
@@ -1440,107 +1440,6 @@ const ConversationIdPage = ({
 			<DrawerFooter />
 		</Drawer>
 	);
-
-	const drawerContentB = (
-		<Drawer
-			open={drawerOpen}
-			// open={true}
-			onOpenChange={setDrawerOpen}
-		>
-			{/* <DrawerTrigger asChild>
-				<Button variant="outline">Open Drawer</Button>
-			</DrawerTrigger> */}
-			<DrawerContent className="p-4 ">
-				<div className="mx-auto w-full max-w-2xl ">
-					<DrawerHeader>
-						<DrawerTitle>Dictionary</DrawerTitle>
-					</DrawerHeader>
-					<div className="p-4 flex flex-col gap-8 items-center">
-						<div className="flex items-center justify-center space-x-3 w-full">
-							<Button
-								variant="outline"
-								className="h-12 w-12 shrink-0 rounded-full"
-							>
-								<span className="sr-only">previous word</span>
-								<ChevronLeftIcon />
-							</Button>
-							<div className="flex-1 text-center">
-								<div className={cn("text-7xl m", cairo.className)}>شخصية</div>
-							</div>
-							<Button
-								variant="outline"
-								className="h-12 w-12 shrink-0 rounded-full"
-							>
-								<span className="sr-only">next word</span>
-								<ChevronRightIcon />
-							</Button>
-						</div>
-						<div className="flex flex-col items-center gap-4 w-full">
-							<div className="flex items-center gap-2 my-3">
-								<Label
-									htmlFor="monolingual_mode"
-									className="text-sm font-medium leading-6 text-gray-900 flex items-center gap-1"
-								>
-									<span>Monolingual mode</span>
-								</Label>
-								<Switch
-									id="monolingual_mode"
-									checked={true}
-									defaultChecked={true}
-									onCheckedChange={() => {}}
-								/>
-								<TooltipProvider>
-									<Tooltip>
-										<TooltipTrigger>
-											<InformationCircleIcon className="w-6 h-6 text-gray-400 hover:text-gray-700" />
-										</TooltipTrigger>
-										<TooltipContent>
-											<div className="max-w-sm">
-												When monolingual mode is enabled, the dictionary will
-												only show definitions in Arabic.
-											</div>
-										</TooltipContent>
-									</Tooltip>
-								</TooltipProvider>
-							</div>
-							<Button size="lg" className="gap-2">
-								<span>Search al-maany.com</span>
-								<ArrowTopRightOnSquareIcon className="w-6 h-6" />
-							</Button>
-							<Card className="w-full px-6 py-4">
-								<CardContent className="min-h-48 px-0 py-2">
-									{/* The word "شخصية" in Arabic generally translates to "character"
-									in English. This term can refer to: Character (Personality
-									Trait): Describing an individual's set of characteristics or
-									qualities that distinguishes them from others. Character
-									(Fictional/Real Person): A person in a story or a narrative,
-									or an individual in real life. In the context of your message,
-									"شخصية" refers to a character in a narrative sense. The person
-									described in the message is evidently a character from a story
-									(likely a fictional one, given the mention of battles with
-									Naruto), and the word is used to highlight his unique and
-									complex attributes and the impact he has within his narrative
-									world. */}
-								</CardContent>
-								<CardFooter className="flex justify-end p-0">
-									<Button
-										size="lg"
-										className="text-white bg-gradient-to-br from-purple-600 to-blue-500 hover:bg-gradient-to-bl focus:ring-4 focus:outline-none focus:ring-blue-300 dark:focus:ring-blue-800 font-medium rounded-lg text-sm px-8  md:w-fit gap-2"
-									>
-										<span>Generate definition</span>
-										<SparklesIconSolid className="w-6 h-6" />
-									</Button>
-								</CardFooter>
-							</Card>
-						</div>
-					</div>
-				</div>
-			</DrawerContent>
-			<DrawerFooter />
-		</Drawer>
-	);
-
-	const drawerContent = drawerContentA;
 
 	const recordingBlob = isRecording && (
 		<>
