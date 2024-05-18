@@ -350,7 +350,7 @@ const DictionaryDrawer = ({
 									className="flex justify-center items-center w-full h-full"
 								>
 									<span className="flex items-center gap-2">
-										<span>Search al-maany.com</span>
+										<span>Search almaany.com</span>
 										<ArrowTopRightOnSquareIcon className="w-6 h-6" />
 									</span>
 								</a>
