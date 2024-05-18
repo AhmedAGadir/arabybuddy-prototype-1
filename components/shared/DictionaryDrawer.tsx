@@ -200,7 +200,7 @@ const DictionaryDrawer = ({
 					disabled={wordInd === words.length - 1}
 				>
 					<span className="sr-only">next word</span>
-					<ChevronLeftIcon />
+					<ChevronLeftIcon className="w-5 h-5" />
 				</Button>
 				<div className="flex-1 text-center">
 					<div className={cn("text-4xl md:text-6xl m", cairo.className)}>
@@ -214,7 +214,7 @@ const DictionaryDrawer = ({
 					disabled={wordInd === 0}
 				>
 					<span className="sr-only">previous word</span>
-					<ChevronRightIcon />
+					<ChevronRightIcon className="w-5 h-5" />
 				</Button>
 			</div>
 		</div>
@@ -312,7 +312,7 @@ const DictionaryDrawer = ({
 	);
 
 	return (
-		<Drawer open={open} onOpenChange={setOpen}>
+		<Drawer open={true} onOpenChange={setOpen}>
 			{/* <DrawerTrigger asChild>
 				<Button variant="outline">Open Drawer</Button>
 			</DrawerTrigger> */}
