@@ -42,6 +42,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { completionMode } from "@/lib/api/assistant";
 import { useLogger } from "@/hooks/useLogger";
 import { ToastAction } from "@radix-ui/react-toast";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 const DictionaryDrawer = ({
 	open,
@@ -62,7 +63,9 @@ const DictionaryDrawer = ({
 
 	const wordInd = wordIndParam ? parseInt(wordIndParam) : null;
 
-	const word = wordInd !== null ? words[wordInd]?.word : null;
+	const wordData = wordInd !== null ? words[wordInd] : null;
+
+	const word = wordData?.word;
 
 	// some state for monolingual mode, initialized from local storage,
 	const [monolingualMode, setMonolingualMode] = React.useState(
@@ -79,13 +82,6 @@ const DictionaryDrawer = ({
 	const { makeChatCompletionStream, abortMakeChatCompletionStream } =
 		useChatService();
 
-	const [definition, setDefinition] = React.useState<{
-		word: string;
-		definitions: string[];
-		context: string;
-		monolingual: boolean;
-	} | null>(null);
-
 	// {
 	// 	word: "موقع",
 	// 	definitions: ["Website", "Location"],
@@ -93,18 +89,29 @@ const DictionaryDrawer = ({
 	// 		"In the provided context, the word 'موقع' refers to a 'website' within the framework of a programming project discussion. It specifically pertains to a digital presence or platform where various types of content or services are hosted and can be accessed via the internet.",
 	// }
 
-	const [isPending, setIsPending] = React.useState(false);
-
 	const { toast } = useToast();
 
-	const generateDefinition = useCallback(async () => {
-		if (!word) {
-			return;
-		}
+	const queryClient = useQueryClient();
 
-		try {
-			setIsPending(true);
+	const queryKey = ["dictionary", word, monolingualMode];
 
+	const { data: definition } = useQuery({
+		queryKey,
+		queryFn: async () => {
+			const data: {
+				word: string;
+				definitions: string[];
+				context: string;
+				monolingual: boolean;
+			} | null = queryClient.getQueryData(queryKey) || null;
+
+			return data;
+		},
+		enabled: !!word,
+	});
+
+	const generateDefinitionMutation = useMutation({
+		mutationFn: async () => {
 			const completionStream = await makeChatCompletionStream(
 				[
 					{
@@ -129,14 +136,16 @@ const DictionaryDrawer = ({
 
 			const completion = JSON.parse(completionContent);
 
-			setDefinition({
+			return {
 				...completion,
 				monolingual: monolingualMode,
-			});
-
-			setIsPending(false);
-		} catch (error) {
-			setIsPending(false);
+			};
+		},
+		onSuccess: (data) => {
+			queryClient.setQueryData(queryKey, data);
+			return data;
+		},
+		onError: (error) => {
 			toast({
 				title: "Error generating definition",
 				description: "An error occurred while generating the definition",
@@ -150,8 +159,14 @@ const DictionaryDrawer = ({
 				className: "error-toast",
 				duration: Infinity,
 			});
-		}
-	}, [makeChatCompletionStream, monolingualMode, toast, word, words]);
+		},
+	});
+
+	const isPending = generateDefinitionMutation.isPending;
+
+	const generateDefinition = async () => {
+		await generateDefinitionMutation.mutate();
+	};
 
 	const updateQueryStr = useCallback(
 		(name: string, value: string) => {
@@ -166,14 +181,12 @@ const DictionaryDrawer = ({
 	const viewPreviousWord = () => {
 		if (wordInd !== null && wordInd > 0) {
 			updateQueryStr("wordInd", String(wordInd - 1));
-			setDefinition(null);
 		}
 	};
 
 	const viewNextWord = () => {
 		if (wordInd !== null && wordInd < words.length - 1) {
 			updateQueryStr("wordInd", String(wordInd + 1));
-			setDefinition(null);
 		}
 	};
 
@@ -251,10 +264,9 @@ const DictionaryDrawer = ({
 							<div className="text-lg font-semibold">
 								<ul className="max-w-md space-y-1 list-disc list-inside ">
 									{definition.definitions.map((def) => (
-										<li>{def}</li>
+										<li key={def}>{def}</li>
 									))}
 								</ul>
-								{/* {definition.definitions.join(", ")} */}
 							</div>
 						</div>
 						<div className="space-y-2">
@@ -314,12 +326,9 @@ const DictionaryDrawer = ({
 						<div className="flex flex-col items-center gap-4 w-full">
 							{monolingualToggleContent}
 							{definitionContent}
-							{/* <button onClick={() => setIsPending((prev) => !prev)}>Toggle Skeleton</button> */}
 							<Button
-								// variant="outline"
 								size="lg"
-								//  className="gap-2 w-full"
-								className="text-white bg-gradient-to-br from-purple-600 to-blue-500 hover:bg-gradient-to-bl focus:ring-4 focus:outline-none focus:ring-blue-300 dark:focus:ring-blue-800  w-full gap-2"
+								className="text-white bg-gradient-to-br from-purple-600 to-blue-500 hover:bg-gradient-to-bl focus:ring-4 focus:outline-none focus:ring-blue-300 dark:focus:ring-blue-800  w-full px-8 gap-2"
 								disabled={!word || isPending}
 								onClick={generateDefinition}
 							>

@@ -174,7 +174,6 @@ const ConversationIdPage = ({
 		messages,
 		createMessage,
 		updateMessage,
-		completeTyping,
 		deleteMessages,
 		refetch,
 		upsertMessageInCache,
@@ -638,9 +637,8 @@ const ConversationIdPage = ({
 	const stopPlayingHandler = useCallback(() => {
 		if (isPlaying) {
 			stopPlaying();
-			completeTyping();
 		}
-	}, [completeTyping, isPlaying, stopPlaying]);
+	}, [isPlaying, stopPlaying]);
 
 	const redoCompletionHandler = useCallback(
 		async (options: {
@@ -1383,8 +1381,7 @@ const ConversationIdPage = ({
 				<div className="md:hidden mb-8">{panelItemsContent}</div>
 			</div>
 			<DictionaryDrawer
-				// open={drawerOpen}
-				open={true}
+				open={drawerOpen}
 				setOpen={setDrawerOpen}
 				words={dictionaryWords}
 			/>
