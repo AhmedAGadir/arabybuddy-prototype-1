@@ -18,18 +18,10 @@ const useChatService = () => {
 		useServerlessRequest();
 
 	async function* makeChatCompletionGenerator(
-		messageHistory: OpenAIMessage[],
+		messages: OpenAIMessage[],
 		options: { mode: CompletionMode }
 	) {
 		try {
-			const latestMessage = messageHistory[messageHistory.length - 1];
-
-			const messages =
-				options.mode === completionMode.TRANSLATE ||
-				options.mode === completionMode.REPHRASE
-					? [latestMessage]
-					: messageHistory;
-
 			const params = {
 				messages,
 				mode: options.mode,
@@ -70,13 +62,10 @@ const useChatService = () => {
 
 			let role: "assistant" | "user";
 
-			if (
-				options.mode === completionMode.TRANSLATE ||
-				options.mode === completionMode.REPHRASE
-			) {
-				role = latestMessage.role;
-			} else {
+			if (options.mode === completionMode.DEFAULT) {
 				role = "assistant";
+			} else {
+				role = messages[messages.length - 1].role;
 			}
 
 			let content = "";

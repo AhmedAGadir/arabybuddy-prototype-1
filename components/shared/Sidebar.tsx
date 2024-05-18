@@ -136,8 +136,8 @@ export default function Sidebar() {
 								href={href}
 								className={cn(
 									isActive
-										? "bg-gray-50 text-indigo-600"
-										: "text-gray-700 hover:text-indigo-600 hover:bg-gray-50",
+										? "bg-secondary text-indigo-600"
+										: "text-gray-700 hover:text-indigo-600 hover:bg-secondary",
 									"group flex justify-between gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold"
 								)}
 							>
@@ -168,11 +168,11 @@ export default function Sidebar() {
 			<>
 				<SignedIn>
 					<li className="-mx-6 lg:hidden">
-						<span className="flex items-center px-6 text-sm font-semibold text-gray-900 hover:bg-gray-50">
+						<span className="flex items-center px-6 text-sm font-semibold text-gray-900 hover:bg-secondary">
 							<SignOutButton redirectUrl="/">
 								<div
 									className={cn(
-										"text-gray-700 hover:text-indigo-600 hover:bg-gray-50 cursor-pointer",
+										"text-gray-700 hover:text-indigo-600 hover:bg-secondary cursor-pointer",
 										"group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold"
 									)}
 								>
@@ -191,7 +191,7 @@ export default function Sidebar() {
 					{/* user button doesnt work in a shadCN sheet, clicking anything inside instantly closes it, 
 					the mobile buttons are just a hack for now  */}
 					<li className="-mx-6 hidden lg:block">
-						<span className="flex items-center gap-x-4 px-6 py-2 text-sm font-semibold leading-6 text-gray-900 hover:bg-gray-50">
+						<span className="flex items-center gap-x-4 px-6 py-2 text-sm font-semibold leading-6 text-gray-900 hover:bg-secondary">
 							<UserButton afterSignOutUrl="/" />
 							<span className="sr-only">Your profile</span>
 							<span aria-hidden="true">
@@ -202,11 +202,11 @@ export default function Sidebar() {
 				</SignedIn>
 				<SignedOut>
 					<li className="-mx-6">
-						<span className="flex items-center gap-x-4 px-6 py-2 text-sm font-semibold leading-6 text-gray-900 hover:bg-gray-50">
+						<span className="flex items-center gap-x-4 px-6 py-2 text-sm font-semibold leading-6 text-gray-900 hover:bg-secondary">
 							<SignInButton>
 								<div
 									className={cn(
-										"text-gray-700 hover:text-indigo-600 hover:bg-gray-50 cursor-pointer",
+										"text-gray-700 hover:text-indigo-600 hover:bg-secondary cursor-pointer",
 										"group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold"
 									)}
 								>
@@ -239,8 +239,8 @@ export default function Sidebar() {
 								href={item.href}
 								className={cn(
 									isActive
-										? "bg-gray-50 text-indigo-600"
-										: "text-gray-700 hover:text-indigo-600 hover:bg-gray-50",
+										? "bg-secondary text-indigo-600"
+										: "text-gray-700 hover:text-indigo-600 hover:bg-secondary",
 									"group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold"
 								)}
 							>

@@ -14,8 +14,6 @@ const useMessages = ({ conversationId }: { conversationId: string }) => {
 
 	const queryClient = useQueryClient();
 
-	const { completeTyping, typewriter } = useTypewriter();
-
 	const queryKey = ["messages", user?.id, conversationId];
 
 	const { isPending, error, data, refetch } = useQuery({
@@ -180,30 +178,6 @@ const useMessages = ({ conversationId }: { conversationId: string }) => {
 				)
 			);
 
-			// const isTranslating = options.translate;
-
-			// const textToType = isTranslating
-			// 	? message.translation ?? ""
-			// 	: message.content;
-
-			// const setTypedContent = (value: string) => {
-			// 	queryClient.setQueryData(
-			// 		queryKey,
-			// 		(old: IMessage[] = []) =>
-			// 			old.map((m) =>
-			// 				m._id === message._id
-			// 					? {
-			// 							...m,
-			// 							translation: isTranslating ? value : m.translation,
-			// 							content: isTranslating ? m.content : value,
-			// 					  }
-			// 					: m
-			// 			)
-			// 	);
-			// };
-
-			// await typewriter(textToType, setTypedContent, 30);
-
 			// Return a context object with the snapshotted value
 			return { previousMessages };
 		},
@@ -262,7 +236,6 @@ const useMessages = ({ conversationId }: { conversationId: string }) => {
 		refetch,
 		createMessage,
 		updateMessage,
-		completeTyping,
 		deleteMessages,
 		upsertMessageInCache,
 	};

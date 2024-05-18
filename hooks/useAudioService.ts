@@ -1,10 +1,10 @@
 import { blobToBase64, concatBase64Strs, concatUint8Arrays } from "@/lib/utils";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
 import { useLogger } from "./useLogger";
 import { useServerlessRequest } from "./useServerlessRequest";
 import { usePreferences } from "./usePreferences";
 import { DEFAULT_USER_PREFERENCES } from "@/lib/database/models/preferences.model";
-import { useAudioPlayer } from "./useAudioPlayer";
+import _ from "lodash";
 
 const useAudioService = () => {
 	const logger = useLogger({ label: "AudioService", color: "#87de74" });
@@ -112,6 +112,7 @@ const useAudioService = () => {
 
 				const base64Audios: string[] = [];
 				const wordData: {
+					id: string;
 					word: string;
 					startTime: number;
 					endTime: number;
@@ -156,7 +157,9 @@ const useAudioService = () => {
 
 									if (character === " ") {
 										if (word) {
+											const id = _.uniqueId();
 											wordData.push({
+												id,
 												word,
 												startTime: wordStartTimeSeconds,
 												endTime: wordEndTimeSeconds,
@@ -173,7 +176,9 @@ const useAudioService = () => {
 										word += character;
 
 										if (i === characters.length - 1) {
+											const id = _.uniqueId();
 											wordData.push({
+												id,
 												word,
 												startTime: wordStartTimeSeconds,
 												endTime: wordEndTimeSeconds,

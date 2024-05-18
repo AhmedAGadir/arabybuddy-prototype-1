@@ -17,8 +17,6 @@ import { useAudioPlayer } from "@/hooks/useAudioPlayer";
 import { useRecording } from "@/hooks/useRecording";
 import { useMessages } from "@/hooks/useMessages";
 import { useConversations } from "@/hooks/useConversations";
-import { ObjectId } from "mongodb";
-import { nanoid } from "nanoid";
 
 import { Button } from "@/components/ui/button";
 
@@ -63,25 +61,13 @@ import {
 	TooltipProvider,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
-import {
-	Drawer,
-	DrawerClose,
-	DrawerContent,
-	DrawerDescription,
-	DrawerFooter,
-	DrawerHeader,
-	DrawerTitle,
-	DrawerTrigger,
-} from "@/components/ui/drawer";
 
-import _, { set } from "lodash";
+import _ from "lodash";
 import { Transition } from "@headlessui/react";
 
 import { cn } from "@/lib/utils";
 import { cairo } from "@/lib/fonts";
 
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { Toggle } from "@/components/ui/toggle";
 import {
 	StopIcon,
@@ -98,31 +84,17 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
-import { text } from "stream/consumers";
-import { Car, Minus, Plus } from "lucide-react";
+
 import { Badge } from "@/components/ui/badge";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCyclingText } from "@/hooks/useCyclingText";
 import { nonWordCharactersRegExp } from "@/lib/constants";
-import useTimestamp from "@/hooks/useTimestamp";
 import {
 	CompletionMode,
 	OpenAIMessage,
 	completionMode,
 } from "@/lib/api/assistant";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
-import {
-	Popover,
-	PopoverContent,
-	PopoverTrigger,
-} from "@/components/ui/popover";
+import { DictionaryDrawer } from "@/components/shared/DictionaryDrawer";
 
 const status = {
 	IDLE: "IDLE",
@@ -202,7 +174,6 @@ const ConversationIdPage = ({
 		messages,
 		createMessage,
 		updateMessage,
-		completeTyping,
 		deleteMessages,
 		refetch,
 		upsertMessageInCache,
@@ -252,20 +223,21 @@ const ConversationIdPage = ({
 	const displayedMessageInd =
 		searchParams.get("ind") !== null ? Number(searchParams.get("ind")) : null;
 
-	const updateDisplayedMessageInd = useCallback(
-		(newIndex: number) => {
-			const createQueryString = (name: string, value: string) => {
-				const params = new URLSearchParams(searchParams.toString());
-				params.set(name, value);
+	const updateQueryStr = useCallback(
+		(name: string, value: string) => {
+			const params = new URLSearchParams(searchParams.toString());
+			params.set(name, value);
 
-				return params.toString();
-			};
-
-			router.replace(
-				pathname + "?" + createQueryString("ind", newIndex.toString())
-			);
+			router.replace(pathname + "?" + params.toString());
 		},
 		[pathname, router, searchParams]
+	);
+
+	const updateDisplayedMessageInd = useCallback(
+		(newIndex: number) => {
+			updateQueryStr("ind", newIndex.toString());
+		},
+		[updateQueryStr]
 	);
 
 	useEffect(() => {
@@ -454,6 +426,7 @@ const ConversationIdPage = ({
 	const wordTimestampsRef = useRef<
 		| {
 				word: string;
+				id: string;
 				startTime: number;
 				endTime: number;
 		  }[]
@@ -539,11 +512,13 @@ const ConversationIdPage = ({
 				const dateStr = new Date().toISOString();
 
 				const completionMessage = {
-					_id: nanoid(),
+					_id: _.uniqueId("message_"),
 					clerkId: user!.id,
 					conversationId,
 					createdAt: dateStr,
 					updatedAt: dateStr,
+					role: "assistant",
+					content: "",
 				} as IMessage;
 
 				latestMessageInd++;
@@ -662,9 +637,8 @@ const ConversationIdPage = ({
 	const stopPlayingHandler = useCallback(() => {
 		if (isPlaying) {
 			stopPlaying();
-			completeTyping();
 		}
-	}, [completeTyping, isPlaying, stopPlaying]);
+	}, [isPlaying, stopPlaying]);
 
 	const redoCompletionHandler = useCallback(
 		async (options: {
@@ -706,11 +680,12 @@ const ConversationIdPage = ({
 					translation: undefined,
 					createdAt: displayedMessage.createdAt,
 					updatedAt: new Date().toISOString(),
+					role: displayedMessage.role,
+					content: "",
 				} as IMessage;
 
 				for await (const data of completionStream) {
 					completionMessage.content = data.content;
-					completionMessage.role = data.role;
 					// update cache, well still need to update the database after
 					await upsertMessageInCache(completionMessage);
 				}
@@ -749,14 +724,13 @@ const ConversationIdPage = ({
 				setProgressBarValue(0);
 			} catch (error) {
 				logger.error("redoCompletion", error);
-				const errorMessages = {
-					[completionMode.REGENERATE]:
-						"There was a problem regenerating this message",
-					[completionMode.REPHRASE]:
-						"There was a problem rephrasing this message",
-				};
 
-				handleError(error, errorMessages[options.mode]);
+				handleError(
+					error,
+					`There was a problem ${
+						completionMode.REGENERATE ? "regenerating" : "rephrasing"
+					} this message`
+				);
 			}
 		},
 		[
@@ -804,11 +778,12 @@ const ConversationIdPage = ({
 				conversationId: displayedMessage.conversationId,
 				createdAt: displayedMessage.createdAt,
 				updatedAt: new Date().toISOString(),
+				role: displayedMessage.role,
+				content: "",
 			} as IMessage;
 
 			for await (const data of completionStream) {
 				completionMessage.translation = data.content;
-				completionMessage.role = data.role;
 				// update cache, well still need to update the database after
 				await upsertMessageInCache(completionMessage);
 			}
@@ -1187,6 +1162,19 @@ const ConversationIdPage = ({
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [displayedMessage, displayedMessage?.content, showTranslation]);
 
+	const dictionaryWords = useMemo(() => {
+		if (!displayedMessage) return [];
+
+		const words = _.words(
+			displayedMessage?.content.replace(nonWordCharactersRegExp, "")
+		).map((word) => ({
+			word,
+			id: _.uniqueId("word_"),
+		}));
+
+		return words;
+	}, [displayedMessage]);
+
 	const messageCardInnerContent = useMemo(() => {
 		const isShowingTranslation =
 			showTranslation &&
@@ -1219,14 +1207,16 @@ const ConversationIdPage = ({
 					}}
 				>
 					<div className="flex flex-wrap gap-2">
-						{_.words(
-							displayedMessage?.content.replace(nonWordCharactersRegExp, "")
-						).map((word, i) => (
+						{dictionaryWords.map(({ word, id }, ind) => (
 							<Badge
-								key={`${word}_${i}`}
+								key={id}
 								variant="secondary"
 								className="text-lg cursor-pointer hover:bg-primary hover:text-white"
-								onClick={() => setDrawerOpen(true)}
+								onClick={() => {
+									// using the index instead of the id allows us to use pagination in the drawer
+									updateQueryStr("wordInd", ind.toString());
+									setDrawerOpen(true);
+								}}
 							>
 								{word}
 							</Badge>
@@ -1256,6 +1246,7 @@ const ConversationIdPage = ({
 							word: timestampedWord,
 							startTime,
 							endTime,
+							id,
 						} = wordTimestampsRef.current![ind];
 
 						const isLastWord = ind === wordTimestampsRef.current!.length - 1;
@@ -1270,7 +1261,7 @@ const ConversationIdPage = ({
 
 						return (
 							<span
-								key={`${word}_${ind}`}
+								key={id}
 								className={cn(
 									isActive && "bg-indigo-600 text-white",
 									"rounded-md p-1"
@@ -1297,10 +1288,12 @@ const ConversationIdPage = ({
 		STATUS,
 		currentTime,
 		dictionaryMode,
-		displayedMessage,
+		dictionaryWords,
+		displayedMessage?.translation,
 		displayedMessageText,
 		isPlaying,
 		showTranslation,
+		updateQueryStr,
 	]);
 
 	const messageCardContent = useMemo(() => {
@@ -1342,112 +1335,11 @@ const ConversationIdPage = ({
 		[displayedMessageInd, displayedMessageText, messages.length]
 	);
 
-	const drawerContent = (
-		<Drawer
-			open={drawerOpen}
-			// open={true}
-			onOpenChange={setDrawerOpen}
-		>
-			{/* <DrawerTrigger asChild>
-				<Button variant="outline">Open Drawer</Button>
-			</DrawerTrigger> */}
-			<DrawerContent className="p-4 ">
-				<div className="mx-auto w-full max-w-2xl ">
-					<DrawerHeader>
-						<DrawerTitle>Dictionary</DrawerTitle>
-					</DrawerHeader>
-					<div className="p-4 flex flex-col gap-8 items-center">
-						<div className="flex items-center justify-center space-x-3 w-full">
-							<Button
-								variant="outline"
-								className="h-12 w-12 shrink-0 rounded-full"
-							>
-								<span className="sr-only">previous word</span>
-								<ChevronLeftIcon />
-							</Button>
-							<div className="flex-1 text-center">
-								<div className={cn("text-4xl md:text-6xl m", cairo.className)}>
-									شخصية
-								</div>
-							</div>
-							<Button
-								variant="outline"
-								className="h-12 w-12 shrink-0 rounded-full"
-							>
-								<span className="sr-only">next word</span>
-								<ChevronRightIcon />
-							</Button>
-						</div>
-						<div className="flex flex-col items-center gap-4 w-full">
-							<div className="flex items-center gap-2 my-3">
-								<Label
-									htmlFor="monolingual_mode"
-									className="text-sm font-medium leading-6 text-gray-900 flex items-center gap-1"
-								>
-									<span>Monolingual mode</span>
-								</Label>
-								<Switch
-									id="monolingual_mode"
-									checked={true}
-									defaultChecked={true}
-									onCheckedChange={() => {}}
-								/>
-								<TooltipProvider delayDuration={0}>
-									<Tooltip>
-										<TooltipTrigger>
-											<InformationCircleIcon className="w-6 h-6 text-gray-400 hover:text-gray-700" />
-										</TooltipTrigger>
-										<TooltipContent>
-											<div className="max-w-sm">
-												When monolingual mode is enabled, the dictionary will
-												only show definitions in Arabic.
-											</div>
-										</TooltipContent>
-									</Tooltip>
-								</TooltipProvider>
-							</div>
-							<Card className="w-full px-6 py-4">
-								<CardContent className="min-h-48 p-0">
-									{/* The word "شخصية" in Arabic generally translates to "character"
-									in English. This term can refer to: Character (Personality
-									Trait): Describing an individual's set of characteristics or
-									qualities that distinguishes them from others. Character
-									(Fictional/Real Person): A person in a story or a narrative,
-									or an individual in real life. In the context of your message,
-									"شخصية" refers to a character in a narrative sense. The person
-									described in the message is evidently a character from a story
-									(likely a fictional one, given the mention of battles with
-									Naruto), and the word is used to highlight his unique and
-									complex attributes and the impact he has within his narrative
-									world. */}
-								</CardContent>
-							</Card>
-							<Button
-								// variant="outline"
-								size="lg"
-								//  className="gap-2 w-full"
-								className="text-white bg-gradient-to-br from-purple-600 to-blue-500 hover:bg-gradient-to-bl focus:ring-4 focus:outline-none focus:ring-blue-300 dark:focus:ring-blue-800  w-full gap-2"
-							>
-								<span>Generate definition</span>
-								<SparklesIconSolid className="w-6 h-6" />
-							</Button>
-							<Button size="lg" className="gap-2 w-full">
-								<span>Search al-maany.com</span>
-								<ArrowTopRightOnSquareIcon className="w-6 h-6" />
-							</Button>
-						</div>
-					</div>
-				</div>
-			</DrawerContent>
-			<DrawerFooter />
-		</Drawer>
-	);
-
 	const recordingBlob = isRecording && (
-		<>
+		<div className="relative flex h-4 w-4 my-2">
 			<span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#FF0066] opacity-75" />
 			<span className="relative inline-flex rounded-full h-4 w-4 bg-[#FF0066]" />
-		</>
+		</div>
 	);
 
 	if (isPending) {
@@ -1484,11 +1376,15 @@ const ConversationIdPage = ({
 					</div>
 					{messageIndexContent}
 				</div>
-				<div className="relative flex h-4 w-4 my-2">{recordingBlob}</div>
+				{recordingBlob}
 				<div className="h-12 w-full text-center">{instructionContent}</div>
 				<div className="md:hidden mb-8">{panelItemsContent}</div>
 			</div>
-			{drawerContent}
+			<DictionaryDrawer
+				open={drawerOpen}
+				setOpen={setDrawerOpen}
+				words={dictionaryWords}
+			/>
 			<SupportCard className="absolute bottom-0 right-0" />
 		</div>
 	);

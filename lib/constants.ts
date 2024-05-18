@@ -10,4 +10,5 @@ export const MIME_TYPES = [
 	"audio/m4a",
 ];
 
-export const nonWordCharactersRegExp = /[!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~?]/g;
+export const nonWordCharactersRegExp =
+	/[!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~؟،؛»]/g;

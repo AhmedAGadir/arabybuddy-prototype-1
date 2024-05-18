@@ -8,6 +8,7 @@ export const completionMode = {
 	REPHRASE: "REPHRASE",
 	REGENERATE: "REGENERATE",
 	TRANSLATE: "TRANSLATE",
+	DICTIONARY: "DICTIONARY",
 	DEFAULT: "DEFAULT",
 } as const;
 
@@ -30,6 +31,27 @@ export const getSystemMessage = ({
 		user_personality_traits: IPreferences["user_personality_traits"];
 	};
 }) => {
+	if (mode === completionMode.DICTIONARY) {
+		let systemMessage = "";
+		systemMessage += `You are an online arabic dictionary than translates from the ${preferences.arabic_dialect} dialect into either english or modern standard arabic depending on the input.`;
+
+		systemMessage += `The input is a JavaScript object with the following format: {word: "string", context: "string", monolingual: boolean}.`;
+
+		systemMessage += `if monolingual is true, you should return the definition in modern standard arabic. Otherwise, you should return the definition in English.`;
+
+		systemMessage += `You must return a JSON object that includes:`;
+
+		systemMessage += `"word" property with the input word as a string.`;
+
+		systemMessage += `"definitions" property containing different meanings for the word as an array of strings.`;
+
+		systemMessage += `"context" property with a 1-2 sentence explanation of what the word means in the context of the input.`;
+
+		systemMessage += `Output should be a raw JSON object with no additional text, comments, or formatting.`;
+
+		return systemMessage;
+	}
+
 	let systemMessage =
 		"You are 'ArabyBuddy', a friendly Arabic language tutor. ";
 
@@ -108,7 +130,7 @@ export const openAiChatCompletionStream = async ({
 			},
 			...messages,
 		],
-		model: "gpt-4o",
+		model: "gpt-4-turbo-preview",
 		stream: true,
 	});
 
