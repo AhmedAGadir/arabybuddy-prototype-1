@@ -31,3 +31,12 @@ export const ARABIC_DIALECTS = [
 ] as const;
 
 export type ArabicDialect = (typeof ARABIC_DIALECTS)[number];
+
+export const status = {
+	IDLE: "IDLE",
+	RECORDING: "RECORDING",
+	PLAYING: "PLAYING",
+	PROCESSING: "PROCESSING",
+} as const;
+
+export type Status = (typeof status)[keyof typeof status];
