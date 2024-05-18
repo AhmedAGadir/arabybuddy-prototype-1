@@ -1366,7 +1366,9 @@ const ConversationIdPage = ({
 								<ChevronLeftIcon />
 							</Button>
 							<div className="flex-1 text-center">
-								<div className={cn("text-6xl m", cairo.className)}>شخصية</div>
+								<div className={cn("text-4xl md:text-6xl m", cairo.className)}>
+									شخصية
+								</div>
 							</div>
 							<Button
 								variant="outline"
