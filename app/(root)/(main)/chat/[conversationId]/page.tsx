@@ -24,10 +24,12 @@ import { Button } from "@/components/ui/button";
 
 import {
 	ArrowPathIcon,
+	ArrowTopRightOnSquareIcon,
 	BookOpenIcon,
 	ChevronLeftIcon,
 	ChevronRightIcon,
 	EllipsisVerticalIcon,
+	InformationCircleIcon,
 	MicrophoneIcon as MicrophoneIconOutline,
 	PlayIcon,
 	SparklesIcon,
@@ -86,10 +88,18 @@ import {
 	StopCircleIcon,
 	XCircleIcon,
 	MicrophoneIcon as MicrophoneIconSolid,
+	SparklesIcon as SparklesIconSolid,
 } from "@heroicons/react/20/solid";
-import { Card, CardContent } from "@/components/ui/card";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardFooter,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
 import { text } from "stream/consumers";
-import { Minus, Plus } from "lucide-react";
+import { Car, Minus, Plus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCyclingText } from "@/hooks/useCyclingText";
@@ -100,6 +110,19 @@ import {
 	OpenAIMessage,
 	completionMode,
 } from "@/lib/api/assistant";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import {
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from "@/components/ui/popover";
 
 const status = {
 	IDLE: "IDLE",
@@ -1328,53 +1351,95 @@ const ConversationIdPage = ({
 			{/* <DrawerTrigger asChild>
 				<Button variant="outline">Open Drawer</Button>
 			</DrawerTrigger> */}
-			<DrawerContent>
-				<div className="mx-auto w-full max-w-sm">
+			<DrawerContent className="p-4 ">
+				<div className="mx-auto w-full max-w-2xl ">
 					<DrawerHeader>
-						<DrawerTitle>Move Goal</DrawerTitle>
-						<DrawerDescription>Set your daily activity goal.</DrawerDescription>
+						<DrawerTitle>Dictionary</DrawerTitle>
 					</DrawerHeader>
-					<div className="p-4 pb-0">
-						<div className="flex items-center justify-center space-x-2">
+					<div className="p-4 flex flex-col gap-8 items-center">
+						<div className="flex items-center justify-center space-x-3 w-full">
 							<Button
 								variant="outline"
-								size="icon"
-								className="h-8 w-8 shrink-0 rounded-full"
-								onClick={() => {}}
-								// disabled={goal <= 200}
+								className="h-12 w-12 shrink-0 rounded-full"
 							>
-								<Minus className="h-4 w-4" />
-								<span className="sr-only">Decrease</span>
+								<span className="sr-only">previous word</span>
+								<ChevronLeftIcon />
 							</Button>
 							<div className="flex-1 text-center">
-								<div className="text-7xl font-bold tracking-tighter">goal</div>
-								<div className="text-[0.70rem] uppercase text-muted-foreground">
-									Calories/day
+								<div className={cn("text-4xl md:text-6xl m", cairo.className)}>
+									شخصية
 								</div>
 							</div>
 							<Button
 								variant="outline"
-								size="icon"
-								className="h-8 w-8 shrink-0 rounded-full"
-								onClick={() => {}}
-								// disabled={goal >= 400}
+								className="h-12 w-12 shrink-0 rounded-full"
 							>
-								<Plus className="h-4 w-4" />
-								<span className="sr-only">Increase</span>
+								<span className="sr-only">next word</span>
+								<ChevronRightIcon />
 							</Button>
 						</div>
-						<div className="mt-3 h-[120px]">
-							<div> information</div>
+						<div className="flex flex-col items-center gap-4 w-full">
+							<div className="flex items-center gap-2 my-3">
+								<Label
+									htmlFor="monolingual_mode"
+									className="text-sm font-medium leading-6 text-gray-900 flex items-center gap-1"
+								>
+									<span>Monolingual mode</span>
+								</Label>
+								<Switch
+									id="monolingual_mode"
+									checked={true}
+									defaultChecked={true}
+									onCheckedChange={() => {}}
+								/>
+								<TooltipProvider delayDuration={0}>
+									<Tooltip>
+										<TooltipTrigger>
+											<InformationCircleIcon className="w-6 h-6 text-gray-400 hover:text-gray-700" />
+										</TooltipTrigger>
+										<TooltipContent>
+											<div className="max-w-sm">
+												When monolingual mode is enabled, the dictionary will
+												only show definitions in Arabic.
+											</div>
+										</TooltipContent>
+									</Tooltip>
+								</TooltipProvider>
+							</div>
+							<Card className="w-full px-6 py-4">
+								<CardContent className="min-h-48 p-0">
+									{/* The word "شخصية" in Arabic generally translates to "character"
+									in English. This term can refer to: Character (Personality
+									Trait): Describing an individual's set of characteristics or
+									qualities that distinguishes them from others. Character
+									(Fictional/Real Person): A person in a story or a narrative,
+									or an individual in real life. In the context of your message,
+									"شخصية" refers to a character in a narrative sense. The person
+									described in the message is evidently a character from a story
+									(likely a fictional one, given the mention of battles with
+									Naruto), and the word is used to highlight his unique and
+									complex attributes and the impact he has within his narrative
+									world. */}
+								</CardContent>
+							</Card>
+							<Button
+								// variant="outline"
+								size="lg"
+								//  className="gap-2 w-full"
+								className="text-white bg-gradient-to-br from-purple-600 to-blue-500 hover:bg-gradient-to-bl focus:ring-4 focus:outline-none focus:ring-blue-300 dark:focus:ring-blue-800  w-full gap-2"
+							>
+								<span>Generate definition</span>
+								<SparklesIconSolid className="w-6 h-6" />
+							</Button>
+							<Button size="lg" className="gap-2 w-full">
+								<span>Search al-maany.com</span>
+								<ArrowTopRightOnSquareIcon className="w-6 h-6" />
+							</Button>
 						</div>
 					</div>
-					<DrawerFooter>
-						<Button>Submit</Button>
-						<DrawerClose asChild>
-							<Button variant="outline">Cancel</Button>
-						</DrawerClose>
-					</DrawerFooter>
 				</div>
 			</DrawerContent>
+			<DrawerFooter />
 		</Drawer>
 	);
 
