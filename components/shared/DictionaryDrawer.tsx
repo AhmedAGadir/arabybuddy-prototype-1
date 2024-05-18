@@ -312,7 +312,7 @@ const DictionaryDrawer = ({
 	);
 
 	return (
-		<Drawer open={true} onOpenChange={setOpen}>
+		<Drawer open={open} onOpenChange={setOpen}>
 			{/* <DrawerTrigger asChild>
 				<Button variant="outline">Open Drawer</Button>
 			</DrawerTrigger> */}
