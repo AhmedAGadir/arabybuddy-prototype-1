@@ -518,6 +518,8 @@ const ConversationIdPage = ({
 					conversationId,
 					createdAt: dateStr,
 					updatedAt: dateStr,
+					role: "assistant",
+					content: "",
 				} as IMessage;
 
 				latestMessageInd++;
@@ -680,11 +682,12 @@ const ConversationIdPage = ({
 					translation: undefined,
 					createdAt: displayedMessage.createdAt,
 					updatedAt: new Date().toISOString(),
+					role: displayedMessage.role,
+					content: "",
 				} as IMessage;
 
 				for await (const data of completionStream) {
 					completionMessage.content = data.content;
-					completionMessage.role = data.role;
 					// update cache, well still need to update the database after
 					await upsertMessageInCache(completionMessage);
 				}
@@ -723,14 +726,13 @@ const ConversationIdPage = ({
 				setProgressBarValue(0);
 			} catch (error) {
 				logger.error("redoCompletion", error);
-				const errorMessages = {
-					[completionMode.REGENERATE]:
-						"There was a problem regenerating this message",
-					[completionMode.REPHRASE]:
-						"There was a problem rephrasing this message",
-				};
 
-				handleError(error, errorMessages[options.mode]);
+				handleError(
+					error,
+					`There was a problem ${
+						completionMode.REGENERATE ? "regenerating" : "rephrasing"
+					} this message`
+				);
 			}
 		},
 		[
@@ -778,11 +780,12 @@ const ConversationIdPage = ({
 				conversationId: displayedMessage.conversationId,
 				createdAt: displayedMessage.createdAt,
 				updatedAt: new Date().toISOString(),
+				role: displayedMessage.role,
+				content: "",
 			} as IMessage;
 
 			for await (const data of completionStream) {
 				completionMessage.translation = data.content;
-				completionMessage.role = data.role;
 				// update cache, well still need to update the database after
 				await upsertMessageInCache(completionMessage);
 			}
@@ -1335,10 +1338,10 @@ const ConversationIdPage = ({
 	);
 
 	const recordingBlob = isRecording && (
-		<>
+		<div className="relative flex h-4 w-4 my-2">
 			<span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#FF0066] opacity-75" />
 			<span className="relative inline-flex rounded-full h-4 w-4 bg-[#FF0066]" />
-		</>
+		</div>
 	);
 
 	if (isPending) {
@@ -1375,12 +1378,13 @@ const ConversationIdPage = ({
 					</div>
 					{messageIndexContent}
 				</div>
-				<div className="relative flex h-4 w-4 my-2">{recordingBlob}</div>
+				{recordingBlob}
 				<div className="h-12 w-full text-center">{instructionContent}</div>
 				<div className="md:hidden mb-8">{panelItemsContent}</div>
 			</div>
 			<DictionaryDrawer
-				open={drawerOpen}
+				// open={drawerOpen}
+				open={true}
 				setOpen={setDrawerOpen}
 				words={dictionaryWords}
 			/>
