@@ -395,6 +395,12 @@ const ConversationIdPage = ({
 		isProcessing,
 	]);
 
+	useEffect(() => {
+		return () => {
+			abortProcessingBtnHandler();
+		};
+	}, []);
+
 	const handleError = useCallback(
 		(error: any, description = "There was a problem with your request.") => {
 			if ((error as any).name === "AbortError") {

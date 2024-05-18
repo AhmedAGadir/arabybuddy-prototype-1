@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useEffect } from "react";
 import {
 	Drawer,
 	DrawerContent,
@@ -81,6 +81,12 @@ const DictionaryDrawer = ({
 
 	const { makeChatCompletionStream, abortMakeChatCompletionStream } =
 		useChatService();
+
+	useEffect(() => {
+		return () => {
+			abortMakeChatCompletionStream();
+		};
+	}, []);
 
 	// {
 	// 	word: "موقع",
