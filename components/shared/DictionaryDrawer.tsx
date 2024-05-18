@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useCallback } from "react";
 import {
 	Drawer,
 	DrawerContent,
@@ -36,7 +36,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { cairo } from "@/lib/fonts";
 import { cn } from "@/lib/utils";
-import { useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 const DictionaryDrawer = ({
 	open,
@@ -47,19 +47,52 @@ const DictionaryDrawer = ({
 	setOpen: (open: boolean) => void;
 	words: { word: string; id: string }[];
 }) => {
+	const router = useRouter();
+	const pathname = usePathname();
 	const searchParams = useSearchParams();
-	const wordParam = searchParams.get("word");
 
-	const wordInd = words.findIndex((w) => w.id === wordParam);
+	const wordIndParam = searchParams.get("wordInd");
 
-	const word = words[wordInd]?.word;
+	const wordInd = wordIndParam ? parseInt(wordIndParam) : null;
+
+	const word = wordInd !== null ? words[wordInd]?.word : null;
+
+	const updateQueryStr = useCallback(
+		(name: string, value: string) => {
+			const params = new URLSearchParams(searchParams.toString());
+			params.set(name, value);
+
+			router.replace(pathname + "?" + params.toString());
+		},
+		[pathname, router, searchParams]
+	);
+
+	const viewPreviousWord = () => {
+		if (wordInd !== null && wordInd > 0) {
+			updateQueryStr("wordInd", String(wordInd - 1));
+		}
+	};
+
+	const viewNextWord = () => {
+		if (wordInd !== null && wordInd < words.length - 1) {
+			updateQueryStr("wordInd", String(wordInd + 1));
+		}
+	};
+
+	// some state for monolingual mode, initialized from local storage,
+	const [monolingualMode, setMonolingualMode] = React.useState(
+		localStorage.getItem("monolingualMode") === "true"
+	);
+
+	const toggleMonolingualMode = () => {
+		setMonolingualMode((prev) => {
+			localStorage.setItem("monolingualMode", String(!prev));
+			return !prev;
+		});
+	};
 
 	return (
-		<Drawer
-			open={open}
-			// open={true}
-			onOpenChange={setOpen}
-		>
+		<Drawer open={open} onOpenChange={setOpen}>
 			{/* <DrawerTrigger asChild>
 				<Button variant="outline">Open Drawer</Button>
 			</DrawerTrigger> */}
@@ -70,14 +103,16 @@ const DictionaryDrawer = ({
 					</DrawerHeader>
 					<div className="p-4 flex flex-col gap-8 items-center">
 						<div className="flex items-center justify-center space-x-3 w-full">
-							<div className="flex items-center  gap-10">
-								{/* <Button
+							<div className="flex items-center w-full gap-10">
+								<Button
 									variant="outline"
 									className="h-12 w-12 shrink-0 rounded-full"
+									onClick={viewNextWord}
+									disabled={wordInd === words.length - 1}
 								>
-									<span className="sr-only">previous word</span>
+									<span className="sr-only">next word</span>
 									<ChevronLeftIcon />
-								</Button> */}
+								</Button>
 								<div className="flex-1 text-center">
 									<div
 										className={cn("text-4xl md:text-6xl m", cairo.className)}
@@ -85,13 +120,15 @@ const DictionaryDrawer = ({
 										{word && word}
 									</div>
 								</div>
-								{/* <Button
+								<Button
 									variant="outline"
 									className="h-12 w-12 shrink-0 rounded-full"
+									onClick={viewPreviousWord}
+									disabled={wordInd === 0}
 								>
-									<span className="sr-only">next word</span>
+									<span className="sr-only">previous word</span>
 									<ChevronRightIcon />
-								</Button> */}
+								</Button>
 							</div>
 						</div>
 						<div className="flex flex-col items-center gap-4 w-full">
@@ -104,9 +141,8 @@ const DictionaryDrawer = ({
 								</Label>
 								<Switch
 									id="monolingual_mode"
-									checked={true}
-									defaultChecked={true}
-									onCheckedChange={() => {}}
+									checked={monolingualMode}
+									onCheckedChange={toggleMonolingualMode}
 								/>
 								<TooltipProvider delayDuration={0}>
 									<Tooltip>
@@ -148,9 +184,20 @@ const DictionaryDrawer = ({
 								<span>Generate definition</span>
 								<SparklesIcon className="w-6 h-6" />
 							</Button>
-							<Button size="lg" className="gap-2 w-full" disabled={!word}>
-								<span>Search al-maany.com</span>
-								<ArrowTopRightOnSquareIcon className="w-6 h-6" />
+							<Button size="lg" className="w-full" disabled={!word}>
+								<a
+									href={`https://www.almaany.com/ar/dict/${
+										monolingualMode ? "ar-ar" : "ar-en"
+									}/${word}/`}
+									target="_blank"
+									rel="noreferrer"
+									className="flex justify-center items-center w-full h-full"
+								>
+									<span className="flex items-center gap-2">
+										<span>Search al-maany.com</span>
+										<ArrowTopRightOnSquareIcon className="w-6 h-6" />
+									</span>
+								</a>
 							</Button>
 						</div>
 					</div>

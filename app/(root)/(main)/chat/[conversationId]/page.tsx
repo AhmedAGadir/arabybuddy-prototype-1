@@ -1206,13 +1206,14 @@ const ConversationIdPage = ({
 					}}
 				>
 					<div className="flex flex-wrap gap-2">
-						{dictionaryWords.map(({ word, id }) => (
+						{dictionaryWords.map(({ word, id }, ind) => (
 							<Badge
 								key={id}
 								variant="secondary"
 								className="text-lg cursor-pointer hover:bg-primary hover:text-white"
 								onClick={() => {
-									updateQueryStr("word", id);
+									// using the index instead of the id allows us to use pagination in the drawer
+									updateQueryStr("wordInd", ind.toString());
 									setDrawerOpen(true);
 								}}
 							>
