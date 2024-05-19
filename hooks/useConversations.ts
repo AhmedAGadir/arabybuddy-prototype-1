@@ -100,6 +100,7 @@ const useConversations = () => {
 				["conversations"],
 				context?.previousConversations ?? ""
 			);
+			throw err;
 		},
 		onSettled: () => {
 			// Invalidate and refetch
@@ -133,7 +134,7 @@ const useConversations = () => {
 		},
 		onError: (err, variables, context) => {
 			logger.error("Error updating conversation:", err);
-			return err;
+			throw err;
 		},
 		onSettled: () => {
 			// Invalidate and refetch

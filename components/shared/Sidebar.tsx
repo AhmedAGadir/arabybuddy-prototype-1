@@ -79,9 +79,17 @@ export default function Sidebar({ onClick }: { onClick?: () => void }) {
 	}, [isPending, error, refetch, toast]);
 
 	const newChatHandler = useCallback(async () => {
-		const data = await createConversation();
-		router.push(`/chat/${data._id}`);
-		onClick?.();
+		try {
+			const data = await createConversation();
+			router.push(`/chat/${data._id}`);
+			onClick?.();
+		} catch (error) {
+			toast({
+				title: "Error creating conversation",
+				description: "An error occurred while creating a new conversation",
+				className: "error-toast",
+			});
+		}
 	}, [router, createConversation]);
 
 	const [conversationIdToDelete, setConversationIdToDelete] =
@@ -99,10 +107,18 @@ export default function Sidebar({ onClick }: { onClick?: () => void }) {
 	};
 
 	const onDeleteConversationConfirmed = async () => {
-		await deleteConversation(conversationIdToDelete as string);
-		setConversationIdToDelete(undefined);
-		router.push("/chat");
-		onClick?.();
+		try {
+			await deleteConversation(conversationIdToDelete as string);
+			setConversationIdToDelete(undefined);
+			router.push("/chat");
+			onClick?.();
+		} catch (error) {
+			toast({
+				title: "Error deleting conversation",
+				description: "An error occurred while deleting the conversation",
+				className: "error-toast",
+			});
+		}
 	};
 
 	const openConversation = useCallback(async (href: string) => {
