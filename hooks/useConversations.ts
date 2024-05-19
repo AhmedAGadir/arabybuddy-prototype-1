@@ -60,6 +60,8 @@ const useConversations = () => {
 		return await createConversationMutation.mutateAsync();
 	};
 
+	const isCreatingConversation = createConversationMutation.isPending;
+
 	const deleteConversationMutation = useMutation({
 		mutationFn: async (conversationId: string) => {
 			logger.log("deleting conversation...", conversationId);
@@ -158,6 +160,7 @@ const useConversations = () => {
 		createConversation,
 		deleteConversation,
 		updateConversation,
+		isCreatingConversation,
 	};
 };
 

@@ -23,12 +23,13 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "../ui/button";
 import { useConversations } from "@/hooks/useConversations";
-import SkewLoader from "react-spinners/SkewLoader";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import ConfirmationDialog from "./ConfirmationDialog";
 import { useToast } from "../ui/use-toast";
 import { ToastAction } from "@radix-ui/react-toast";
 import { ArrowRightEndOnRectangleIcon } from "@heroicons/react/20/solid";
+import { Skeleton } from "@/components/ui/skeleton";
+import MoonLoader from "react-spinners/MoonLoader";
 
 const accountNavigation = [
 	{
@@ -40,8 +41,8 @@ const accountNavigation = [
 	{ name: "Profile", href: "/profile", icon: UserIcon },
 ];
 
-export default function Sidebar() {
-	const { user } = useUser();
+export default function Sidebar({ onClick }: { onClick?: () => void }) {
+	const { user, isLoaded } = useUser();
 
 	const router = useRouter();
 	const pathname = usePathname();
@@ -56,6 +57,7 @@ export default function Sidebar() {
 		refetch,
 		deleteConversation,
 		createConversation,
+		isCreatingConversation,
 	} = useConversations();
 
 	useEffect(() => {
@@ -79,6 +81,7 @@ export default function Sidebar() {
 	const newChatHandler = useCallback(async () => {
 		const data = await createConversation();
 		router.push(`/chat/${data._id}`);
+		onClick?.();
 	}, [router, createConversation]);
 
 	const [conversationIdToDelete, setConversationIdToDelete] =
@@ -90,6 +93,7 @@ export default function Sidebar() {
 		id: string
 	) => {
 		e.preventDefault();
+		e.stopPropagation();
 		setConversationIdToDelete(id);
 		setConfirmationDialogOpen(true);
 	};
@@ -98,21 +102,28 @@ export default function Sidebar() {
 		await deleteConversation(conversationIdToDelete as string);
 		setConversationIdToDelete(undefined);
 		router.push("/chat");
+		onClick?.();
 	};
+
+	const openConversation = useCallback(async (href: string) => {
+		router.push(href);
+		onClick?.();
+	}, []);
+
+	const openPage = useCallback(async (href: string) => {
+		router.push(href);
+		onClick?.();
+	}, []);
 
 	const conversationListContent = useMemo(() => {
 		if (isPending) {
 			return (
-				<div className="text-center my-10">
-					<SkewLoader
-						color="#5E17EB"
-						// color="black"
-						loading
-						// cssOverride={{ margin: "0"}}
-						size={10}
-						aria-label="Loading Spinner"
-						data-testid="loader"
-					/>
+				<div className="space-y-3">
+					{Array(6)
+						.fill({})
+						.map((_, i) => (
+							<Skeleton key={i} className="h-8 min-w-[240px] w-full" />
+						))}
 				</div>
 			);
 		}
@@ -132,13 +143,14 @@ export default function Sidebar() {
 
 					return (
 						<li key={_id}>
-							<Link
-								href={href}
+							<Button
+								variant="ghost"
+								onClick={() => openConversation(href)}
 								className={cn(
 									isActive
 										? "bg-secondary text-indigo-600"
 										: "text-gray-700 hover:text-indigo-600 hover:bg-secondary",
-									"group flex justify-between gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold"
+									"group flex justify-between gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold w-full"
 								)}
 							>
 								{/* TODO: implement editable conversation labels */}
@@ -155,7 +167,7 @@ export default function Sidebar() {
 								<span className="truncate" style={{ direction: "rtl" }}>
 									{label ?? lastMessage ?? "Untitled"}
 								</span>
-							</Link>
+							</Button>
 						</li>
 					);
 				})}
@@ -164,11 +176,14 @@ export default function Sidebar() {
 	}, [conversations, error, isPending, pathname, searchParams]);
 
 	const authContent = useMemo(() => {
+		if (!isLoaded && user) {
+			return <Skeleton className="h-8 w-full" />;
+		}
 		return (
 			<>
 				<SignedIn>
 					<li className="-mx-6 lg:hidden">
-						<span className="flex items-center px-6 text-sm font-semibold text-gray-900 hover:bg-secondary">
+						<span className="flex items-center px-5 text-sm font-semibold text-gray-900 hover:bg-secondary">
 							<SignOutButton redirectUrl="/">
 								<div
 									className={cn(
@@ -191,7 +206,7 @@ export default function Sidebar() {
 					{/* user button doesnt work in a shadCN sheet, clicking anything inside instantly closes it, 
 					the mobile buttons are just a hack for now  */}
 					<li className="-mx-6 hidden lg:block">
-						<span className="flex items-center gap-x-4 px-6 py-2 text-sm font-semibold leading-6 text-gray-900 hover:bg-secondary">
+						<span className="flex items-center gap-x-4 px-5 py-2 text-sm font-semibold leading-6 text-gray-900 hover:bg-secondary">
 							<UserButton afterSignOutUrl="/" />
 							<span className="sr-only">Your profile</span>
 							<span aria-hidden="true">
@@ -202,7 +217,7 @@ export default function Sidebar() {
 				</SignedIn>
 				<SignedOut>
 					<li className="-mx-6">
-						<span className="flex items-center gap-x-4 px-6 py-2 text-sm font-semibold leading-6 text-gray-900 hover:bg-secondary">
+						<span className="flex items-center gap-x-4 px-5 py-2 text-sm font-semibold leading-6 text-gray-900 hover:bg-secondary">
 							<SignInButton>
 								<div
 									className={cn(
@@ -225,9 +240,22 @@ export default function Sidebar() {
 				</SignedOut>
 			</>
 		);
-	}, [user]);
+	}, [user, isLoaded]);
 
 	const otherNavItemsContent = useMemo(() => {
+		if (isPending) {
+			return (
+				<div className="space-y-3">
+					{Array(accountNavigation.length)
+						.fill({})
+						.map((_, i) => (
+							<Skeleton key={i} className="h-8 w-full " />
+						))}
+					{authContent}
+				</div>
+			);
+		}
+
 		return (
 			<ul className="space-y-1">
 				{accountNavigation.map((item) => {
@@ -235,51 +263,69 @@ export default function Sidebar() {
 
 					return (
 						<li key={item.name}>
-							<Link
-								href={item.href}
+							<Button
+								variant="ghost"
+								onClick={() => openPage(`${item.href}`)}
 								className={cn(
 									isActive
 										? "bg-secondary text-indigo-600"
 										: "text-gray-700 hover:text-indigo-600 hover:bg-secondary",
-									"group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold"
+									"group rounded-md p-2 text-sm leading-6 font-semibold w-full justify-start"
 								)}
 							>
-								<item.icon
-									className={cn(
-										isActive
-											? "text-indigo-600"
-											: "text-gray-400 group-hover:text-indigo-600",
-										"h-6 w-6 shrink-0"
-									)}
-									aria-hidden="true"
-								/>
-								{item.name}
-							</Link>
+								<div className="flex items-center gap-x-3">
+									<item.icon
+										className={cn(
+											isActive
+												? "text-indigo-600"
+												: "text-gray-400 group-hover:text-indigo-600",
+											"h-6 w-6 shrink-0"
+										)}
+										aria-hidden="true"
+									/>
+									{item.name}
+								</div>
+							</Button>
 						</li>
 					);
 				})}
 				{authContent}
 			</ul>
 		);
-	}, [authContent, pathname]);
+	}, [authContent, pathname, isPending]);
 
-	const newChatButtonContent = (
-		<Button className="flex justify-between group" onClick={newChatHandler}>
-			<span>New Chat</span>
-			<PencilSquareIcon
-				className={cn(
-					"text-gray-400 group-hover:text-indigo-100",
-					"h-6 w-6 shrink-0"
+	const newChatButtonContent = useMemo(() => {
+		if (isPending) {
+			return <Skeleton className="h-9 w-full bg-primary" />;
+		}
+
+		return (
+			<Button
+				className="flex justify-center items-center group"
+				onClick={newChatHandler}
+				disabled={isCreatingConversation}
+			>
+				{isCreatingConversation && <MoonLoader size={20} color="#fff" />}
+				{!isCreatingConversation && (
+					<div className="flex justify-between items-center w-full">
+						<span>New Chat</span>
+						<PencilSquareIcon
+							className={cn(
+								"text-gray-400 group-hover:text-indigo-100",
+								"h-6 w-6 shrink-0"
+							)}
+							aria-hidden="true"
+						/>
+					</div>
 				)}
-				aria-hidden="true"
-			/>
-		</Button>
-	);
+			</Button>
+		);
+	}, [isPending, isCreatingConversation]);
 
 	return (
 		<aside
 			className={cn(
-				"flex grow flex-col gap-y-5 overflow-y-auto border-r border-gray-200 bg-white px-6 h-full"
+				"flex grow flex-col gap-y-5 overflow-y-auto border-r border-gray-200 bg-white px-5 h-full"
 			)}
 		>
 			<div className="flex p-4 shrink-0 items-center lg:pt-6">
@@ -296,7 +342,7 @@ export default function Sidebar() {
 			<nav className="flex-1 min-h-0  flex flex-col">
 				{newChatButtonContent}
 				<ul role="list" className="flex-1 min-h-0 flex flex-col gap-y-7 mt-4 ">
-					<li className="flex-1  overflow-y-scroll min-h-0">
+					<li className="flex-1 overflow-y-scroll min-h-0 px-1">
 						{conversationListContent}
 					</li>
 
