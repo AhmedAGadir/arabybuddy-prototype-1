@@ -42,9 +42,6 @@ const useChatService = () => {
 					user_interests:
 						preferences.user_interests ??
 						DEFAULT_USER_PREFERENCES.user_interests,
-					user_personality_traits:
-						preferences.user_personality_traits ??
-						DEFAULT_USER_PREFERENCES.user_personality_traits,
 				},
 			};
 
@@ -124,9 +121,6 @@ const useChatService = () => {
 	// 					user_interests:
 	// 						preferences.user_interests ??
 	// 						DEFAULT_USER_PREFERENCES.user_interests,
-	// 					user_personality_traits:
-	// 						preferences.user_personality_traits ??
-	// 						DEFAULT_USER_PREFERENCES.user_personality_traits,
 	// 				},
 	// 			};
 	// 			logger.log("making request to: /api/chat/assistant...", params);

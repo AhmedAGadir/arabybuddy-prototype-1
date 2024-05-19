@@ -153,60 +153,6 @@ const INTERESTS = {
 	],
 };
 
-const PERSONALITY_TRAITS = [
-	{ value: "Adventurous", icon: "🚀" },
-	{ value: "Animal Lover", icon: "🐶" },
-	{ value: "Bookworm", icon: "📖" },
-	{ value: "Calm", icon: "🌊" },
-	{ value: "Carefree", icon: "🍃" },
-	{ value: "Cheerful", icon: "😄" },
-	{ value: "Competitive", icon: "🏆" },
-	{ value: "Conservative", icon: "🔒" },
-	{ value: "Creative", icon: "🌈" },
-	{ value: "Driven", icon: "🚗" },
-	{ value: "Entrepreneurial", icon: "💼" },
-	{ value: "Empathetic", icon: "💞" },
-	{ value: "ENFJ", icon: "🎤" },
-	{ value: "ENFP", icon: "🎨" },
-	{ value: "ENTJ", icon: "👔" },
-	{ value: "ENTP", icon: "💡" },
-	{ value: "ESFJ", icon: "👩‍👧‍👦" },
-	{ value: "ESFP", icon: "🕺" },
-	{ value: "ESTJ", icon: "🏢" },
-	{ value: "ESTP", icon: "🏂" },
-	{ value: "Extroverted", icon: "🤝" },
-	{ value: "Family-oriented", icon: "👨‍👩‍👧" },
-	{ value: "Fashionable", icon: "👗" },
-	{ value: "Generous", icon: "🎁" },
-	{ value: "Humorous", icon: "😂" },
-	{ value: "Imaginative", icon: "💭" },
-	{ value: "Independent", icon: "🏝️" },
-	{ value: "INFJ", icon: "🌟" },
-	{ value: "INFP", icon: "🌼" },
-	{ value: "INTJ", icon: "🧠" },
-	{ value: "INTP", icon: "🔍" },
-	{ value: "Introverted", icon: "🏠" },
-	{ value: "ISFJ", icon: "💖" },
-	{ value: "ISFP", icon: "🎸" },
-	{ value: "ISTJ", icon: "📚" },
-	{ value: "ISTP", icon: "🔧" },
-	{ value: "Liberal", icon: "🕊️" },
-	{ value: "Logical", icon: "🖥️" },
-	{ value: "Loyal", icon: "🐾" },
-	{ value: "Nerdy", icon: "🤓" },
-	{ value: "Night Owl", icon: "🦉" },
-	{ value: "Optimistic", icon: "☀️" },
-	{ value: "Organized", icon: "🗂️" },
-	{ value: "Outdoorsy", icon: "🌲" },
-	{ value: "Passionate", icon: "🔥" },
-	{ value: "Patient", icon: "⏳" },
-	{ value: "Practical", icon: "🔨" },
-	{ value: "Religious", icon: "🙏" },
-	{ value: "Romantic", icon: "❤️" },
-	{ value: "Sociable", icon: "🍹" },
-	{ value: "Spiritual", icon: "✨" },
-];
-
 const preferencesFormSchema = z.object({
 	arabic_dialect: z.enum(ARABIC_DIALECTS),
 	assistant_language_level: z.enum(["beginner", "intermediate", "native"]),
@@ -229,9 +175,6 @@ const preferencesFormSchema = z.object({
 	user_interests: z
 		.array(z.string())
 		.max(15, "You can only select up to 15 interests"),
-	user_personality_traits: z
-		.array(z.string())
-		.max(6, "You can only select up to 6 personality traits"),
 });
 
 const PreferencesPage = () => {
@@ -288,9 +231,6 @@ const PreferencesPage = () => {
 					DEFAULT_USER_PREFERENCES.voice_use_speaker_boost,
 				user_interests:
 					preferences.user_interests ?? DEFAULT_USER_PREFERENCES.user_interests,
-				user_personality_traits:
-					preferences.user_personality_traits ??
-					DEFAULT_USER_PREFERENCES.user_personality_traits,
 			});
 		}
 	}, [isPending, error, preferences, form]);
@@ -1100,58 +1040,6 @@ const PreferencesPage = () => {
 															</div>
 														)
 													)}
-												</div>
-											</div>
-
-											<FormMessage />
-										</FormItem>
-									);
-								}}
-							/>
-						</div>
-
-						<div className="sm:col-span-6">
-							<FormField
-								control={form.control}
-								name="user_personality_traits"
-								render={({ field }) => {
-									return (
-										<FormItem>
-											<div>
-												<FormLabel className="block text-md font-medium leading-6 text-gray-900">
-													Personality Traits
-												</FormLabel>
-												<div className="mt-2 flex flex-wrap gap-2">
-													{PERSONALITY_TRAITS.map((trait) => (
-														<Badge
-															className={cn(
-																"cursor-pointer",
-																(field.value ?? []).includes(trait.value)
-																	? "bg-indigo-600 hover:bg-indigo-400"
-																	: "hover:bg-indigo-400 hover:text-primary-foreground"
-															)}
-															key={trait.value}
-															variant={
-																(field.value ?? []).includes(trait.value)
-																	? "default"
-																	: "secondary"
-															}
-															onClick={() => {
-																const index = field.value.indexOf(trait.value);
-																if (index === -1) {
-																	field.onChange([...field.value, trait.value]);
-																} else {
-																	field.onChange([
-																		...field.value.slice(0, index),
-																		...field.value.slice(index + 1),
-																	]);
-																}
-																form.trigger(field.name);
-															}}
-														>
-															{trait.icon} {trait.value}
-														</Badge>
-													))}
 												</div>
 											</div>
 
