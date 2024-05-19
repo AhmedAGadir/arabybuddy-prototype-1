@@ -1141,7 +1141,7 @@ const ConversationIdPage = ({
 
 	if (isPending) {
 		return (
-			<div className="flex-1 flex items-center justify-center bg-g">
+			<div className="flex-1 flex items-center justify-center background-texture">
 				<SkewLoader
 					color="black"
 					loading

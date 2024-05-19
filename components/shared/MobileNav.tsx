@@ -14,8 +14,10 @@ import {
 } from "@/components/ui/sheet";
 import Sidebar from "./Sidebar";
 import Link from "next/link";
+import { useState } from "react";
 
 export default function MobileNav() {
+	const [isOpen, setIsOpen] = useState(false);
 	return (
 		<div className="min-h-full">
 			<nav className="bg-white shadow-sm">
@@ -35,7 +37,7 @@ export default function MobileNav() {
 							</div>
 						</div>
 						<div className="flex items-center">
-							<Sheet>
+							<Sheet open={isOpen} onOpenChange={setIsOpen}>
 								<SheetTrigger>
 									<div className="relative inline-flex items-center justify-center rounded-md bg-white p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
 										<span className="absolute -inset-0.5" />
@@ -49,7 +51,7 @@ export default function MobileNav() {
 									</div>
 								</SheetTrigger>
 								<SheetContent className="p-0">
-									<Sidebar />
+									<Sidebar onClick={() => setIsOpen(false)} />
 								</SheetContent>
 							</Sheet>
 						</div>
