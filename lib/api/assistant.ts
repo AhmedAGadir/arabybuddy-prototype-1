@@ -28,7 +28,6 @@ export const getSystemMessage = ({
 		assistant_tone: IPreferences["assistant_tone"];
 		assistant_detail_level: IPreferences["assistant_detail_level"];
 		user_interests: IPreferences["user_interests"];
-		user_personality_traits: IPreferences["user_personality_traits"];
 	};
 }) => {
 	if (mode === completionMode.DICTIONARY) {
@@ -69,7 +68,7 @@ export const getSystemMessage = ({
 		systemMessage += `You are here to converse with ${firstName}. make sure you include their name in your initial greeting.`;
 	}
 
-	systemMessage += `Offer engaging topics of conversation based on the user's interests and personality traits.`;
+	systemMessage += `Offer engaging topics of conversation based on the user's interests.`;
 
 	//  dialect and language level
 	systemMessage += `Speak in ${preferences.arabic_dialect} dialect and at a ${preferences.assistant_language_level} language level.`;
@@ -94,13 +93,6 @@ export const getSystemMessage = ({
 		systemMessage += `Consider the user's interests such as ${preferences.user_interests.join(
 			", "
 		)} when choosing topics. `;
-	}
-
-	// personality traits
-	if (preferences.user_personality_traits.length > 0) {
-		systemMessage += `Adapt your interaction style to match personality traits like ${preferences.user_personality_traits.join(
-			", "
-		)}.`;
 	}
 
 	return systemMessage;

@@ -29,7 +29,6 @@ type RequestBody = {
 		assistant_tone: IPreferences["assistant_tone"];
 		assistant_detail_level: IPreferences["assistant_detail_level"];
 		user_interests: IPreferences["user_interests"];
-		user_personality_traits: IPreferences["user_personality_traits"];
 	};
 };
 

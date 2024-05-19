@@ -13,7 +13,6 @@ export interface IPreferences {
 	voice_style: number;
 	voice_use_speaker_boost: boolean;
 	user_interests: string[];
-	user_personality_traits: string[];
 }
 
 export const DEFAULT_USER_PREFERENCES: Omit<IPreferences, "clerkId"> = {
@@ -27,7 +26,6 @@ export const DEFAULT_USER_PREFERENCES: Omit<IPreferences, "clerkId"> = {
 	voice_style: 0,
 	voice_use_speaker_boost: true,
 	user_interests: [],
-	user_personality_traits: [],
 };
 
 const PreferencesSchema = new Schema(
@@ -74,10 +72,6 @@ const PreferencesSchema = new Schema(
 			required: true,
 		},
 		user_interests: {
-			type: [String],
-			required: true,
-		},
-		user_personality_traits: {
 			type: [String],
 			required: true,
 		},
