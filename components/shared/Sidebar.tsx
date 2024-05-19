@@ -81,7 +81,7 @@ export default function Sidebar({ onClick }: { onClick?: () => void }) {
 	const newChatHandler = useCallback(async () => {
 		try {
 			const data = await createConversation();
-			router.push(`/chat/${data._id}`);
+			router.push(`/chat/${data._id}?new=true`);
 			onClick?.();
 		} catch (error) {
 			toast({

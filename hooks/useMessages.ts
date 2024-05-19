@@ -16,10 +16,9 @@ const useMessages = ({ conversationId }: { conversationId: string }) => {
 
 	const queryKey = ["messages", user?.id, conversationId];
 
-	const { isPending, error, data, refetch } = useQuery({
+	const { isPending, error, data, refetch, isLoading } = useQuery({
 		queryKey,
 		refetchOnWindowFocus: true,
-		initialData: [],
 		queryFn: async () => {
 			logger.log("fetching messages...");
 			const response = await fetch(
@@ -229,15 +228,18 @@ const useMessages = ({ conversationId }: { conversationId: string }) => {
 		return await upsertInCacheMutation.mutateAsync(message);
 	};
 
+	const messages = (data ?? []) as IMessage[];
+
 	return {
 		isPending,
 		error,
-		messages: data as IMessage[],
+		messages,
 		refetch,
 		createMessage,
 		updateMessage,
 		deleteMessages,
 		upsertMessageInCache,
+		isLoading,
 	};
 };
 

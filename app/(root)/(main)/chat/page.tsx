@@ -34,7 +34,7 @@ const ChatPage = () => {
 			setIsCreating(true);
 			const { _id } = await createConversation();
 			setIsCreating(false);
-			router.push(`/chat/${_id}`);
+			router.push(`/chat/${_id}?new=true`);
 		} catch (error) {
 			setIsCreating(false);
 			logger.error(error);
