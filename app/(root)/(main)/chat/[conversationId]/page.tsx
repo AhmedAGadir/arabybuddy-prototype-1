@@ -1114,10 +1114,20 @@ const ConversationIdPage = ({
 		[displayedMessageInd, displayedMessageText, messages.length]
 	);
 
-	const recordingBlob = isRecording && (
-		<div className="relative flex h-4 w-4 my-2">
-			<span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#FF0066] opacity-75" />
-			<span className="relative inline-flex rounded-full h-4 w-4 bg-[#FF0066]" />
+	const recordingBlob = (
+		<div
+			className={cn(
+				"relative flex h-4 w-4 my-2",
+				// if were not recording, hide the blob on mobile (to save space)
+				!isRecording && "hidden md:flex"
+			)}
+		>
+			{isRecording && (
+				<>
+					<span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#FF0066] opacity-75" />
+					<span className="relative inline-flex rounded-full h-4 w-4 bg-[#FF0066]" />
+				</>
+			)}
 		</div>
 	);
 
@@ -1155,6 +1165,22 @@ const ConversationIdPage = ({
 					</div>
 					{messageIndexContent}
 				</div>
+				{/* divs to view each size */}
+				{/* <div className="sm:hidden">
+					<h1>xs</h1>
+				</div>
+				<div className="hidden sm:block md:hidden">
+					<h1>small</h1>
+				</div>
+				<div className="hidden md:block lg:hidden">
+					<h1>medium</h1>
+				</div>
+				<div className="hidden lg:block xl:hidden">
+					<h1>large</h1>
+				</div>
+				<div className="hidden xl:block">
+					<h1>xl + up</h1>
+				</div> */}
 				{recordingBlob}
 				<div className="h-12 w-full text-center">{instructionContent}</div>
 				<div className="md:hidden mb-8">{chatPanelContent}</div>
