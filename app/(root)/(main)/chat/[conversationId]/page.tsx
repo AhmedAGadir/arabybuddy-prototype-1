@@ -131,6 +131,7 @@ const ConversationIdPage = ({
 		deleteMessages,
 		refetch,
 		upsertMessageInCache,
+		isLoading,
 	} = useMessages({
 		conversationId,
 	});
@@ -176,6 +177,8 @@ const ConversationIdPage = ({
 
 	const displayedMessageInd =
 		searchParams.get("ind") !== null ? Number(searchParams.get("ind")) : null;
+
+	const isNewChat = searchParams.get("new") === "true";
 
 	const updateQueryStr = useCallback(
 		(name: string, value: string) => {
@@ -856,6 +859,30 @@ const ConversationIdPage = ({
 		stopRecording,
 	]);
 
+	const chatPanelContent = (
+		<ChatPanel
+			chatStatus={STATUS}
+			previousMessageHandler={previousMessageHandler}
+			nextMessageHandler={nextMessageHandler}
+			isFirstMessage={displayedMessageInd === 0}
+			isLastMessage={displayedMessageInd === messages.length - 1}
+			isMessage={displayedMessage !== null}
+			hasTranslation={displayedMessage?.translation !== undefined}
+			isUserMessage={displayedMessage?.role === "user"}
+			isAssistantMessage={displayedMessage?.role === "assistant"}
+			replayBtnHandler={replayBtnHandler}
+			abortProcessingBtnHandler={abortProcessingBtnHandler}
+			stopPlayingHandler={stopPlayingHandler}
+			redoCompletionHandler={redoCompletionHandler}
+			toggleRecordingHandler={toggleRecordingHandler}
+			toggleDictionaryHandler={toggleDictionaryHandler}
+			toggleTranslationHandler={toggleTranslationHandler}
+			translateBtnHandler={translateBtnHandler}
+			dictionaryMode={dictionaryMode}
+			translationMode={translationMode}
+		/>
+	);
+
 	const instructionContent = (
 		<Transition
 			className={cn(
@@ -885,45 +912,6 @@ const ConversationIdPage = ({
 		/>
 	);
 
-	const messageCardDetails = useMemo(() => {
-		if (displayedMessage?.role === "assistant") {
-			return {
-				name: "ArabyBuddy",
-				avatarSrc: "/assets/arabybuddy.svg",
-				avatarAlt: "ArabyBuddy avatar",
-			};
-		}
-		return {
-			name: "You",
-			avatarSrc: user?.imageUrl ?? "/assets/user.svg",
-			avatarAlt: "User avatar",
-		};
-	}, [displayedMessage?.role, user?.imageUrl]);
-
-	const menuContent = useMemo(() => {
-		if (isPlaying) {
-			return (
-				<SpeakerWaveIcon className="w-5 h-5 sm:w-6 sm:h-6 text-slate-400 transition ease-in-out" />
-			);
-		}
-		return <div />;
-		// return (
-		// 	<ScaleLoader
-		// 		color="#b5bac4"
-		// 		loading
-		// 		height={20}
-		// 		cssOverride={{
-		// 			display: "block",
-		// 			margin: "0",
-		// 		}}
-		// 		speedMultiplier={1.5}
-		// 		aria-label="Loading Spinner"
-		// 		data-testid="loader"
-		// 	/>
-		// );
-		// }
-	}, [isPlaying]);
-
 	// needed for streaming updates in the messageCard component
 	const displayedMessageText = useMemo(() => {
 		if (translationMode && displayedMessage?.translation) {
@@ -934,30 +922,6 @@ const ConversationIdPage = ({
 		// NOTE: displayedMessage?.content must be included in the deps array
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [displayedMessage, displayedMessage?.content, translationMode]);
-
-	const chatPanelContent = (
-		<ChatPanel
-			chatStatus={STATUS}
-			previousMessageHandler={previousMessageHandler}
-			nextMessageHandler={nextMessageHandler}
-			isFirstMessage={displayedMessageInd === 0}
-			isLastMessage={displayedMessageInd === messages.length - 1}
-			isMessage={displayedMessage !== null}
-			hasTranslation={displayedMessage?.translation !== undefined}
-			isUserMessage={displayedMessage?.role === "user"}
-			isAssistantMessage={displayedMessage?.role === "assistant"}
-			replayBtnHandler={replayBtnHandler}
-			abortProcessingBtnHandler={abortProcessingBtnHandler}
-			stopPlayingHandler={stopPlayingHandler}
-			redoCompletionHandler={redoCompletionHandler}
-			toggleRecordingHandler={toggleRecordingHandler}
-			toggleDictionaryHandler={toggleDictionaryHandler}
-			toggleTranslationHandler={toggleTranslationHandler}
-			translateBtnHandler={translateBtnHandler}
-			dictionaryMode={dictionaryMode}
-			translationMode={translationMode}
-		/>
-	);
 
 	const dictionaryWords = useMemo(() => {
 		if (!displayedMessage) return [];
@@ -977,24 +941,6 @@ const ConversationIdPage = ({
 			translationMode &&
 			displayedMessage?.translation &&
 			(!dictionaryMode || isPlaying);
-
-		if (false) {
-			return (
-				<PulseLoader
-					color="black"
-					loading
-					cssOverride={{
-						display: "block",
-						margin: "0",
-						width: 250,
-					}}
-					size={6}
-					aria-label="Loading Spinner"
-					data-testid="loader"
-					speedMultiplier={0.75}
-				/>
-			);
-		}
 
 		if (dictionaryMode && STATUS === status.IDLE) {
 			return (
@@ -1094,7 +1040,40 @@ const ConversationIdPage = ({
 	]);
 
 	const messageCardContent = useMemo(() => {
-		if (!displayedMessage) return null;
+		// don't show message card if there is no message to display
+		if (!displayedMessage && !isLoading) return null;
+
+		// don't show skeleton loaders on new chats that are still
+		// doing their first fetch
+		if (!displayedMessage && isNewChat && isLoading) {
+			return null;
+		}
+
+		const messageCardDetails = {
+			name: "",
+			avatarSrc: "",
+			avatarAlt: "",
+		};
+
+		switch (displayedMessage?.role) {
+			case "assistant":
+				messageCardDetails.name = "ArabyBuddy";
+				messageCardDetails.avatarSrc = "/assets/arabybuddy.svg";
+				messageCardDetails.avatarAlt = "ArabyBuddy avatar";
+				break;
+			case "user":
+			default:
+				messageCardDetails.name = "You";
+				messageCardDetails.avatarSrc = user?.imageUrl ?? "/assets/user.svg";
+				messageCardDetails.avatarAlt = "User avatar";
+				break;
+		}
+
+		const menuContent = isPlaying ? (
+			<SpeakerWaveIcon className="w-5 h-5 sm:w-6 sm:h-6 text-slate-400 transition ease-in-out" />
+		) : (
+			<div />
+		);
 
 		return (
 			<MessageCard
@@ -1103,23 +1082,26 @@ const ConversationIdPage = ({
 					// isPlaying &&
 					// 	"text-transparent bg-clip-text bg-gradient-to-r to-indigo-500 from-sky-500 shadow-blue-500/50"
 				)}
-				name={messageCardDetails.name}
-				avatarSrc={messageCardDetails.avatarSrc}
-				avatarAlt={messageCardDetails.avatarAlt}
+				name={messageCardDetails?.name}
+				avatar={{
+					src: messageCardDetails?.avatarSrc,
+					alt: messageCardDetails?.avatarAlt,
+				}}
 				// glow={isPlaying}
 				showLoadingOverlay={STATUS === status.PROCESSING}
+				// isLoading is only true for the first fetch
+				showSkeleton={isLoading}
 				menuContent={menuContent}
 				content={messageCardInnerContent}
 			/>
 		);
 	}, [
 		displayedMessage,
-		messageCardDetails.name,
-		messageCardDetails.avatarSrc,
-		messageCardDetails.avatarAlt,
 		STATUS,
-		menuContent,
+		isPlaying,
 		messageCardInnerContent,
+		isLoading,
+		isNewChat,
 	]);
 
 	const messageIndexContent = useMemo(
@@ -1139,19 +1121,19 @@ const ConversationIdPage = ({
 		</div>
 	);
 
-	if (isPending) {
-		return (
-			<div className="flex-1 flex items-center justify-center background-texture">
-				<SkewLoader
-					color="black"
-					loading
-					size={20}
-					aria-label="Loading Spinner"
-					data-testid="loader"
-				/>
-			</div>
-		);
-	}
+	// if (isPending) {
+	// 	return (
+	// 		<div className="flex-1 flex items-center justify-center background-texture">
+	// 			<SkewLoader
+	// 				color="black"
+	// 				loading
+	// 				size={20}
+	// 				aria-label="Loading Spinner"
+	// 				data-testid="loader"
+	// 			/>
+	// 		</div>
+	// 	);
+	// }
 
 	if (error) {
 		return null;

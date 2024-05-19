@@ -12,52 +12,86 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import { cairo } from "@/lib/fonts";
+import { Skeleton } from "../ui/skeleton";
 
 const MessageCard = ({
 	name,
-	avatarSrc,
-	avatarAlt,
+	avatar,
 	content,
 	menuContent,
 	glow = false,
 	showLoadingOverlay = false,
+	showSkeleton = false,
 	className,
 }: {
 	name?: string;
-	avatarSrc: string;
-	avatarAlt: string;
+	avatar: {
+		src?: string;
+		alt?: string;
+	};
 	content: JSX.Element;
 	menuContent?: JSX.Element;
 	glow?: boolean;
 	showLoadingOverlay?: boolean;
+	showSkeleton?: boolean;
 	className?: string;
 }) => {
 	const { device } = useMediaQuery();
 	const isMobile = device === "mobile";
 
-	const topBarContent = (
-		<div className={cn("flex justify-between")}>
-			{/* <div className="block sm:hidden" /> */}
-			{/* <div className="hidden sm:block">{menuContent ?? null}</div> */}
-			{menuContent ?? null}
+	const nameContent = (
+		<>
+			{showSkeleton && <Skeleton className="h-6 sm:h-7 w-[100px]" />}
+			{!showSkeleton && name && <span>{name}</span>}
+		</>
+	);
 
-			<div className="flex items-center gap-2">
-				{name && (
-					<span className="text-md sm:text-lg font-medium md:font-semibold">
-						{name}
-					</span>
-				)}
-
+	const avatarContent = (
+		<>
+			{showSkeleton && (
+				<Skeleton className="w-8 h-8 sm:w-10 sm:h-10 rounded-full" />
+			)}
+			{!showSkeleton && (
 				<Image
 					className="w-8 h-8 sm:w-10 sm:h-10 rounded-full"
 					width={12}
 					height={12}
-					src={avatarSrc}
-					alt={avatarAlt}
+					src={avatar?.src ?? "/assets/user.png"}
+					alt={avatar?.alt ?? "Avatar"}
 					unoptimized
+					priority
 				/>
+			)}
+		</>
+	);
+
+	const topBarContent = (
+		<div className={cn("flex justify-between")}>
+			{/* <div className="block sm:hidden" /> */}
+			{/* <div className="hidden sm:block">{menuContent ?? null}</div> */}
+			{menuContent ?? <div />}
+
+			<div className="flex items-center gap-2">
+				<span className="text-md sm:text-lg font-medium md:font-semibold">
+					{nameContent}
+				</span>
+				{avatarContent}
 			</div>
 		</div>
+	);
+
+	const textContent = (
+		<>
+			{showSkeleton && (
+				<div className="space-y-3">
+					<Skeleton className="w-full h-6 sm:h-7 " />
+					{/* <Skeleton className="w-full h-6 sm:h-7 " /> */}
+					<Skeleton className="w-1/2 h-6 sm:h-7 " />
+				</div>
+			)}
+
+			{!showSkeleton && content}
+		</>
 	);
 
 	return (
@@ -71,7 +105,7 @@ const MessageCard = ({
 					)}
 					style={{ direction: "rtl" }}
 				>
-					{content}
+					{textContent}
 				</div>
 				{showLoadingOverlay && (
 					<div className="absolute inset-0 w-full h-full bg-white bg-opacity-60 flex items-center justify-center"></div>
