@@ -12,6 +12,7 @@ import {
 	AdjustmentsHorizontalIcon,
 	BellIcon,
 	CheckIcon,
+	MapPinIcon,
 	PencilSquareIcon,
 	PlusIcon,
 } from "@heroicons/react/24/outline";
@@ -133,7 +134,8 @@ const ChatPage = () => {
 				<div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
 					<div className="flex justify-between">
 						<h1 className="text-3xl font-bold leading-tight tracking-tight text-gray-900">
-							{`Welcome ${user?.firstName} 👋`}
+							{/* TODO: show skeleton loader */}
+							{`Welcome ${user?.firstName ?? ""} 👋`}
 						</h1>
 						<DropdownMenu>
 							<DropdownMenuTrigger>Open</DropdownMenuTrigger>
@@ -159,10 +161,14 @@ const ChatPage = () => {
 					<div className="text-center flex items-stretch justify-center md:justify-start relative flex-wrap gap-4 lg:gap-6">
 						{chatPartners.map((partner) => (
 							<>
-								<Card className={cn("w-[300px] bg-white flex flex-col")}>
+								<Card
+									className={cn(
+										"w-[300px] bg-background flex flex-col group/card"
+									)}
+								>
 									<CardHeader>
 										<Image
-											className="w-36 h-36 rounded-full mx-auto"
+											className="w-36 h-36 rounded-full mx-auto ring-2 ring-slate-300 ring-offset-4 ring-offset-slate-50 mb-2 group-hover/card:ring-indigo-600 transition-all ease-in duration-50"
 											width={12}
 											height={12}
 											src={partner.image}
@@ -170,53 +176,40 @@ const ChatPage = () => {
 											unoptimized
 											priority
 										/>
+										<div className="text-muted-foreground font-medium leading-none tracking-tight text-xs uppercase flex items-center gap-0.5 justify-center">
+											<MapPinIcon className="w-4 h-4" />
+											{`${partner.location[0]}, ${partner.location[1]}`}
+										</div>
 										<CardTitle>{partner.name}</CardTitle>
 										<CardDescription>{partner.role}</CardDescription>
 									</CardHeader>
-									<CardContent className="gap-4 flex-1 flex flex-col justify-between">
-										{/* <div className=" flex items-center space-x-4 rounded-md border p-4">
-								<BellIcon />
-								<div className="flex-1 space-y-1">
-									<p className="text-sm font-medium leading-none">
-										Push Notifications
-									</p>
-									<p className="text-sm text-muted-foreground">
-										Send notifications to device.
-									</p>
-								</div>
-								<Switch />
-							</div> */}
-										{/* {partner.conversationTopics.map((topic, index) => (
-									<div
-										key={index}
-										className="mb-4 grid grid-cols-[25px_1fr] items-start pb-4 last:mb-0 last:pb-0"
-									>
-										<span className="flex h-2 w-2 translate-y-1 rounded-full bg-sky-500" />
-										<div className="space-y-1">
-											<p className="text-sm font-medium leading-none">
-												{topic}
-											</p>
-											<p className="text-sm text-muted-foreground">{topic}</p>
-										</div>
-									</div>
-								))} */}
-										<div className="flex flex-wrap gap-1">
-											{partner.conversationTopics.map((topic) => (
-												<Badge key={topic} variant="outline">
-													{topic}
-												</Badge>
-											))}
-										</div>
-
+									<CardContent className="gap-3 flex-1 flex flex-col justify-between">
+										<p className="text-xs text-left text-muted-foreground tracking-tight leading-none">
+											Speaks
+										</p>
 										<div className="flex flex-wrap gap-2">
 											{partner.dialects.map((dialect) => (
 												<DialectBadge dialect={dialect} key={dialect} />
 											))}
 										</div>
+
+										<p className="text-xs text-left text-muted-foreground tracking-tight leading-none">
+											Themes
+										</p>
+										<div className="flex flex-wrap gap-1">
+											{partner.conversationTopics.map((topic) => (
+												<Badge key={topic} variant="secondary">
+													{topic}
+												</Badge>
+											))}
+										</div>
 									</CardContent>
 									<CardFooter>
-										<Button className="w-full bg-indigo-600 hover:bg-indigo-500">
-											New Chat
+										<Button
+											variant="outline"
+											className="w-full hover:text-indigo-600"
+										>
+											Start Chat
 										</Button>
 									</CardFooter>
 								</Card>

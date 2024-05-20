@@ -44,6 +44,7 @@ export const chatPartners: {
 	conversationTopics: string[];
 	image: string;
 	dialects: ArabicDialect[];
+	location: [string, string, string];
 }[] = [
 	{
 		id: "layla",
@@ -59,6 +60,7 @@ export const chatPartners: {
 		],
 		image: "/assets/chat-partners/student-female.png",
 		dialects: ["Modern Standard Arabic", "Egyptian"],
+		location: ["Cairo", "EG", "Egypt"],
 	},
 	{
 		id: "mustafa",
@@ -74,6 +76,7 @@ export const chatPartners: {
 		],
 		image: "/assets/chat-partners/professional-male.png",
 		dialects: ["Modern Standard Arabic", "Gulf"],
+		location: ["Riyadh", "SA", "Saudi Arabia"],
 	},
 	{
 		id: "abu-khalid",
@@ -89,6 +92,7 @@ export const chatPartners: {
 		],
 		image: "/assets/chat-partners/chef-male.png",
 		dialects: ["Modern Standard Arabic", "Iraqi"],
+		location: ["Basra", "IQ", "Iraq"],
 	},
 	{
 		id: "youssef",
@@ -104,6 +108,7 @@ export const chatPartners: {
 		],
 		image: "/assets/chat-partners/traveler-male.png",
 		dialects: ["Modern Standard Arabic", "Sudanese"],
+		location: ["Khartoum", "SD", "Sudan"],
 	},
 	{
 		id: "noura",
@@ -119,6 +124,7 @@ export const chatPartners: {
 		],
 		image: "/assets/chat-partners/activist-female.png",
 		dialects: ["Modern Standard Arabic", "Levantine"],
+		location: ["Amman", "JO", "Jordan"],
 	},
 	{
 		id: "juha",
@@ -135,6 +141,7 @@ export const chatPartners: {
 		],
 		image: "/assets/chat-partners/juha.png",
 		dialects: ["Modern Standard Arabic"],
+		location: ["Here, there, and everywhere", "", ""],
 	},
 	{
 		id: "arabybuddy",
@@ -151,6 +158,7 @@ export const chatPartners: {
 		],
 		image: "/assets/arabybuddy.png",
 		dialects: [...ARABIC_DIALECTS],
+		location: ["", "", ""],
 	},
 ];
 
