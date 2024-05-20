@@ -44,7 +44,7 @@ export const chatPartners: {
 	conversationTopics: string[];
 	image: string;
 	dialects: ArabicDialect[];
-	location: [string, string, string];
+	location?: [string, string, string];
 }[] = [
 	{
 		id: "layla",
@@ -158,7 +158,6 @@ export const chatPartners: {
 		],
 		image: "/assets/arabybuddy.png",
 		dialects: [...ARABIC_DIALECTS],
-		location: ["", "", ""],
 	},
 ];
 

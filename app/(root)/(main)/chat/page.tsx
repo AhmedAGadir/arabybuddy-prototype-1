@@ -128,6 +128,13 @@ const ChatPage = () => {
 		router.push("/preferences");
 	};
 
+	const statusIndicator = (
+		<span className="relative flex h-2 w-2">
+			<span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"></span>
+			<span className="relative inline-flex rounded-full h-2 w-2 bg-sky-500"></span>
+		</span>
+	);
+
 	return (
 		<div className="py-10 bg-gray-50 flex-1 max-h-screen overflow-y-scroll">
 			<header>
@@ -168,7 +175,11 @@ const ChatPage = () => {
 								>
 									<CardHeader>
 										<Image
-											className="w-36 h-36 rounded-full mx-auto ring-2 ring-slate-300 ring-offset-4 ring-offset-slate-50 mb-2 group-hover/card:ring-indigo-600 transition-all ease-in duration-50"
+											className={cn(
+												"w-36 h-36 rounded-full mx-auto",
+												partner.id !== "arabybuddy" &&
+													"ring-2 ring-slate-300 ring-offset-4 ring-offset-slate-50 mb-3 group-hover/card:ring-indigo-600 transition-all ease-in duration-50"
+											)}
 											width={12}
 											height={12}
 											src={partner.image}
@@ -176,11 +187,20 @@ const ChatPage = () => {
 											unoptimized
 											priority
 										/>
-										<div className="text-muted-foreground font-medium leading-none tracking-tight text-xs uppercase flex items-center gap-0.5 justify-center">
-											<MapPinIcon className="w-4 h-4" />
-											{`${partner.location[0]}, ${partner.location[1]}`}
-										</div>
-										<CardTitle>{partner.name}</CardTitle>
+										{partner.location && (
+											<div className="text-muted-foreground font-medium leading-none tracking-tight text-xs uppercase flex items-center gap-0.5 justify-center">
+												<MapPinIcon className="w-4 h-4" />
+												{`${partner.location[0]}, ${partner.location[1]}`}
+											</div>
+										)}
+										<CardTitle>
+											<span className="relative w-fit">
+												{partner.name}
+												<span className="absolute -right-4">
+													{statusIndicator}
+												</span>
+											</span>
+										</CardTitle>
 										<CardDescription>{partner.role}</CardDescription>
 									</CardHeader>
 									<CardContent className="gap-3 flex-1 flex flex-col justify-between">

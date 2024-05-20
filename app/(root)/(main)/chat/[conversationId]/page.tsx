@@ -1114,7 +1114,7 @@ const ConversationIdPage = ({
 		[displayedMessageInd, displayedMessageText, messages.length]
 	);
 
-	const recordingBlob = (
+	const recordingIndicator = (
 		<div
 			className={cn(
 				"relative flex h-4 w-4 my-2",
@@ -1181,7 +1181,7 @@ const ConversationIdPage = ({
 				<div className="hidden xl:block">
 					<h1>xl + up</h1>
 				</div> */}
-				{recordingBlob}
+				{recordingIndicator}
 				<div className="h-12 w-full text-center">{instructionContent}</div>
 				<div className="md:hidden mb-8">{chatPanelContent}</div>
 			</div>
