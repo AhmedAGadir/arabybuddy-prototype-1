@@ -60,7 +60,7 @@ export const chatPartners: {
 		],
 		image: "/assets/chat-partners/student-female.png",
 		dialects: ["Modern Standard Arabic", "Egyptian"],
-		location: ["Cairo", "EG", "Egypt"],
+		location: ["Cairo", "EGY", "Egypt"],
 	},
 	{
 		id: "mustafa",
@@ -76,7 +76,7 @@ export const chatPartners: {
 		],
 		image: "/assets/chat-partners/professional-male.png",
 		dialects: ["Modern Standard Arabic", "Gulf"],
-		location: ["Riyadh", "SA", "Saudi Arabia"],
+		location: ["Riyadh", "SAU", "Saudi Arabia"],
 	},
 	{
 		id: "abu-khalid",
@@ -92,7 +92,7 @@ export const chatPartners: {
 		],
 		image: "/assets/chat-partners/chef-male.png",
 		dialects: ["Modern Standard Arabic", "Iraqi"],
-		location: ["Basra", "IQ", "Iraq"],
+		location: ["Basra", "IRQ", "Iraq"],
 	},
 	{
 		id: "youssef",
@@ -108,7 +108,7 @@ export const chatPartners: {
 		],
 		image: "/assets/chat-partners/traveler-male.png",
 		dialects: ["Modern Standard Arabic", "Sudanese"],
-		location: ["Khartoum", "SD", "Sudan"],
+		location: ["Khartoum", "SDN", "Sudan"],
 	},
 	{
 		id: "noura",
@@ -124,7 +124,7 @@ export const chatPartners: {
 		],
 		image: "/assets/chat-partners/activist-female.png",
 		dialects: ["Modern Standard Arabic", "Levantine"],
-		location: ["Amman", "JO", "Jordan"],
+		location: ["Amman", "JOR", "Jordan"],
 	},
 	{
 		id: "juha",
