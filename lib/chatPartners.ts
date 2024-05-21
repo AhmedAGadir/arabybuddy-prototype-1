@@ -55,6 +55,7 @@ export const chatPartners: {
 	image: string;
 	dialects: ArabicDialect[];
 	location?: [string, string, string];
+	flag?: string;
 }[] = [
 	{
 		id: "layla",
@@ -72,13 +73,14 @@ export const chatPartners: {
 		image: "/assets/chat-partners/student-female.png",
 		dialects: ["Modern Standard Arabic", "Egyptian"],
 		location: ["Cairo", "EGY", "Egypt"],
+		flag: "🇪🇬",
 	},
 	{
 		id: "mustafa",
 		name: "Mustafa",
 		role: "Job Interviewer",
 		background:
-			"Mustafa is a seasoned HR professional from Riyadh, Saudi Arabia. He specializes in recruitment and has vast experience in conducting interviews across various industries.",
+			"Mustafa is a seasoned HR professional from Sharjah, UAE. He specializes in recruitment and has vast experience in conducting interviews across various industries.",
 		conversationTopics: [
 			"Mock interviews",
 			"Resume building",
@@ -88,7 +90,8 @@ export const chatPartners: {
 		],
 		image: "/assets/chat-partners/professional-male.png",
 		dialects: ["Modern Standard Arabic", "Gulf"],
-		location: ["Riyadh", "SAU", "Saudi Arabia"],
+		location: ["Sharjah", "UAE", "United Arab Emirates"],
+		flag: "🇦🇪",
 	},
 	{
 		id: "abu-khalid",
@@ -106,6 +109,7 @@ export const chatPartners: {
 		image: "/assets/chat-partners/chef-male.png",
 		dialects: ["Modern Standard Arabic", "Iraqi"],
 		location: ["Basra", "IRQ", "Iraq"],
+		flag: "🇮🇶",
 	},
 	{
 		id: "fatima",
@@ -122,6 +126,7 @@ export const chatPartners: {
 		image: "/assets/chat-partners/teacher-female.png",
 		dialects: ["Modern Standard Arabic", "Yemeni"],
 		location: ["Sana'a", "YEM", "Yemen"],
+		flag: "🇾🇪",
 	},
 	{
 		id: "youssef",
@@ -139,6 +144,7 @@ export const chatPartners: {
 		image: "/assets/chat-partners/traveler-male.png",
 		dialects: ["Modern Standard Arabic", "Sudanese"],
 		location: ["Khartoum", "SDN", "Sudan"],
+		flag: "🇸🇩",
 	},
 	{
 		id: "sofia",
@@ -156,6 +162,7 @@ export const chatPartners: {
 		image: "/assets/chat-partners/athlete-female.png",
 		dialects: ["Modern Standard Arabic", "Maghrebi"],
 		location: ["Casablanca", "MAR", "Morocco"],
+		flag: "🇲🇦",
 	},
 	{
 		id: "noura",
@@ -172,6 +179,7 @@ export const chatPartners: {
 		image: "/assets/chat-partners/activist-female.png",
 		dialects: ["Modern Standard Arabic", "Levantine"],
 		location: ["Amman", "JOR", "Jordan"],
+		flag: "🇯🇴",
 	},
 	{
 		id: "juha",
@@ -189,6 +197,7 @@ export const chatPartners: {
 		image: "/assets/chat-partners/juha.png",
 		dialects: ["Modern Standard Arabic"],
 		location: ["Here, there, and everywhere", "", ""],
+		flag: "💭",
 	},
 	{
 		id: "arabybuddy",

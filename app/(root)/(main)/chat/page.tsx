@@ -196,8 +196,8 @@ const ChatPage = () => {
 			<Card
 				key={partner.id}
 				className={cn(
-					"w-[300px] bg-background flex flex-col group/card relative transition-all ease-in duration-50",
-					nonFiltered && "filter blur-sm"
+					"w-[300px] bg-background flex flex-col group/card relative transition-all ease-in duration-50 shadow-md",
+					nonFiltered && "hover:filter hover:blur-sm"
 				)}
 			>
 				{nonFiltered && (
@@ -208,20 +208,27 @@ const ChatPage = () => {
 					></div>
 				)}
 				<CardHeader>
-					<Image
-						className={cn(
-							"w-36 h-36 rounded-full mx-auto",
-							filtered &&
-								partner.id !== "arabybuddy" &&
-								"ring-2 ring-slate-300 ring-offset-4 ring-offset-slate-50 mb-3 group-hover/card:ring-indigo-600 transition-all ease-in duration-50"
+					<div className="relative rounded-full mx-auto">
+						<Image
+							className={cn(
+								"w-36 h-36 rounded-full",
+								filtered &&
+									partner.id !== "arabybuddy" &&
+									"ring-2 ring-slate-300 ring-offset-4 ring-offset-slate-50 mb-3 group-hover/card:ring-indigo-600 transition-all ease-in duration-50"
+							)}
+							width={12}
+							height={12}
+							src={partner.image}
+							alt={partner.name}
+							unoptimized
+							priority
+						/>
+						{partner.flag && (
+							<div className="absolute top-0 right-0 text-4xl">
+								{partner.flag}
+							</div>
 						)}
-						width={12}
-						height={12}
-						src={partner.image}
-						alt={partner.name}
-						unoptimized
-						priority
-					/>
+					</div>
 					{partner.location && (
 						<div className="text-muted-foreground font-medium leading-none tracking-tight text-xs uppercase flex items-center gap-0.5 justify-center">
 							<MapPinIcon className="w-4 h-4" />
@@ -339,14 +346,18 @@ const ChatPage = () => {
 	);
 
 	const alertBarContent = filteredDialects.length > 0 && (
-		<Alert variant="blue">
-			{/* <RocketLaunchIcon className="h-5 w-5" /> */}
-			<BoltSlashIcon className="h-5 w-5 fill-blue-600" />
-			<AlertTitle>Heads up!</AlertTitle>
+		<Alert variant="purple" className="flex gap-1">
+			<div>
+				<BoltSlashIcon className="h-5 w-5 fill-inherit" />
+			</div>
 			<AlertDescription>
-				<Link href="#" className="hover:underline">
-					Upgrade to Pro to unlock every dialect for all chat partners.
-				</Link>
+				You have applied dialect filters.{" "}
+				<a
+					href="#"
+					className="font-medium text-purple-700 underline hover:text-purple-600"
+				>
+					Upgrade your account to unlock all dialects for every chat partner.
+				</a>
 			</AlertDescription>
 		</Alert>
 	);
