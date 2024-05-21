@@ -194,6 +194,7 @@ const ChatPage = () => {
 		const nonFiltered = nonFilteredChatPartners.includes(partner);
 		return (
 			<Card
+				key={partner.id}
 				className={cn(
 					"w-[300px] bg-background flex flex-col group/card relative transition-all ease-in duration-50",
 					nonFiltered && "filter blur-sm"
@@ -292,6 +293,7 @@ const ChatPage = () => {
 			<PopoverContent className="w-fit flex flex-col p-0 py-2">
 				{ARABIC_DIALECTS.map((dialect) => (
 					<Toggle
+						key={dialect}
 						pressed={filteredDialects.includes(dialect)}
 						onPressedChange={(pressed: boolean) =>
 							onDialectFilterChange(dialect, pressed)
