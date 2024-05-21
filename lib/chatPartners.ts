@@ -30,6 +30,16 @@ const prompts: { id: string; prompt: string }[] = [
 			"A high-quality portrait illustration of a passionate, female, late-20's, dark-skinned kenyan environmental activist, wearing a hijab, with determined eyes and a warm smile, wearing a green blouse, urban buildings in lively background, in the style of simple 90s anime, anime art, colored anime drawings, arabian features,, front-facing, looking directly at camera, 8K anime drawings, stunning anime aesthetic art, beautiful anime character drawings, precision, eye-catching anime artworks, visually appealing anime characters, and captivating anime-inspired characters, created by a professional --v 5.2 --style raw",
 	},
 	{
+		id: "fatima",
+		prompt:
+			"A high-quality portrait illustration of an intelligent, female, in her 50s, Yemeni math teacher, brown-skinned, thick eyebrows, middle-aged, overweight, large nose, wise eyes, strict-looking, discerning, wearing a traditional hijab and modest clothing, classroom setting in the background, in the style of simple 90s anime, colored anime drawings, front-facing, looking directly at camera, 8K anime drawings, stunning anime aesthetic art, precision, eye-catching anime artworks, created by a professional --v 5.2 --style raw",
+	},
+	{
+		id: "sofia",
+		prompt:
+			"A high-quality portrait illustration of a passionate, female, early-30's, Moroccan athlete from Casablanca, with a fit physique, determined eyes, and a confident smile, wearing athletic gear, track and field stadium in the background, in the style of simple 90s anime, anime art, colored anime drawings, Moroccan features, front-facing, looking directly at camera, 8K anime drawings, stunning anime aesthetic art, beautiful anime character drawings, precision, eye-catching anime artworks, created by a professional --v 5.2 --style raw",
+	},
+	{
 		id: "juha",
 		prompt:
 			"A high-quality portrait illustration of middle-aged turkish man, mischievous grin, fool, goofy, long grey beard, traditional 9th century abassid attire, turkish turban, playful yet thoughtful expression, Middle Eastern background with oversized teapot, in the style of simple 90s anime, anime art, colored anime drawings, turkish features, turkish skin tone, front-facing, looking directly at camera, 8K anime drawings, stunning anime aesthetic art, beautiful anime character drawings, precision, eye-catching anime artworks, visually appealing anime characters, and captivating anime-inspired characters, created by a professional --v 5.2 --style raw",
@@ -55,8 +65,9 @@ export const chatPartners: {
 		conversationTopics: [
 			"Campus life",
 			"Egyptian history",
-			"popular tourist sites in Cairo",
-			"current events in the education sector",
+			"Popular tourist sites in Cairo",
+			"Current events in the education sector",
+			"Music and movies",
 		],
 		image: "/assets/chat-partners/student-female.png",
 		dialects: ["Modern Standard Arabic", "Egyptian"],
@@ -69,10 +80,11 @@ export const chatPartners: {
 		background:
 			"Mustafa is a seasoned HR professional from Riyadh, Saudi Arabia. He specializes in recruitment and has vast experience in conducting interviews across various industries.",
 		conversationTopics: [
+			"Mock interviews",
+			"Resume building",
+			"Career development",
+			"Workplace culture",
 			"Job interview tips",
-			"resume building",
-			"career development",
-			"workplace culture",
 		],
 		image: "/assets/chat-partners/professional-male.png",
 		dialects: ["Modern Standard Arabic", "Gulf"],
@@ -85,14 +97,31 @@ export const chatPartners: {
 		background:
 			"Khalid is a renowned chef from Basra, Iraq, who specializes in Mediterranean cuisine. He runs a popular restaurant and cooking school.",
 		conversationTopics: [
-			"Iraqi cuisine",
-			"recipe exchange",
-			"cooking techniques",
-			"importance of food in cultural identity",
+			"Names of foods and ingredients",
+			"Middle-Eastern cuisine",
+			"Recipe exchange",
+			"Cooking techniques",
+			"Importance of food in cultural identity",
 		],
 		image: "/assets/chat-partners/chef-male.png",
 		dialects: ["Modern Standard Arabic", "Iraqi"],
 		location: ["Basra", "IRQ", "Iraq"],
+	},
+	{
+		id: "fatima",
+		name: "Fatima",
+		role: "Math Teacher",
+		background:
+			"Fatima is a dedicated math teacher from Sana'a, Yemen, in her 50s. She is passionate about making math accessible and enjoyable for her students. With years of experience, Fatima helps learners understand mathematical concepts and develop strong problem-solving skills.",
+		conversationTopics: [
+			"Counting and numbers",
+			"Days of the week and months",
+			"Telling time",
+			"Arithmetic and geometry",
+		],
+		image: "/assets/chat-partners/teacher-female.png",
+		dialects: ["Modern Standard Arabic", "Yemeni"],
+		location: ["Sana'a", "YEM", "Yemen"],
 	},
 	{
 		id: "youssef",
@@ -102,13 +131,31 @@ export const chatPartners: {
 			"Youssef is a travel blogger from Khartoum, Sudan, who explores different countries and shares his experiences through his popular blog and social media.",
 		conversationTopics: [
 			"Travel tips",
-			"cultural experiences",
-			"must-visit places in the Arab world",
-			"storytelling from his travels",
+			"Cultural experiences",
+			"Must-visit places in the Arab world",
+			"Storytelling from his travels",
+			"Asking for directions",
 		],
 		image: "/assets/chat-partners/traveler-male.png",
 		dialects: ["Modern Standard Arabic", "Sudanese"],
 		location: ["Khartoum", "SDN", "Sudan"],
+	},
+	{
+		id: "sofia",
+		name: "Sofia",
+		role: "Athlete",
+		background:
+			"Sofia is a spirited athlete from Casablanca, Morocco, in her 20s. She competes in track and field and is a strong advocate for sports and fitness. Sofia enjoys sharing her knowledge about physical health and the benefits of an active lifestyle.",
+		conversationTopics: [
+			"names of body parts",
+			"Sports & fitness",
+			"exercise routines",
+			"healthy eating habits",
+			"competitive events",
+		],
+		image: "/assets/chat-partners/athlete-female.png",
+		dialects: ["Modern Standard Arabic", "Maghrebi"],
+		location: ["Casablanca", "MAR", "Morocco"],
 	},
 	{
 		id: "noura",
@@ -117,10 +164,10 @@ export const chatPartners: {
 		background:
 			"Noura is an environmental activist from Amman, Jordan. She has a fiery passion for justice and her enthusiasm is infectious. She works with various NGOs to promote sustainability and environmental awareness.",
 		conversationTopics: [
-			"Environmental challenges in the Middle East",
-			"sustainability projects",
-			"eco-friendly living",
-			"activism",
+			"Sustainability projects",
+			"Eco-friendly living",
+			"Activism",
+			"Climate change",
 		],
 		image: "/assets/chat-partners/activist-female.png",
 		dialects: ["Modern Standard Arabic", "Levantine"],
