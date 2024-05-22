@@ -179,13 +179,12 @@ const ChatPage = () => {
 		return (
 			<div
 				key={partner.id}
-				className={cn("relative group/card rounded-lg shadow-md")}
+				className={cn("relative group/card rounded-lg shadow-lg")}
 			>
 				<Card
 					className={cn(
 						"w-[300px] bg-background flex flex-col relative transition-all ease-in duration-50 h-full",
-						!filtered &&
-							"opacity-60 filter blur-sm group-hover/card:blur-md blur-md"
+						!filtered && "opacity-40 filter blur-md"
 					)}
 				>
 					<CardHeader>
@@ -262,10 +261,10 @@ const ChatPage = () => {
 				{!filtered && (
 					<div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 ">
 						<div className="flex flex-col items-center ">
-							<BoltSlashIcon className="h-10 w-10 fill-slate-600" />
+							<BoltSlashIcon className="h-10 w-10 fill-slate-600 group-hover/card:fill-purple-600" />
 							<Link
 								href="#"
-								className="font-medium text-slate-600 group-hover/card:underline cursor-pointer"
+								className="font-medium text-slate-600 group-hover/card:text-purple-600 group-hover/card:underline cursor-pointer"
 							>
 								Upgrade to Pro to unlock all dialects for every chat partner
 							</Link>
