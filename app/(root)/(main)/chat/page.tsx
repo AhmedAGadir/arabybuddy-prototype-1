@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { useConversations } from "@/hooks/useConversations";
 import { useLogger } from "@/hooks/useLogger";
-import { chatPartners } from "@/lib/chatPartners";
+import { ChatPartner, chatPartners } from "@/lib/chatPartners";
 import { cn } from "@/lib/utils";
 import { useUser } from "@clerk/nextjs";
 import {
@@ -53,31 +53,6 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import Link from "next/link";
 import { BoltSlashIcon } from "@heroicons/react/20/solid";
 
-// 	<span className="inline-flex items-center rounded-md bg-gray-100 px-2 py-1 text-xs font-medium text-gray-600">
-// 	Badge
-//   </span>
-//   <span className="inline-flex items-center rounded-md bg-red-100 px-2 py-1 text-xs font-medium text-red-700">
-// 	Badge
-//   </span>
-//   <span className="inline-flex items-center rounded-md bg-yellow-100 px-2 py-1 text-xs font-medium text-yellow-800">
-// 	Badge
-//   </span>
-//   <span className="inline-flex items-center rounded-md bg-green-100 px-2 py-1 text-xs font-medium text-green-700">
-// 	Badge
-//   </span>
-//   <span className="inline-flex items-center rounded-md bg-blue-100 px-2 py-1 text-xs font-medium text-blue-700">
-// 	Badge
-//   </span>
-//   <span className="inline-flex items-center rounded-md bg-indigo-100 px-2 py-1 text-xs font-medium text-indigo-700">
-// 	Badge
-//   </span>
-//   <span className="inline-flex items-center rounded-md bg-purple-100 px-2 py-1 text-xs font-medium text-purple-700">
-// 	Badge
-//   </span>
-//   <span className="inline-flex items-center rounded-md bg-pink-100 px-2 py-1 text-xs font-medium text-pink-700">
-// 	Badge
-//   </span>
-
 const dialectColors: {
 	[key in ArabicDialect]: [string, string];
 } = {
@@ -91,14 +66,21 @@ const dialectColors: {
 	Yemeni: ["bg-gray-100", "text-gray-700"],
 };
 
-const DialectBadge = ({ dialect }: { dialect: ArabicDialect }) => {
+const DialectBadge = ({
+	dialect,
+	className,
+}: {
+	dialect: ArabicDialect;
+	className?: string;
+}) => {
 	const [bg, text] = dialectColors[dialect];
 	return (
 		<span
 			className={cn(
-				"inline-flex items-center rounded-md px-2 py-1 text-xs font-medium",
+				"inline-flex items-center rounded-md px-2 py-1 text-xs font-medium text-nowrap",
 				bg,
-				text
+				text,
+				className
 			)}
 		>
 			{dialect}
@@ -189,92 +171,108 @@ const ChatPage = () => {
 		...nonFilteredChatPartners,
 	];
 
-	const chatPartnersContent = sortedChatPartners.map((partner) => {
-		const filtered = filteredChatPartners.includes(partner);
-		const nonFiltered = nonFilteredChatPartners.includes(partner);
+	const isPartnerFiltered = (partner: ChatPartner) =>
+		filteredChatPartners.includes(partner);
+
+	const chatPartnerCardsContent = sortedChatPartners.map((partner) => {
+		const filtered = isPartnerFiltered(partner);
 		return (
-			<Card
+			<div
 				key={partner.id}
-				className={cn(
-					"w-[300px] bg-background flex flex-col group/card relative transition-all ease-in duration-50 shadow-md",
-					nonFiltered && "hover:filter hover:blur-sm"
-				)}
+				className={cn("relative group/card rounded-lg shadow-md")}
 			>
-				{nonFiltered && (
-					<div
-						className={cn(
-							"absolute top-0 left-0 h-full w-full bg-primary-foreground opacity-60 z-20 filter blur-sm flex items-center justify-center"
-						)}
-					></div>
-				)}
-				<CardHeader>
-					<div className="relative rounded-full mx-auto">
-						<Image
-							className={cn(
-								"w-36 h-36 rounded-full",
-								filtered &&
-									partner.id !== "arabybuddy" &&
-									"ring-2 ring-slate-300 ring-offset-4 ring-offset-slate-50 mb-3 group-hover/card:ring-indigo-600 transition-all ease-in duration-50"
+				<Card
+					className={cn(
+						"w-[300px] bg-background flex flex-col relative transition-all ease-in duration-50 h-full",
+						!filtered &&
+							"opacity-60 filter blur-sm group-hover/card:blur-md blur-md"
+					)}
+				>
+					<CardHeader>
+						<div className="relative rounded-full mx-auto">
+							<Image
+								className={cn(
+									"w-36 h-36 rounded-full",
+									filtered &&
+										partner.id !== "arabybuddy" &&
+										"ring-2 ring-slate-300 ring-offset-4 ring-offset-slate-50 mb-3 group-hover/card:ring-indigo-600 transition-all ease-in duration-50"
+								)}
+								width={12}
+								height={12}
+								src={partner.image}
+								alt={partner.name}
+								unoptimized
+								priority
+							/>
+							{partner.flag && (
+								<div className="absolute top-0 right-0 text-4xl">
+									{partner.flag}
+								</div>
 							)}
-							width={12}
-							height={12}
-							src={partner.image}
-							alt={partner.name}
-							unoptimized
-							priority
-						/>
-						{partner.flag && (
-							<div className="absolute top-0 right-0 text-4xl">
-								{partner.flag}
+						</div>
+						{partner.location && (
+							<div className="text-muted-foreground font-medium leading-none tracking-tight text-xs uppercase flex items-center gap-0.5 justify-center">
+								<MapPinIcon className="w-4 h-4" />
+								{`${partner.location[0]}, ${partner.location[1]}`}
 							</div>
 						)}
-					</div>
-					{partner.location && (
-						<div className="text-muted-foreground font-medium leading-none tracking-tight text-xs uppercase flex items-center gap-0.5 justify-center">
-							<MapPinIcon className="w-4 h-4" />
-							{`${partner.location[0]}, ${partner.location[1]}`}
+						<CardTitle>
+							<span className="relative w-fit">
+								{partner.name}
+								<span className="absolute -right-4">{statusIndicator}</span>
+							</span>
+						</CardTitle>
+						<CardDescription>{partner.role}</CardDescription>
+					</CardHeader>
+					<CardContent className="flex-1 space-y-6">
+						<div className="space-y-3">
+							<p className="text-xs text-left text-muted-foreground tracking-tight leading-none">
+								Speaks
+							</p>
+							<div className="flex flex-wrap gap-2">
+								{partner.dialects.map((dialect) => (
+									<DialectBadge dialect={dialect} key={dialect} />
+								))}
+							</div>
 						</div>
-					)}
-					<CardTitle>
-						<span className="relative w-fit">
-							{partner.name}
-							<span className="absolute -right-4">{statusIndicator}</span>
-						</span>
-					</CardTitle>
-					<CardDescription>{partner.role}</CardDescription>
-				</CardHeader>
-				<CardContent className="gap-3 flex-1 flex flex-col justify-between">
-					<p className="text-xs text-left text-muted-foreground tracking-tight leading-none">
-						Speaks
-					</p>
-					<div className="flex flex-wrap gap-2">
-						{partner.dialects.map((dialect) => (
-							<DialectBadge dialect={dialect} key={dialect} />
-						))}
-					</div>
 
-					<p className="text-xs text-left text-muted-foreground tracking-tight leading-none">
-						Themes
-					</p>
-					<div className="flex flex-wrap gap-1">
-						{partner.conversationTopics.map((topic) => (
-							<Badge key={topic} variant="secondary">
-								{topic}
-							</Badge>
-						))}
+						<div className="space-y-3">
+							<p className="text-xs text-left text-muted-foreground tracking-tight leading-none">
+								Themes
+							</p>
+							<div className="flex flex-wrap gap-2">
+								{partner.conversationTopics.map((topic) => (
+									<Badge key={topic} variant="secondary">
+										{topic}
+									</Badge>
+								))}
+							</div>
+						</div>
+					</CardContent>
+					<CardFooter>
+						<Button
+							variant="outline"
+							disabled={!filtered}
+							className="w-full border-indigo-600 text-indigo-600 hover:text-secondary hover:bg-indigo-600"
+						>
+							Start Chat
+						</Button>
+					</CardFooter>
+				</Card>
+				{!filtered && (
+					<div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 ">
+						<div className="flex flex-col items-center ">
+							<BoltSlashIcon className="h-10 w-10 fill-slate-600" />
+							<Link
+								href="#"
+								className="font-medium text-slate-600 group-hover/card:underline cursor-pointer"
+							>
+								Upgrade to Pro to unlock all dialects for every chat partner
+							</Link>
+						</div>
 					</div>
-				</CardContent>
-				<CardFooter>
-					<Button
-						variant="outline"
-						disabled={nonFiltered}
-						className="w-full border-indigo-600 text-indigo-600 hover:text-secondary hover:bg-indigo-600"
-					>
-						Start Chat
-					</Button>
-				</CardFooter>
-			</Card>
-			// </div>
+				)}
+			</div>
 		);
 	});
 
@@ -352,12 +350,12 @@ const ChatPage = () => {
 			</div>
 			<AlertDescription>
 				You have applied dialect filters.{" "}
-				<a
+				<Link
 					href="#"
-					className="font-medium text-purple-700 underline hover:text-purple-600"
+					className="font-medium text-purple-700 underline hover:text-purple-600 cursor-pointer"
 				>
 					Upgrade your account to unlock all dialects for every chat partner.
-				</a>
+				</Link>
 			</AlertDescription>
 		</Alert>
 	);
@@ -378,10 +376,10 @@ const ChatPage = () => {
 			</header>
 			<main>
 				{/* page content wrapper */}
-				<div className="mr-auto max-w-7xl sm:px-6 lg:px-8 mt-8">
+				<div className="mr-auto max-w-7xl px-4 sm:px-6 lg:px-8 mt-8">
 					{/* chat partner cards wrapper */}
 					<div className="text-center flex items-stretch justify-center md:justify-start relative flex-wrap gap-4 lg:gap-6">
-						{chatPartnersContent}
+						{chatPartnerCardsContent}
 					</div>
 				</div>
 			</main>

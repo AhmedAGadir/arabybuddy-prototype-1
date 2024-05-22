@@ -46,7 +46,7 @@ const prompts: { id: string; prompt: string }[] = [
 	},
 ];
 
-export const chatPartners: {
+export type ChatPartner = {
 	id: string;
 	name: string;
 	role: string;
@@ -56,7 +56,9 @@ export const chatPartners: {
 	dialects: ArabicDialect[];
 	location?: [string, string, string];
 	flag?: string;
-}[] = [
+};
+
+export const chatPartners: ChatPartner[] = [
 	{
 		id: "layla",
 		name: "Layla",
