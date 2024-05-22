@@ -364,7 +364,7 @@ const ChatPage = () => {
 			<header>
 				<div className="mr-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-3">
 					<div className="flex justify-between">{salutationContent}</div>
-					<div className="flex flex-col sm:flex-row justify-between items-center">
+					<div className="flex flex-col sm:flex-row justify-between items-center gap-3">
 						<p className="text-lg text-gray-500 max-w-4xl">
 							Get started by selecting a chat partner.
 						</p>
