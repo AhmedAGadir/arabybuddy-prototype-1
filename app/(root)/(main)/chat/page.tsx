@@ -264,7 +264,7 @@ const ChatPage = () => {
 							<BoltSlashIcon className="h-10 w-10 fill-slate-600 group-hover/card:fill-purple-600" />
 							<Link
 								href="#"
-								className="font-medium text-slate-600 group-hover/card:text-purple-600 group-hover/card:underline cursor-pointer"
+								className="font-medium text-slate-600 group-hover/card:text-purple-600 underline cursor-pointer"
 							>
 								Upgrade to Pro to unlock all dialects for every chat partner
 							</Link>
