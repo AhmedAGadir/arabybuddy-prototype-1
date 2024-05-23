@@ -49,13 +49,13 @@ const MessageCard = ({
 	const avatarContent = (
 		<>
 			{showSkeleton && (
-				<Skeleton className="w-8 h-8 sm:w-10 sm:h-10 rounded-full" />
+				<Skeleton className="w-16 h-16 sm:w-20 sm:h-20 rounded-full" />
 			)}
 			{!showSkeleton && (
 				<Image
-					className="w-8 h-8 sm:w-10 sm:h-10 rounded-full"
-					width={12}
-					height={12}
+					className="w-16 h-16 sm:w-20 sm:h-20 rounded-full"
+					width={20}
+					height={20}
 					src={avatar?.src ?? "/assets/user.png"}
 					alt={avatar?.alt ?? "Avatar"}
 					unoptimized
@@ -96,7 +96,9 @@ const MessageCard = ({
 
 	return (
 		<Card className={cn("relative flex-1 flex flex-col shadow-xl", className)}>
-			<CardHeader className="p-4 sm:p-6">{topBarContent}</CardHeader>
+			<CardHeader className="p-4 sm:p-6 pb-[0.5rem] sm:pb-[0.5rem]">
+				{topBarContent}
+			</CardHeader>
 			<CardContent className="p-4 pt-0 sm:p-6 sm:pt-0 bg-opacity-50 overflow-y-scroll">
 				<div
 					className={cn(

@@ -32,6 +32,19 @@ export const ARABIC_DIALECTS = [
 
 export type ArabicDialect = (typeof ARABIC_DIALECTS)[number];
 
+export const ARABIC_DIALECTS_SHORT: {
+	[key in ArabicDialect]: string;
+} = {
+	"Modern Standard Arabic": "MSA",
+	Egyptian: "EGY",
+	Levantine: "LEV",
+	Gulf: "GULF",
+	Maghrebi: "MAR",
+	Sudanese: "SDN",
+	Iraqi: "IRQ",
+	Yemeni: "YEM",
+};
+
 export const status = {
 	IDLE: "IDLE",
 	RECORDING: "RECORDING",

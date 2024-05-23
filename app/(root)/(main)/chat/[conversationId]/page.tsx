@@ -95,6 +95,8 @@ import {
 import { DictionaryDrawer } from "@/components/shared/DictionaryDrawer";
 import ChatPanel from "@/components/shared/ChatPanel";
 import { status, type Status } from "@/types/types";
+import { DialectBadge } from "@/components/shared/DialectBadge";
+import { chatPartners } from "@/lib/chatPartners";
 
 const task = {
 	SPEECH_TO_TEXT: "SPEECH_TO_TEXT",
@@ -120,7 +122,16 @@ const ConversationIdPage = ({
 
 	const { user } = useUser();
 
-	const { updateConversation, deleteConversation } = useConversations();
+	const { conversations, updateConversation, deleteConversation } =
+		useConversations();
+
+	const conversation = conversations.find((c) => c._id === conversationId);
+
+	const chatPartnerId = conversation?.chatPartnerId;
+
+	const chatPartner = chatPartners.find((p) => p.id === chatPartnerId);
+
+	const chatDialect = conversation?.chatDialect;
 
 	const {
 		isPending,
@@ -203,14 +214,10 @@ const ConversationIdPage = ({
 	const nextMessageHandler = () =>
 		updateDisplayedMessageInd((displayedMessageInd ?? 0) + 1);
 
-	useEffect(() => {
-		// initialise to last message index
-		if (searchParams.get("ind") === null && messages.length > 0) {
-			logger.log("init displayedMessageInd to last message index");
-			updateDisplayedMessageInd(messages.length - 1);
-		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [messages]);
+	if (searchParams.get("ind") === null && messages.length > 0) {
+		logger.log("init displayedMessageInd to last message index");
+		updateDisplayedMessageInd(messages.length - 1);
+	}
 
 	const displayedMessage = useMemo(() => {
 		// first load
@@ -1049,6 +1056,10 @@ const ConversationIdPage = ({
 			return null;
 		}
 
+		if (!chatPartner || !chatDialect) {
+			return null;
+		}
+
 		const messageCardDetails = {
 			name: "",
 			avatarSrc: "",
@@ -1057,9 +1068,11 @@ const ConversationIdPage = ({
 
 		switch (displayedMessage?.role) {
 			case "assistant":
-				messageCardDetails.name = "ArabyBuddy";
-				messageCardDetails.avatarSrc = "/assets/arabybuddy.svg";
-				messageCardDetails.avatarAlt = "ArabyBuddy avatar";
+				messageCardDetails.name = chatPartner.flag
+					? `${chatPartner.name}`
+					: chatPartner.name;
+				messageCardDetails.avatarSrc = chatPartner.image;
+				messageCardDetails.avatarAlt = chatPartner.name;
 				break;
 			case "user":
 			default:
@@ -1072,7 +1085,11 @@ const ConversationIdPage = ({
 		const menuContent = isPlaying ? (
 			<SpeakerWaveIcon className="w-5 h-5 sm:w-6 sm:h-6 text-slate-400 transition ease-in-out" />
 		) : (
-			<div />
+			<DialectBadge
+				className="self-start text-md"
+				dialect={chatDialect}
+				shorten
+			/>
 		);
 
 		return (
@@ -1102,6 +1119,8 @@ const ConversationIdPage = ({
 		messageCardInnerContent,
 		isLoading,
 		isNewChat,
+		chatPartner,
+		chatDialect,
 	]);
 
 	const messageIndexContent = useMemo(
@@ -1190,7 +1209,7 @@ const ConversationIdPage = ({
 				setOpen={setDrawerOpen}
 				words={dictionaryWords}
 			/>
-			<SupportCard className="absolute bottom-0 right-0" />
+			<SupportCard className="fixed bottom-0 right-0" />
 		</div>
 	);
 };

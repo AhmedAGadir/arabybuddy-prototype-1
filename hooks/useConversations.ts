@@ -4,6 +4,7 @@ import { IConversation } from "@/lib/database/models/conversation.model";
 import { useUser } from "@clerk/nextjs";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLogger } from "./useLogger";
+import { ArabicDialect } from "@/types/types";
 
 const useConversations = () => {
 	const logger = useLogger({ label: "useConversations", color: "#55ff37" });
@@ -26,14 +27,22 @@ const useConversations = () => {
 	});
 
 	const createConversationMutation = useMutation({
-		mutationFn: async () => {
-			logger.log("creating conversation...");
-			// throw new Error("test");
+		mutationFn: async ({
+			chatPartnerId,
+			chatDialect,
+		}: {
+			chatPartnerId: string;
+			chatDialect: ArabicDialect;
+		}) => {
+			logger.log(
+				`creating conversation with ${chatPartnerId} in ${chatDialect}...`
+			);
 			const response = await fetch(`/api/conversations`, {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
 				},
+				body: JSON.stringify({ chatPartnerId, chatDialect }),
 			});
 			if (!response.ok) {
 				throw new Error("Network response was not ok");
@@ -56,8 +65,17 @@ const useConversations = () => {
 		// TODO: cancel outgoing fetches when creating a conversation
 	});
 
-	const createConversation = async () => {
-		return await createConversationMutation.mutateAsync();
+	const createConversation = async ({
+		chatPartnerId,
+		chatDialect,
+	}: {
+		chatPartnerId: string;
+		chatDialect: ArabicDialect;
+	}) => {
+		return await createConversationMutation.mutateAsync({
+			chatPartnerId,
+			chatDialect,
+		});
 	};
 
 	const isCreatingConversation = createConversationMutation.isPending;
@@ -151,7 +169,7 @@ const useConversations = () => {
 		return await updateConversationMutation.mutateAsync(updatedConversation);
 	};
 
-	const conversations = data?.conversations as IConversation[];
+	const conversations = (data?.conversations ?? []) as IConversation[];
 
 	return {
 		isPending,
