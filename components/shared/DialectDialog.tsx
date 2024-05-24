@@ -58,7 +58,7 @@ const DialectDialog = ({
 										chatPartner.id !== "arabybuddy" &&
 										"ring-2 ring-slate-300 ring-offset-4 ring-offset-slate-50"
 									}`,
-									flag: "text-xl",
+									flag: "text-2xl",
 								}}
 							/>
 						</div>
