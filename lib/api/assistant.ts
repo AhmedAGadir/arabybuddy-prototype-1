@@ -1,6 +1,7 @@
 import OpenAI from "openai";
 import { IMessage } from "../database/models/message.model";
-import { IPreferences } from "../database/models/preferences.model";
+import { AssistantPayload } from "@/app/api/chat/assistant/route";
+import { chatPartners } from "@/lib/chatPartners";
 
 export type OpenAIMessage = Pick<IMessage, "role" | "content">;
 
@@ -15,66 +16,64 @@ export const completionMode = {
 export type CompletionMode =
 	(typeof completionMode)[keyof typeof completionMode];
 
-export const getSystemMessage = ({
-	mode,
-	firstName,
-	preferences,
-}: {
-	mode: CompletionMode;
-	firstName: string | undefined;
-	preferences: {
-		arabic_dialect: IPreferences["arabic_dialect"];
-		assistant_language_level: IPreferences["assistant_language_level"];
-		assistant_tone: IPreferences["assistant_tone"];
-		assistant_detail_level: IPreferences["assistant_detail_level"];
-		user_interests: IPreferences["user_interests"];
-	};
-}) => {
+export const getSystemMessage = (payload: AssistantPayload) => {
+	const {
+		mode,
+		chat: { chatPartnerId, chatDialect },
+		user: { firstName },
+		preferences: {
+			assistant_language_level,
+			assistant_detail_level,
+			user_interests,
+		},
+	} = payload;
+
 	if (mode === completionMode.DICTIONARY) {
 		let systemMessage = "";
-		systemMessage += `You are an online arabic dictionary than translates from the ${preferences.arabic_dialect} dialect into either english or modern standard arabic depending on the input.`;
-
+		systemMessage += `You are an online arabic dictionary than translates from the ${chatDialect} dialect into either english or modern standard arabic depending on the input.`;
 		systemMessage += `The input is a JavaScript object with the following format: {word: "string", context: "string", monolingual: boolean}.`;
-
 		systemMessage += `if monolingual is true, you should return the definition in modern standard arabic. Otherwise, you should return the definition in English.`;
-
 		systemMessage += `You must return a JSON object that includes:`;
-
 		systemMessage += `"word" property with the input word as a string.`;
-
 		systemMessage += `"definitions" property containing different meanings for the word as an array of strings.`;
-
 		systemMessage += `"context" property with a 1-2 sentence explanation of what the word means in the context of the input.`;
-
 		systemMessage += `Output should be a raw JSON object with no additional text, comments, or formatting.`;
-
 		return systemMessage;
 	}
 
-	let systemMessage =
-		"You are 'ArabyBuddy', a friendly Arabic language tutor. ";
-
 	if (mode === completionMode.TRANSLATE) {
-		systemMessage += `Our goal is to help the user learn Arabic and have engaging conversations. You should translate the last message from the ${preferences.arabic_dialect} dialect into english.`;
+		let systemMessage = "";
+		systemMessage += `You are an online arabic translation generator. Translate the last message from the ${chatDialect} dialect into english. `;
+		systemMessage += `Output should be the translated text only, with no additional text, comments, or formatting. `;
 		return systemMessage;
 	}
 
 	if (mode === completionMode.REPHRASE) {
-		systemMessage += `Our goal is to help the user learn Arabic and have engaging conversations. You should rephrase the last message to make it sound more natural and flow better in the ${preferences.arabic_dialect} dialect. Rephrase it from the perspective of the user.`;
+		let systemMessage = "";
+		systemMessage += `You are an online arabic language tutor that rephrases user input in the ${chatDialect} dialect so that it sounds more natural, flows better and expresses ideas in a way that is more typical of a native speaker. `;
+		systemMessage += `Output should be the rephrased text only, with no additional text, comments, or formatting. `;
 		return systemMessage;
 	}
 
-	if (firstName) {
-		systemMessage += `You are here to converse with ${firstName}. make sure you include their name in your initial greeting.`;
+	const chatPartner = chatPartners.find(
+		(partner) => partner.id === chatPartnerId
+	);
+
+	if (!chatPartner) {
+		throw new Error("Chat partner not found");
 	}
 
-	systemMessage += `Offer engaging topics of conversation based on the user's interests.`;
+	let systemMessage = `You are 'ArabyBuddy', an online Arabic language tutor. You take on the role of a native Arabic speaker who is here to help users practice their Arabic language skills.`;
 
-	//  dialect and language level
-	systemMessage += `Speak in ${preferences.arabic_dialect} dialect and at a ${preferences.assistant_language_level} language level.`;
-
-	// tone
-	systemMessage += `Your responses should be ${preferences.assistant_tone}.`;
+	systemMessage += `You are conversing in the ${chatDialect} dialect.`;
+	systemMessage += `For this conversation, you are role playing as ${chatPartner.name}, here is your personality profile: ${chatPartner.background}`;
+	systemMessage += `Some of the themes your role covers are: ${chatPartner.themes.join(
+		", "
+	)}`;
+	systemMessage += `Your current location is ${chatPartner.location}.`;
+	systemMessage += `You are conversing with ${
+		firstName ?? "a user"
+	} who speaks ${chatDialect} dialect at a ${assistant_language_level} language level.`;
 
 	// detail level
 	const detailLevelWordCount = {
@@ -82,18 +81,15 @@ export const getSystemMessage = ({
 		medium: [70, 120],
 		high: [120, 160],
 	};
-	systemMessage += `Aim for between ${
-		detailLevelWordCount[preferences.assistant_detail_level][0]
-	} to ${
-		detailLevelWordCount[preferences.assistant_detail_level][1]
-	} words per response. `;
+
+	systemMessage += `Aim for between ${detailLevelWordCount[assistant_detail_level][0]} to ${detailLevelWordCount[assistant_detail_level][1]} words in your responses. `;
 
 	// interests
-	if (preferences.user_interests.length > 0) {
-		systemMessage += `Consider the user's interests such as ${preferences.user_interests.join(
-			", "
-		)} when choosing topics. `;
-	}
+	// if (preferences.user_interests.length > 0) {
+	// 	systemMessage += `Consider the user's interests such as ${user_interests.join(
+	// 		", "
+	// 	)} when choosing topics. `;
+	// }
 
 	return systemMessage;
 };

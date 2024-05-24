@@ -141,6 +141,11 @@ const ChatPage = () => {
 			: []
 	);
 
+	const clearDialectFilters = () => {
+		setFilteredDialects([]);
+		localStorage?.removeItem("filteredDialects");
+	};
+
 	const onDialectFilterChange = useCallback(
 		(dialect: ArabicDialect, pressed: boolean) => {
 			const nextFiltered = pressed
@@ -240,7 +245,7 @@ const ChatPage = () => {
 								Themes
 							</p>
 							<div className="flex flex-wrap gap-2">
-								{partner.conversationTopics.map((topic) => (
+								{partner.themes.map((topic) => (
 									<Badge key={topic} variant="secondary">
 										{topic}
 									</Badge>
@@ -327,9 +332,9 @@ const ChatPage = () => {
 				))}
 				<div className="px-2 mt-2">
 					<Button
-						variant="outline"
+						variant="secondary"
 						className="w-full"
-						onClick={() => setFilteredDialects([])}
+						onClick={clearDialectFilters}
 						disabled={filteredDialects.length === 0}
 					>
 						Clear Filters

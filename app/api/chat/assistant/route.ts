@@ -19,14 +19,18 @@ const openai = new OpenAI({
 	apiKey: process.env.OPENAI_API_KEY,
 });
 
-type RequestBody = {
+export type AssistantPayload = {
 	messages: OpenAIMessage[];
 	mode: CompletionMode;
-	firstName: string | undefined;
+	chat: {
+		chatPartnerId: string;
+		chatDialect: string;
+	};
+	user: {
+		firstName: string | undefined;
+	};
 	preferences: {
-		arabic_dialect: IPreferences["arabic_dialect"];
 		assistant_language_level: IPreferences["assistant_language_level"];
-		assistant_tone: IPreferences["assistant_tone"];
 		assistant_detail_level: IPreferences["assistant_detail_level"];
 		user_interests: IPreferences["user_interests"];
 	};
@@ -36,12 +40,13 @@ export async function POST(req: Request, res: Response) {
 	try {
 		auth().protect();
 
-		const { messages, mode, firstName, preferences }: RequestBody =
-			await req.json();
+		const payload: AssistantPayload = await req.json();
 
-		console.log(`completion mode: ${mode}`);
+		console.log(`payload: ${payload}`);
 
-		const systemMessage = getSystemMessage({ mode, preferences, firstName });
+		const { messages } = payload;
+
+		const systemMessage = getSystemMessage(payload);
 
 		console.log("systemMessage:", systemMessage);
 
