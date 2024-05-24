@@ -5,6 +5,9 @@ import { useServerlessRequest } from "./useServerlessRequest";
 import { usePreferences } from "./usePreferences";
 import { DEFAULT_USER_PREFERENCES } from "@/lib/database/models/preferences.model";
 import _ from "lodash";
+import { ArabicDialect } from "@/types/types";
+import { TextToSpeechPayload } from "@/app/api/chat/text-to-speech/route";
+import { ChatPartnerId } from "@/lib/chatPartners";
 
 const useAudioService = () => {
 	const logger = useLogger({ label: "AudioService", color: "#87de74" });
@@ -20,7 +23,7 @@ const useAudioService = () => {
 		async (audioBlob: Blob) => {
 			try {
 				const base64Audio = await blobToBase64(audioBlob);
-				const params = {
+				const payload = {
 					audio: {
 						base64Audio,
 						type: audioBlob.type.split("/")[1],
@@ -28,10 +31,10 @@ const useAudioService = () => {
 					},
 				};
 
-				logger.log("making request to: /api/chat/speech-to-text...", params);
+				logger.log("making request to: /api/chat/speech-to-text...", payload);
 				const res = await makeServerlessRequestSpeechToText(
 					"/api/chat/speech-to-text",
-					params
+					payload
 				);
 
 				const data = await res.json();
@@ -61,35 +64,41 @@ const useAudioService = () => {
 	} = useServerlessRequest();
 
 	const textToSpeech = useCallback(
-		async (content: string) => {
+		async (
+			content: string,
+			params: {
+				chatPartnerId: ChatPartnerId;
+				chatDialect: ArabicDialect;
+			}
+		) => {
 			try {
-				const params = {
-					content,
-					voice_customization: {
-						arabic_dialect:
-							preferences.arabic_dialect ??
-							DEFAULT_USER_PREFERENCES.arabic_dialect,
-						assistant_gender:
-							preferences.assistant_gender ??
-							DEFAULT_USER_PREFERENCES.assistant_gender,
-						voice_stability:
-							preferences.voice_stability ??
-							DEFAULT_USER_PREFERENCES.voice_stability,
-						voice_similarity_boost:
-							preferences.voice_similarity_boost ??
-							DEFAULT_USER_PREFERENCES.voice_similarity_boost,
-						voice_style:
-							preferences.voice_style ?? DEFAULT_USER_PREFERENCES.voice_style,
-						voice_use_speaker_boost:
-							preferences.voice_use_speaker_boost ??
-							DEFAULT_USER_PREFERENCES.voice_use_speaker_boost,
+				const payload: TextToSpeechPayload = {
+					text: content,
+					chat: {
+						chatPartnerId: params.chatPartnerId,
+						chatDialect: params.chatDialect,
+					},
+					preferences: {
+						voice_customization: {
+							voice_stability:
+								preferences.voice_stability ??
+								DEFAULT_USER_PREFERENCES.voice_stability,
+							voice_similarity_boost:
+								preferences.voice_similarity_boost ??
+								DEFAULT_USER_PREFERENCES.voice_similarity_boost,
+							voice_style:
+								preferences.voice_style ?? DEFAULT_USER_PREFERENCES.voice_style,
+							voice_use_speaker_boost:
+								preferences.voice_use_speaker_boost ??
+								DEFAULT_USER_PREFERENCES.voice_use_speaker_boost,
+						},
 					},
 				};
-				logger.log("making request to: /api/chat/text-to-speech...");
+				logger.log("making request to: /api/chat/text-to-speech...", payload);
 
 				const res = await makeServerlessRequestTextToSpeech(
 					"/api/chat/text-to-speech",
-					params
+					payload
 				);
 				if (!res.ok) {
 					throw new Error(`HTTP error status: ${res.status}`);

@@ -5,6 +5,7 @@ import { useUser } from "@clerk/nextjs";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLogger } from "./useLogger";
 import { ArabicDialect } from "@/types/types";
+import { ChatPartnerId } from "@/lib/chatPartners";
 
 const useConversations = () => {
 	const logger = useLogger({ label: "useConversations", color: "#55ff37" });
@@ -31,7 +32,7 @@ const useConversations = () => {
 			chatPartnerId,
 			chatDialect,
 		}: {
-			chatPartnerId: string;
+			chatPartnerId: ChatPartnerId;
 			chatDialect: ArabicDialect;
 		}) => {
 			logger.log(
@@ -69,7 +70,7 @@ const useConversations = () => {
 		chatPartnerId,
 		chatDialect,
 	}: {
-		chatPartnerId: string;
+		chatPartnerId: ChatPartnerId;
 		chatDialect: ArabicDialect;
 	}) => {
 		return await createConversationMutation.mutateAsync({

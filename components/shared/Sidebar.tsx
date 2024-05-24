@@ -337,7 +337,7 @@ export default function Sidebar({ onClick }: { onClick?: () => void }) {
 				)}
 			</Button>
 		);
-	}, [isPending, isCreatingConversation]);
+	}, [isPending, newChatHandler, isCreatingConversation]);
 
 	return (
 		<aside

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { useConversations } from "@/hooks/useConversations";
 import { useLogger } from "@/hooks/useLogger";
-import { ChatPartner, chatPartners } from "@/lib/chatPartners";
+import { ChatPartner, ChatPartnerId, chatPartners } from "@/lib/chatPartners";
 import { cn } from "@/lib/utils";
 import { useUser } from "@clerk/nextjs";
 import {
@@ -70,7 +70,9 @@ const ChatPage = () => {
 		[pathname, router, searchParams]
 	);
 
-	const newChatPartnerId = searchParams.get("newChatPartnerId");
+	const newChatPartnerId = searchParams.get(
+		"newChatPartnerId"
+	) as ChatPartnerId | null;
 
 	const newChatPartnerInd = chatPartners.findIndex(
 		(partner) => partner.id === newChatPartnerId
@@ -84,7 +86,7 @@ const ChatPage = () => {
 		chatPartnerId,
 		chatDialect,
 	}: {
-		chatPartnerId: string;
+		chatPartnerId: ChatPartnerId;
 		chatDialect: ArabicDialect;
 	}) => {
 		try {
@@ -105,7 +107,7 @@ const ChatPage = () => {
 		}
 	};
 
-	const startChatHandler = async (partnerId: string) => {
+	const startChatHandler = async (partnerId: ChatPartnerId) => {
 		const chatPartnerInd = chatPartners.findIndex(
 			(partner) => partner.id === partnerId
 		);

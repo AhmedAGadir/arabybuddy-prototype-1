@@ -8,6 +8,8 @@ import {
 	getSystemMessage,
 	openAiChatCompletionStream,
 } from "@/lib/api/assistant";
+import { ChatPartnerId } from "@/lib/chatPartners";
+import { ArabicDialect } from "@/types/types";
 
 export const maxDuration = 60; // seconds
 
@@ -23,8 +25,8 @@ export type AssistantPayload = {
 	messages: OpenAIMessage[];
 	mode: CompletionMode;
 	chat: {
-		chatPartnerId: string;
-		chatDialect: string;
+		chatPartnerId: ChatPartnerId;
+		chatDialect: ArabicDialect;
 	};
 	user: {
 		firstName: string | undefined;

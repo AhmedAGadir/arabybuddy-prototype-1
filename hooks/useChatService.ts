@@ -9,6 +9,8 @@ import {
 } from "@/lib/api/assistant";
 import { useServerlessRequest } from "./useServerlessRequest";
 import { AssistantPayload } from "@/app/api/chat/assistant/route";
+import { ArabicDialect } from "@/types/types";
+import { ChatPartnerId } from "@/lib/chatPartners";
 
 const useChatService = () => {
 	const logger = useLogger({ label: "ChatService", color: "#fe7de9" });
@@ -23,8 +25,8 @@ const useChatService = () => {
 		messages: OpenAIMessage[],
 		params: {
 			mode: CompletionMode;
-			chatPartnerId: string;
-			chatDialect: string;
+			chatPartnerId: ChatPartnerId;
+			chatDialect: ArabicDialect;
 		}
 	) {
 		try {
@@ -96,8 +98,8 @@ const useChatService = () => {
 		messageHistory: OpenAIMessage[],
 		params: {
 			mode?: CompletionMode;
-			chatPartnerId: string;
-			chatDialect: string;
+			chatPartnerId: ChatPartnerId;
+			chatDialect: ArabicDialect;
 		}
 	) =>
 		makeChatCompletionGenerator(messageHistory, {

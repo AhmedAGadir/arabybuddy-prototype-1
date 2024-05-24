@@ -3,7 +3,21 @@
 
 import { ARABIC_DIALECTS, ArabicDialect } from "@/types/types";
 
-const prompts: { id: string; prompt: string }[] = [
+export const chatPartnerId = {
+	layla: "layla",
+	mustafa: "mustafa",
+	abuKhalid: "abu-khalid",
+	fatima: "fatima",
+	youssef: "youssef",
+	sofia: "sofia",
+	noura: "noura",
+	juha: "juha",
+	arabybuddy: "arabybuddy",
+} as const;
+
+export type ChatPartnerId = (typeof chatPartnerId)[keyof typeof chatPartnerId];
+
+const prompts: { id: ChatPartnerId; prompt: string }[] = [
 	{
 		id: "layla",
 		prompt:
@@ -47,7 +61,7 @@ const prompts: { id: string; prompt: string }[] = [
 ];
 
 export type ChatPartner = {
-	id: string;
+	id: ChatPartnerId;
 	name: string;
 	role: string;
 	background: string;

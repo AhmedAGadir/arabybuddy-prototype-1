@@ -469,7 +469,11 @@ const ConversationIdPage = ({
 			setActiveTask(task.TEXT_TO_SPEECH);
 
 			const { base64Audio, wordData } = await textToSpeech(
-				completionMessage.content
+				completionMessage.content,
+				{
+					chatPartnerId,
+					chatDialect,
+				}
 			);
 
 			wordTimestampsRef.current = wordData;
@@ -614,7 +618,11 @@ const ConversationIdPage = ({
 				setActiveTask(task.TEXT_TO_SPEECH);
 
 				const { base64Audio, wordData } = await textToSpeech(
-					completionMessage.content
+					completionMessage.content,
+					{
+						chatPartnerId,
+						chatDialect,
+					}
 				);
 
 				wordTimestampsRef.current = wordData;
@@ -674,6 +682,10 @@ const ConversationIdPage = ({
 
 	const replayBtnHandler = useCallback(async () => {
 		try {
+			if (!chatPartnerId || !chatDialect) {
+				throw new Error("chatPartnerId or chatDialect is null");
+			}
+
 			if (!displayedMessage) {
 				throw new Error("displayedMessage is null");
 			}
@@ -683,7 +695,11 @@ const ConversationIdPage = ({
 			setActiveTask(task.TEXT_TO_SPEECH_REPLAY);
 
 			const { base64Audio, wordData } = await textToSpeech(
-				displayedMessage.content
+				displayedMessage.content,
+				{
+					chatPartnerId,
+					chatDialect,
+				}
 			);
 
 			setActiveTask(null);
@@ -704,6 +720,8 @@ const ConversationIdPage = ({
 		}
 	}, [
 		audioElementInitialized,
+		chatDialect,
+		chatPartnerId,
 		displayedMessage,
 		handleError,
 		initAudioElement,
@@ -782,7 +800,11 @@ const ConversationIdPage = ({
 				setActiveTask(task.TEXT_TO_SPEECH);
 
 				const { base64Audio, wordData } = await textToSpeech(
-					completionMessage.content
+					completionMessage.content,
+					{
+						chatPartnerId,
+						chatDialect,
+					}
 				);
 
 				wordTimestampsRef.current = wordData;
@@ -890,7 +912,11 @@ const ConversationIdPage = ({
 			setActiveTask(task.TEXT_TO_SPEECH);
 
 			const { base64Audio, wordData } = await textToSpeech(
-				completionMessage.translation!
+				completionMessage.translation!,
+				{
+					chatPartnerId,
+					chatDialect,
+				}
 			);
 
 			wordTimestampsRef.current = wordData;

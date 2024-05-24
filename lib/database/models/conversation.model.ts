@@ -1,10 +1,11 @@
+import { ChatPartnerId } from "@/lib/chatPartners";
 import { ArabicDialect } from "@/types/types";
 import { Schema, model, models } from "mongoose";
 
 export interface IConversation extends Document {
 	_id: string;
 	clerkId: string;
-	chatPartnerId: string;
+	chatPartnerId: ChatPartnerId;
 	chatDialect: ArabicDialect;
 	createdAt: Date;
 	lastMessage: string;
