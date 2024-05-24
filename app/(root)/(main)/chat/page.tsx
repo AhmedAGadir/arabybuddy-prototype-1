@@ -195,7 +195,7 @@ const ChatPage = () => {
 			>
 				<Card
 					className={cn(
-						"w-full sm:w-[300px] bg-background flex flex-col relative transition-all ease-in duration-50 h-full",
+						"w-full md:w-[300px] bg-background flex flex-col relative transition-all ease-in duration-50 h-full",
 						!filtered && "opacity-40 filter blur-md"
 					)}
 				>
