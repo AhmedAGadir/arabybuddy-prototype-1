@@ -30,13 +30,6 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
-import {
 	Popover,
 	PopoverContent,
 	PopoverTrigger,
@@ -51,16 +44,7 @@ import { BoltSlashIcon } from "@heroicons/react/20/solid";
 import { DialectBadge } from "@/components/shared/DialectBadge";
 import ChatPartnerAvatar from "@/components/shared/ChatPartnerAvatar";
 
-import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-	DialogTrigger,
-} from "@/components/ui/dialog";
-import { update } from "lodash";
+import DialectDialog from "@/components/shared/DialectDialog";
 
 const ChatPage = () => {
 	const logger = useLogger({ label: "ChatPage", color: "#fe7de9" });
@@ -86,13 +70,7 @@ const ChatPage = () => {
 		[pathname, router, searchParams]
 	);
 
-	const [dialogOpen, setDialogOpen] = useState(false);
-
-	const closeDialog = () => {
-		updateQueryStr("newChatPartnerId", "");
-		updateQueryStr("newChatDialect", "");
-		setDialogOpen(false);
-	};
+	const [dialectDialogOpen, setDialectDialogOpen] = useState(false);
 
 	const createAndOpenChat = async ({
 		chatPartnerId,
@@ -139,7 +117,7 @@ const ChatPage = () => {
 
 		if (chatPartner.dialects.length > 1) {
 			updateQueryStr("newChatPartnerId", partnerId);
-			setDialogOpen(true);
+			setDialectDialogOpen(true);
 			return;
 		}
 
@@ -263,18 +241,6 @@ const ChatPage = () => {
 						</div>
 					</CardContent>
 					<CardFooter className="flex gap-2">
-						{/* <Select defaultValue={partner.dialects[1]}>
-							<SelectTrigger className="w-[180px]">
-								<SelectValue placeholder="Select Dialect" />
-							</SelectTrigger>
-							<SelectContent>
-								{partner.dialects.map((dialect) => (
-									<SelectItem key={dialect} value={dialect}>
-										{dialect}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select> */}
 						<Button
 							onClick={() => startChatHandler(partner.id)}
 							disabled={!filtered || isCreatingConversation || isPending}
@@ -388,7 +354,6 @@ const ChatPage = () => {
 		</Alert>
 	);
 
-	const newChatDialect = searchParams.get("newChatDialect");
 	const newChatPartnerId = searchParams.get("newChatPartnerId");
 
 	const newChatPartnerInd = chatPartners.findIndex(
@@ -396,79 +361,6 @@ const ChatPage = () => {
 	);
 
 	const newChatPartner = chatPartners[newChatPartnerInd];
-
-	const DialectDialogContent = newChatPartner && (
-		<Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-			<DialogContent>
-				<DialogHeader>
-					<DialogTitle>Choose a dialect</DialogTitle>
-				</DialogHeader>
-				<DialogDescription>
-					<div className="flex flex-col gap-5 justify-center items-center">
-						<div className="w-auto">
-							<ChatPartnerAvatar
-								chatPartner={newChatPartner}
-								classes={{
-									image: `w-32 h-32 ${
-										newChatPartner.id !== "arabybuddy" &&
-										"ring-2 ring-slate-300 ring-offset-4 ring-offset-slate-50"
-									}`,
-									flag: "text-xl",
-								}}
-							/>
-						</div>
-						<p className="text-center">
-							<span className="font-semibold">{newChatPartner.name}</span>{" "}
-							speaks a few different dialects. Choose one to start a
-							conversation.
-						</p>
-						<Select
-							onValueChange={(value) => {
-								updateQueryStr("newChatDialect", value);
-							}}
-						>
-							<SelectTrigger className="w-full">
-								<SelectValue placeholder="Select Dialect" />
-							</SelectTrigger>
-							<SelectContent>
-								{newChatPartner.dialects.map((dialect) => (
-									<SelectItem key={dialect} value={dialect}>
-										{dialect}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
-					</div>
-				</DialogDescription>
-				<DialogFooter className="flex flex-col-reverse sm:flex-row gap-2">
-					<Button
-						variant="outline"
-						className="mx-auto w-full"
-						onClick={closeDialog}
-						disabled={isCreatingConversation}
-					>
-						Cancel
-					</Button>
-					<Button
-						variant="indigo"
-						className="mx-auto w-full"
-						disabled={
-							!newChatPartner || !newChatDialect || isCreatingConversation
-						}
-						onClick={() => {
-							createAndOpenChat({
-								chatPartnerId: newChatPartnerId!,
-								chatDialect: newChatDialect as ArabicDialect,
-							});
-						}}
-					>
-						{isCreatingConversation && <MoonLoader size={20} color="#fff" />}
-						{!isCreatingConversation && "Start Conversation"}
-					</Button>
-				</DialogFooter>
-			</DialogContent>
-		</Dialog>
-	);
 
 	return (
 		<div className="py-10 bg-gray-50 flex-1 max-h-screen overflow-y-scroll relative">
@@ -493,7 +385,21 @@ const ChatPage = () => {
 					</div>
 				</div>
 			</main>
-			{DialectDialogContent}
+			{newChatPartner && (
+				<DialectDialog
+					key={newChatPartnerId}
+					open={dialectDialogOpen}
+					onOpenChange={setDialectDialogOpen}
+					chatPartner={newChatPartner}
+					onDialectSelected={(dialect) => {
+						createAndOpenChat({
+							chatPartnerId: newChatPartnerId!,
+							chatDialect: dialect,
+						});
+					}}
+					isPending={isCreatingConversation}
+				/>
+			)}
 			<SupportCard className="fixed bottom-0 right-0" />
 		</div>
 	);
