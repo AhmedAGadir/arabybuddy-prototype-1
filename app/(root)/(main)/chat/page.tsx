@@ -70,6 +70,14 @@ const ChatPage = () => {
 		[pathname, router, searchParams]
 	);
 
+	const newChatPartnerId = searchParams.get("newChatPartnerId");
+
+	const newChatPartnerInd = chatPartners.findIndex(
+		(partner) => partner.id === newChatPartnerId
+	);
+
+	const newChatPartner = chatPartners[newChatPartnerInd];
+
 	const [dialectDialogOpen, setDialectDialogOpen] = useState(false);
 
 	const createAndOpenChat = async ({
@@ -187,7 +195,7 @@ const ChatPage = () => {
 			>
 				<Card
 					className={cn(
-						"w-[300px] bg-background flex flex-col relative transition-all ease-in duration-50 h-full",
+						"w-full sm:w-[300px] bg-background flex flex-col relative transition-all ease-in duration-50 h-full",
 						!filtered && "opacity-40 filter blur-md"
 					)}
 				>
@@ -244,8 +252,9 @@ const ChatPage = () => {
 						<Button
 							onClick={() => startChatHandler(partner.id)}
 							disabled={!filtered || isCreatingConversation || isPending}
-							variant="outline"
-							className="w-full border-indigo-600 text-indigo-600 hover:text-secondary hover:bg-indigo-600"
+							variant="indigo"
+							size="lg"
+							className="w-full"
 						>
 							{isCreatingConversation && <MoonLoader size={20} color="#fff" />}
 							{!isCreatingConversation && <>Start Chat</>}
@@ -353,14 +362,6 @@ const ChatPage = () => {
 			</AlertDescription>
 		</Alert>
 	);
-
-	const newChatPartnerId = searchParams.get("newChatPartnerId");
-
-	const newChatPartnerInd = chatPartners.findIndex(
-		(partner) => partner.id === newChatPartnerId
-	);
-
-	const newChatPartner = chatPartners[newChatPartnerInd];
 
 	return (
 		<div className="py-10 bg-gray-50 flex-1 max-h-screen overflow-y-scroll relative">
