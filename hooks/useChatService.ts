@@ -67,7 +67,7 @@ const useChatService = () => {
 
 			let role: "assistant" | "user";
 
-			if (params.mode === completionMode.DEFAULT) {
+			if (params.mode === "DEFAULT") {
 				role = "assistant";
 			} else {
 				role = messages[messages.length - 1].role;
@@ -103,7 +103,7 @@ const useChatService = () => {
 		}
 	) =>
 		makeChatCompletionGenerator(messageHistory, {
-			mode: params.mode ?? completionMode.DEFAULT,
+			mode: params.mode ?? "DEFAULT",
 			chatPartnerId: params.chatPartnerId,
 			chatDialect: params.chatDialect,
 		});

@@ -28,7 +28,7 @@ export const getSystemMessage = (payload: AssistantPayload) => {
 		},
 	} = payload;
 
-	if (mode === completionMode.DICTIONARY) {
+	if (mode === "DICTIONARY") {
 		let systemMessage = "";
 		systemMessage += `You are an online arabic dictionary than translates from the ${chatDialect} dialect into either english or modern standard arabic depending on the input.`;
 		systemMessage += `The input is a JavaScript object with the following format: {word: "string", context: "string", monolingual: boolean}.`;
@@ -41,14 +41,14 @@ export const getSystemMessage = (payload: AssistantPayload) => {
 		return systemMessage;
 	}
 
-	if (mode === completionMode.TRANSLATE) {
+	if (mode === "TRANSLATE") {
 		let systemMessage = "";
 		systemMessage += `You are an online arabic translation generator. Translate the last message from the ${chatDialect} dialect into english. `;
 		systemMessage += `Output should be the translated text only, with no additional text, comments, or formatting. `;
 		return systemMessage;
 	}
 
-	if (mode === completionMode.REPHRASE) {
+	if (mode === "REPHRASE") {
 		let systemMessage = "";
 		systemMessage += `You are an online arabic language tutor that rephrases user input in the ${chatDialect} dialect so that it sounds more natural, flows better and expresses ideas in a way that is more typical of a native speaker. `;
 		systemMessage += `Output should be the rephrased text only, with no additional text, comments, or formatting. `;

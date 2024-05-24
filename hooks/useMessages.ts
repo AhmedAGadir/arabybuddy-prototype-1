@@ -159,7 +159,7 @@ const useMessages = ({ conversationId }: { conversationId: string }) => {
 			// Snapshot the previous value
 			const previousMessages = queryClient.getQueryData(queryKey) ?? [];
 
-			const isTranslating = options.mode === completionMode.TRANSLATE;
+			const isTranslating = options.mode === "TRANSLATE";
 
 			// Optimistically update to the new value
 			logger.log("optimistically updating messages...");
@@ -190,7 +190,7 @@ const useMessages = ({ conversationId }: { conversationId: string }) => {
 
 	const updateMessage = async (
 		message: Pick<IMessage, "_id" | "content"> & Partial<IMessage>,
-		options: { mode: CompletionMode } = { mode: completionMode.DEFAULT }
+		options: { mode: CompletionMode } = { mode: "DEFAULT" }
 	) => {
 		return await updateMessageMutation.mutateAsync({ message, options });
 	};

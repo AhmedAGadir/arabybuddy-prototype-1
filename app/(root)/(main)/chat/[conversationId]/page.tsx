@@ -304,13 +304,13 @@ const ConversationIdPage = ({
 	const isProcessing = STATUS === status.PROCESSING;
 	const isIdle = STATUS === status.IDLE;
 
-	const isDoingSpeechToText = activeTask === task.SPEECH_TO_TEXT;
-	const isDoingAssistant = activeTask === task.ASSISTANT;
-	const isDoingAssistantRegenerate = activeTask === task.ASSISTANT_REGENERATE;
-	const isDoingAssistantRephrase = activeTask === task.ASSISTANT_REPHRASE;
-	const isDoingAssistantTranslate = activeTask === task.ASSISTANT_TRANSLATE;
-	const isDoingTextToSpeech = activeTask === task.TEXT_TO_SPEECH;
-	const isDoingTextToSpeechReplay = activeTask === task.TEXT_TO_SPEECH_REPLAY;
+	const isDoingSpeechToText = activeTask === "SPEECH_TO_TEXT";
+	const isDoingAssistant = activeTask === "ASSISTANT";
+	const isDoingAssistantRegenerate = activeTask === "ASSISTANT_REGENERATE";
+	const isDoingAssistantRephrase = activeTask === "ASSISTANT_REPHRASE";
+	const isDoingAssistantTranslate = activeTask === "ASSISTANT_TRANSLATE";
+	const isDoingTextToSpeech = activeTask === "TEXT_TO_SPEECH";
+	const isDoingTextToSpeechReplay = activeTask === "TEXT_TO_SPEECH_REPLAY";
 
 	const instructions: {
 		[key in Status]: string[];
@@ -362,17 +362,17 @@ const ConversationIdPage = ({
 	const abortProcessingBtnHandler = useCallback(() => {
 		if (!isProcessing) return;
 		switch (activeTask) {
-			case task.SPEECH_TO_TEXT:
+			case "SPEECH_TO_TEXT":
 				abortSpeechToText();
 				break;
-			case task.TEXT_TO_SPEECH:
-			case task.TEXT_TO_SPEECH_REPLAY:
+			case "TEXT_TO_SPEECH":
+			case "TEXT_TO_SPEECH_REPLAY":
 				abortTextToSpeech();
 				break;
-			case task.ASSISTANT:
-			case task.ASSISTANT_REGENERATE:
-			case task.ASSISTANT_REPHRASE:
-			case task.ASSISTANT_TRANSLATE:
+			case "ASSISTANT":
+			case "ASSISTANT_REGENERATE":
+			case "ASSISTANT_REPHRASE":
+			case "ASSISTANT_TRANSLATE":
 				abortMakeChatCompletionStream();
 				break;
 			default:
@@ -438,7 +438,7 @@ const ConversationIdPage = ({
 
 			startProgressBarInterval();
 
-			setActiveTask(task.ASSISTANT);
+			setActiveTask("ASSISTANT");
 
 			const completionStream = await makeChatCompletionStream([], {
 				chatPartnerId,
@@ -466,7 +466,7 @@ const ConversationIdPage = ({
 				await upsertMessageInCache(completionMessage);
 			}
 
-			setActiveTask(task.TEXT_TO_SPEECH);
+			setActiveTask("TEXT_TO_SPEECH");
 
 			const { base64Audio, wordData } = await textToSpeech(
 				completionMessage.content,
@@ -558,7 +558,7 @@ const ConversationIdPage = ({
 				startProgressBarInterval();
 
 				// TODO: sanitize transcription, no input should be empty
-				setActiveTask(task.SPEECH_TO_TEXT);
+				setActiveTask("SPEECH_TO_TEXT");
 
 				const { transcription } = await speechToText(audioBlob);
 
@@ -577,7 +577,7 @@ const ConversationIdPage = ({
 					content: transcription,
 				});
 
-				setActiveTask(task.ASSISTANT);
+				setActiveTask("ASSISTANT");
 
 				const completionStream = await makeChatCompletionStream(
 					[
@@ -615,7 +615,7 @@ const ConversationIdPage = ({
 					await upsertMessageInCache(completionMessage);
 				}
 
-				setActiveTask(task.TEXT_TO_SPEECH);
+				setActiveTask("TEXT_TO_SPEECH");
 
 				const { base64Audio, wordData } = await textToSpeech(
 					completionMessage.content,
@@ -692,7 +692,7 @@ const ConversationIdPage = ({
 
 			startProgressBarInterval();
 
-			setActiveTask(task.TEXT_TO_SPEECH_REPLAY);
+			setActiveTask("TEXT_TO_SPEECH_REPLAY");
 
 			const { base64Audio, wordData } = await textToSpeech(
 				displayedMessage.content,
@@ -739,9 +739,7 @@ const ConversationIdPage = ({
 	}, [isPlaying, stopPlaying]);
 
 	const redoCompletionHandler = useCallback(
-		async (options: {
-			mode: typeof completionMode.REGENERATE | typeof completionMode.REPHRASE;
-		}) => {
+		async (options: { mode: "REGENERATE" | "REPHRASE" }) => {
 			try {
 				if (!chatPartnerId || !chatDialect) {
 					throw new Error("chatPartnerId or chatDialect is null");
@@ -761,9 +759,9 @@ const ConversationIdPage = ({
 					.slice(0, displayedMessageInd ?? 0);
 
 				setActiveTask(
-					options.mode === completionMode.REGENERATE
-						? task.ASSISTANT_REGENERATE
-						: task.ASSISTANT_REPHRASE
+					options.mode === "REGENERATE"
+						? "ASSISTANT_REGENERATE"
+						: "ASSISTANT_REPHRASE"
 				);
 
 				const completionStream = await makeChatCompletionStream(
@@ -797,7 +795,7 @@ const ConversationIdPage = ({
 					await upsertMessageInCache(completionMessage);
 				}
 
-				setActiveTask(task.TEXT_TO_SPEECH);
+				setActiveTask("TEXT_TO_SPEECH");
 
 				const { base64Audio, wordData } = await textToSpeech(
 					completionMessage.content,
@@ -836,7 +834,7 @@ const ConversationIdPage = ({
 				handleError(
 					error,
 					`There was a problem ${
-						completionMode.REGENERATE ? "regenerating" : "rephrasing"
+						options.mode === "REGENERATE" ? "regenerating" : "rephrasing"
 					} this message`
 				);
 			}
@@ -882,7 +880,7 @@ const ConversationIdPage = ({
 			setTranslationMode(true);
 			startProgressBarInterval();
 
-			setActiveTask(task.ASSISTANT_TRANSLATE);
+			setActiveTask("ASSISTANT_TRANSLATE");
 
 			const completionStream = await makeChatCompletionStream(
 				[
@@ -891,7 +889,7 @@ const ConversationIdPage = ({
 						content: displayedMessage.content,
 					},
 				],
-				{ mode: completionMode.TRANSLATE, chatPartnerId, chatDialect }
+				{ mode: "TRANSLATE", chatPartnerId, chatDialect }
 			);
 
 			const completionMessage = {
@@ -909,7 +907,7 @@ const ConversationIdPage = ({
 				await upsertMessageInCache(completionMessage);
 			}
 
-			setActiveTask(task.TEXT_TO_SPEECH);
+			setActiveTask("TEXT_TO_SPEECH");
 
 			const { base64Audio, wordData } = await textToSpeech(
 				completionMessage.translation!,
@@ -936,7 +934,7 @@ const ConversationIdPage = ({
 					translation: completionMessage.translation,
 				},
 				{
-					mode: completionMode.TRANSLATE,
+					mode: "TRANSLATE",
 				}
 			);
 
@@ -1354,6 +1352,8 @@ const ConversationIdPage = ({
 				open={drawerOpen}
 				setOpen={setDrawerOpen}
 				words={dictionaryWords}
+				chatPartnerId={chatPartnerId}
+				chatDialect={chatDialect}
 			/>
 			<SupportCard className="fixed bottom-0 right-0" />
 		</div>
