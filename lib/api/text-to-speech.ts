@@ -10,24 +10,35 @@ type VoiceMap = {
 
 const voiceLibrary = {
 	rachel: { name: "Rachel", voiceId: "JOoOS0ygQqJknGa2C14N" },
+	faris: { name: "Faris", voiceId: "3wSw4sLrInDfXVdwlPRZ" },
 	joey: {
 		name: "Joey - Youthful and Energetic",
 		voiceId: "bjL4GZJa40TcWjwdphFX",
 	},
 	mourad: { name: "Mourad", voiceId: "kERwN6X2cY8g1XbfzJsX" },
 	sana: { name: "Sana", voiceId: "mRdG9GYEjJmIzqbYTidv" },
+	noor: { name: "Noor", voiceId: "WFpAC00N91RVzSO3GG44" },
+	wahab: { name: "Wahab Arabic", voiceId: "ldeGOUQJqLGjlVgYn7YL" },
+	carla: {
+		name: "Carla - young and energetic",
+		voiceId: "1RCoDgfs0Ygdh1c5TPuW",
+	},
+	cowboy: {
+		name: "Cowboy Bob // VF",
+		voiceId: "KTPVrSVAEUSJRClDzBw7",
+	},
 };
 
 const voices: VoiceMap = {
 	layla: voiceLibrary.rachel.voiceId,
-	mustafa: voiceLibrary.joey.voiceId,
+	mustafa: voiceLibrary.faris.voiceId,
 	"abu-khalid": voiceLibrary.mourad.voiceId,
 	fatima: voiceLibrary.sana.voiceId,
 	youssef: voiceLibrary.joey.voiceId,
-	sofia: voiceLibrary.rachel.voiceId,
-	noura: voiceLibrary.sana.voiceId,
-	juha: voiceLibrary.joey.voiceId,
-	arabybuddy: voiceLibrary.mourad.voiceId,
+	sofia: voiceLibrary.carla.voiceId,
+	noura: voiceLibrary.noor.voiceId,
+	juha: voiceLibrary.cowboy.voiceId,
+	arabybuddy: voiceLibrary.joey.voiceId,
 };
 
 // were using a stream instead now so we can get timestamps for each word

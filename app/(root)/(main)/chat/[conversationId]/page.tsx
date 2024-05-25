@@ -1226,7 +1226,7 @@ const ConversationIdPage = ({
 		}
 
 		const menuContent = isPlaying ? (
-			<SpeakerWaveIcon className="w-5 h-5 sm:w-6 sm:h-6 text-slate-400 transition ease-in-out" />
+			<SpeakerWaveIcon className="w-6 h-6 sm:w-7 sm:h-7 text-slate-400 transition ease-in-out" />
 		) : (
 			<DialectBadge
 				className="self-start text-md"

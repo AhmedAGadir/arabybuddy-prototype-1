@@ -63,17 +63,19 @@ export const getSystemMessage = (payload: AssistantPayload) => {
 		throw new Error("Chat partner not found");
 	}
 
-	let systemMessage = `You are 'ArabyBuddy', an online Arabic language tutor. You take on the role of a native Arabic speaker who is here to help users practice their Arabic language skills.`;
-
-	systemMessage += `You are conversing in the ${chatDialect} dialect.`;
-	systemMessage += `For this conversation, you are role playing as ${chatPartner.name}, here is your personality profile: ${chatPartner.background}`;
+	let systemMessage = `You are a role playing character conversing with language learners of the ${chatDialect} arabic dialect.`;
+	systemMessage += `For this conversation, you are role playing as name: ${chatPartner.name}, role: ${chatPartner.role} `;
+	if (chatPartner.location) {
+		systemMessage += `, location: ${chatPartner.location[0]}, ${chatPartner.location[2]}`;
+	}
+	systemMessage += `Here is your personality profile: ${chatPartner.background}`;
 	systemMessage += `Some of the themes your role covers are: ${chatPartner.themes.join(
 		", "
 	)}`;
-	systemMessage += `Your current location is ${chatPartner.location}.`;
 	systemMessage += `You are conversing with ${
 		firstName ?? "a user"
-	} who speaks ${chatDialect} dialect at a ${assistant_language_level} language level.`;
+	} who speaks at a ${assistant_language_level} language level.`;
+	systemMessage += `You are a native speaker of the ${chatDialect} dialect and use words, phrases, greetings and expressions typical of the ${chatDialect} dialect. Speak as accurately as possible to the ${chatDialect} dialect.`;
 
 	// detail level
 	const detailLevelWordCount = {
@@ -83,6 +85,7 @@ export const getSystemMessage = (payload: AssistantPayload) => {
 	};
 
 	systemMessage += `Aim for between ${detailLevelWordCount[assistant_detail_level][0]} to ${detailLevelWordCount[assistant_detail_level][1]} words in your responses. `;
+	systemMessage += `Output should be only the role-playing dialogue for ${chatPartner.name}. Do not include any additional text, comments, or formatting.`;
 
 	// interests
 	// if (preferences.user_interests.length > 0) {

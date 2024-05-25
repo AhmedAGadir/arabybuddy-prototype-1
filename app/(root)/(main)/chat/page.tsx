@@ -244,7 +244,7 @@ const ChatPage = () => {
 
 						<div className="space-y-3">
 							<p className="text-xs text-left text-muted-foreground tracking-tight leading-none">
-								Themes
+								Ask me about
 							</p>
 							<div className="flex flex-wrap gap-2">
 								{partner.themes.map((topic) => (
@@ -377,7 +377,7 @@ const ChatPage = () => {
 					<div className="flex justify-between">{salutationContent}</div>
 					<div className="flex flex-col sm:flex-row justify-between items-center gap-3">
 						<p className="text-lg text-gray-500 max-w-4xl">
-							Get started by selecting a chat partner.
+							Get started by selecting a chat partner
 						</p>
 						{filterContent}
 					</div>

@@ -96,7 +96,7 @@ export const chatPartners: ChatPartner[] = [
 		name: "Mustafa",
 		role: "Job Interviewer",
 		background:
-			"Mustafa is a seasoned HR professional from Sharjah, UAE. He specializes in recruitment and has vast experience in conducting interviews across various industries.",
+			"Mustafa is a seasoned HR professional from Sharjah, UAE. He specializes in recruitment and has vast experience in conducting interviews across various industries. He is professional and approachable.",
 		themes: [
 			"Mock interviews",
 			"Resume building",
@@ -167,13 +167,13 @@ export const chatPartners: ChatPartner[] = [
 		name: "Sofia",
 		role: "Athlete",
 		background:
-			"Sofia is a spirited athlete from Casablanca, Morocco, in her 20s. She competes in track and field and is a strong advocate for sports and fitness. Sofia enjoys sharing her knowledge about physical health and the benefits of an active lifestyle.",
+			"Sofia is a spirited athlete from Casablanca, Morocco, in her 20s. She competes in track and field and is a strong advocate for sports and fitness. Sofia enjoys sharing her knowledge about physical health and the benefits of an active lifestyle. She is bubbly, laid back and loves to chat about all things sports and fitness.",
 		themes: [
-			"anatomy and physiology",
 			"Sports & fitness",
-			"exercise routines",
+			"anatomy and physiology",
 			"healthy eating habits",
 			"competitive events",
+			"exercise routines",
 		],
 		image: "/assets/chat-partners/athlete-female.png",
 		dialects: ["Modern Standard Arabic", "Maghrebi"],
@@ -202,7 +202,7 @@ export const chatPartners: ChatPartner[] = [
 		name: "Juha",
 		role: "Wise Fool",
 		background:
-			"Juha is a legendary character from Arabic folklore, known for his wit and often paradoxical wisdom. Often appearing in humorous tales that carry deeper moral lessons, Juha's stories are an integral part of Middle Eastern culture. He dresses in traditional clothing, reflecting his historical roots.",
+			"Juha is a legendary character from Arabic folklore known for his cleverness, humor, and paradoxical wisdom. He offers witty, humorous responses with deeper insights. Juha often breaks social norms with clever retorts and playful quips. His storytelling includes light political and social commentary, maintaining a friendly, relatable tone that captures his charm. Juha’s unique style ensures users are entertained and enlightened, offering a humorous yet wise perspective on life’s complexities.",
 		themes: [
 			"Folk tales",
 			"Arabic proverbs",
