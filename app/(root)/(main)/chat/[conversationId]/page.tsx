@@ -95,6 +95,8 @@ import {
 import { DictionaryDrawer } from "@/components/shared/DictionaryDrawer";
 import ChatPanel from "@/components/shared/ChatPanel";
 import { status, type Status } from "@/types/types";
+import { DialectBadge } from "@/components/shared/DialectBadge";
+import { chatPartners } from "@/lib/chatPartners";
 
 const task = {
 	SPEECH_TO_TEXT: "SPEECH_TO_TEXT",
@@ -120,7 +122,16 @@ const ConversationIdPage = ({
 
 	const { user } = useUser();
 
-	const { updateConversation, deleteConversation } = useConversations();
+	const { conversations, updateConversation, deleteConversation } =
+		useConversations();
+
+	const conversation = conversations.find((c) => c._id === conversationId);
+
+	const chatPartnerId = conversation?.chatPartnerId;
+
+	const chatPartner = chatPartners.find((p) => p.id === chatPartnerId);
+
+	const chatDialect = conversation?.chatDialect;
 
 	const {
 		isPending,
@@ -138,6 +149,7 @@ const ConversationIdPage = ({
 
 	const { makeChatCompletionStream, abortMakeChatCompletionStream } =
 		useChatService();
+
 	const { speechToText, textToSpeech, abortSpeechToText, abortTextToSpeech } =
 		useAudioService();
 
@@ -203,14 +215,10 @@ const ConversationIdPage = ({
 	const nextMessageHandler = () =>
 		updateDisplayedMessageInd((displayedMessageInd ?? 0) + 1);
 
-	useEffect(() => {
-		// initialise to last message index
-		if (searchParams.get("ind") === null && messages.length > 0) {
-			logger.log("init displayedMessageInd to last message index");
-			updateDisplayedMessageInd(messages.length - 1);
-		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [messages]);
+	if (searchParams.get("ind") === null && messages.length > 0) {
+		logger.log("init displayedMessageInd to last message index");
+		updateDisplayedMessageInd(messages.length - 1);
+	}
 
 	const displayedMessage = useMemo(() => {
 		// first load
@@ -266,6 +274,26 @@ const ConversationIdPage = ({
 	const progressBarValueRef = useRef<number>();
 	progressBarValueRef.current = progressBarValue;
 
+	const progressBarIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+	const startProgressBarInterval = useCallback(() => {
+		progressBarIntervalRef.current = setInterval(() => {
+			setProgressBarValue((prev) => {
+				if (prev >= 100) {
+					return prev;
+				}
+				return prev + 1;
+			});
+		}, 40);
+	}, []);
+
+	const stopProgressBar = useCallback(() => {
+		if (progressBarIntervalRef.current) {
+			clearInterval(progressBarIntervalRef.current);
+		}
+		setProgressBarValue(0);
+	}, []);
+
 	const STATUS: Status = useMemo(() => {
 		if (isRecording) return status.RECORDING;
 		if (isPlaying) return status.PLAYING;
@@ -276,13 +304,13 @@ const ConversationIdPage = ({
 	const isProcessing = STATUS === status.PROCESSING;
 	const isIdle = STATUS === status.IDLE;
 
-	const isDoingSpeechToText = activeTask === task.SPEECH_TO_TEXT;
-	const isDoingAssistant = activeTask === task.ASSISTANT;
-	const isDoingAssistantRegenerate = activeTask === task.ASSISTANT_REGENERATE;
-	const isDoingAssistantRephrase = activeTask === task.ASSISTANT_REPHRASE;
-	const isDoingAssistantTranslate = activeTask === task.ASSISTANT_TRANSLATE;
-	const isDoingTextToSpeech = activeTask === task.TEXT_TO_SPEECH;
-	const isDoingTextToSpeechReplay = activeTask === task.TEXT_TO_SPEECH_REPLAY;
+	const isDoingSpeechToText = activeTask === "SPEECH_TO_TEXT";
+	const isDoingAssistant = activeTask === "ASSISTANT";
+	const isDoingAssistantRegenerate = activeTask === "ASSISTANT_REGENERATE";
+	const isDoingAssistantRephrase = activeTask === "ASSISTANT_REPHRASE";
+	const isDoingAssistantTranslate = activeTask === "ASSISTANT_TRANSLATE";
+	const isDoingTextToSpeech = activeTask === "TEXT_TO_SPEECH";
+	const isDoingTextToSpeechReplay = activeTask === "TEXT_TO_SPEECH_REPLAY";
 
 	const instructions: {
 		[key in Status]: string[];
@@ -334,17 +362,17 @@ const ConversationIdPage = ({
 	const abortProcessingBtnHandler = useCallback(() => {
 		if (!isProcessing) return;
 		switch (activeTask) {
-			case task.SPEECH_TO_TEXT:
+			case "SPEECH_TO_TEXT":
 				abortSpeechToText();
 				break;
-			case task.TEXT_TO_SPEECH:
-			case task.TEXT_TO_SPEECH_REPLAY:
+			case "TEXT_TO_SPEECH":
+			case "TEXT_TO_SPEECH_REPLAY":
 				abortTextToSpeech();
 				break;
-			case task.ASSISTANT:
-			case task.ASSISTANT_REGENERATE:
-			case task.ASSISTANT_REPHRASE:
-			case task.ASSISTANT_TRANSLATE:
+			case "ASSISTANT":
+			case "ASSISTANT_REGENERATE":
+			case "ASSISTANT_REPHRASE":
+			case "ASSISTANT_TRANSLATE":
 				abortMakeChatCompletionStream();
 				break;
 			default:
@@ -360,9 +388,9 @@ const ConversationIdPage = ({
 
 	useEffect(() => {
 		return () => {
-			abortProcessingBtnHandler();
+			// abortProcessingBtnHandler();
 		};
-	}, []);
+	}, [abortProcessingBtnHandler]);
 
 	const handleError = useCallback(
 		(error: any, description = "There was a problem with your request.") => {
@@ -387,9 +415,9 @@ const ConversationIdPage = ({
 			}
 
 			setActiveTask(null);
-			setProgressBarValue(0);
+			stopProgressBar();
 		},
-		[isPlaying, stopPlaying, toast]
+		[isPlaying, stopPlaying, stopProgressBar, toast]
 	);
 
 	const wordTimestampsRef = useRef<
@@ -402,52 +430,135 @@ const ConversationIdPage = ({
 		| null
 	>(null);
 
-	const handleMakeChatCompletion = useCallback(
-		async (
-			messageHistory: OpenAIMessage[],
-			options: { mode: CompletionMode }
-		) => {
-			throw new Error("Not implemented");
+	const generateGreeting = useCallback(async () => {
+		try {
+			if (!chatPartnerId || !chatDialect) {
+				throw new Error("chatPartnerId or chatDialect is null");
+			}
 
-			// switch (options.mode) {
-			// 	case completionMode.REGENERATE:
-			// 		setActiveTask(task.ASSISTANT_REGENERATE);
-			// 		break;
-			// 	case completionMode.REPHRASE:
-			// 		setActiveTask(task.ASSISTANT_REPHRASE);
-			// 		break;
-			// 	case completionMode.TRANSLATE:
-			// 		setActiveTask(task.ASSISTANT_TRANSLATE);
-			// 		break;
-			// 	default:
-			// 		setActiveTask(task.ASSISTANT);
-			// }
+			startProgressBarInterval();
 
-			// const { completionMessage } = await makeChatCompletion(
-			// 	messageHistory,
-			// 	options
-			// );
-			// setActiveTask(null);
+			setActiveTask("ASSISTANT");
 
-			// return { completionMessage };
-		},
-		[]
-	);
+			const completionStream = await makeChatCompletionStream([], {
+				chatPartnerId,
+				chatDialect,
+			});
+
+			const dateStr = new Date().toISOString();
+
+			const completionMessage = {
+				// this id will be replaced by the actual id from the database
+				_id: _.uniqueId("temporary_message_id_"),
+				clerkId: user!.id,
+				conversationId,
+				createdAt: dateStr,
+				updatedAt: dateStr,
+				role: "assistant",
+				content: "",
+			} as IMessage;
+
+			updateDisplayedMessageInd(0);
+
+			for await (const data of completionStream) {
+				completionMessage.content = data.content;
+				completionMessage.role = data.role;
+				await upsertMessageInCache(completionMessage);
+			}
+
+			setActiveTask("TEXT_TO_SPEECH");
+
+			const { base64Audio, wordData } = await textToSpeech(
+				completionMessage.content,
+				{
+					chatPartnerId,
+					chatDialect,
+				}
+			);
+
+			wordTimestampsRef.current = wordData;
+
+			if (!audioElementInitialized) {
+				initAudioElement();
+			}
+			await playAudio(base64Audio);
+
+			wordTimestampsRef.current = null;
+
+			setActiveTask(null);
+
+			await createMessage({
+				role: completionMessage.role,
+				content: completionMessage.content,
+			});
+
+			updateConversation({
+				_id: conversationId,
+				lastMessage: completionMessage.content,
+			});
+
+			stopProgressBar();
+
+			return { success: true };
+		} catch (error) {
+			logger.error("generateGreeting failed", error);
+
+			handleError(error);
+
+			return { success: false };
+		}
+	}, [
+		audioElementInitialized,
+		chatDialect,
+		chatPartnerId,
+		conversationId,
+		createMessage,
+		handleError,
+		initAudioElement,
+		logger,
+		makeChatCompletionStream,
+		playAudio,
+		startProgressBarInterval,
+		stopProgressBar,
+		textToSpeech,
+		updateConversation,
+		updateDisplayedMessageInd,
+		upsertMessageInCache,
+		user,
+	]);
+
+	const greetingGeneratedRef = useRef(false);
+
+	if (
+		!greetingGeneratedRef.current &&
+		isNewChat &&
+		!isPending &&
+		messages.length === 0 &&
+		chatPartnerId &&
+		user?.id
+	) {
+		generateGreeting();
+		greetingGeneratedRef.current = true;
+	}
 
 	const onRecordingComplete = useCallback(
 		async (audioBlob: Blob) => {
 			// await new Promise((resolve) => setTimeout(resolve, 3000));
 			// throw new Error("Not implemented");
 			try {
+				if (!chatPartnerId || !chatDialect) {
+					throw new Error("chatPartnerId or chatDialect is null");
+				}
+
 				// sanitize audio blob - it cant be larger than 9.216 MB
 				if (audioBlob.size > 9216000) {
 					throw new Error("Audio is too long");
 				}
 
-				setProgressBarValue(1);
+				startProgressBarInterval();
 
 				// TODO: sanitize transcription, no input should be empty
-				setActiveTask(task.SPEECH_TO_TEXT);
+				setActiveTask("SPEECH_TO_TEXT");
 
 				const { transcription } = await speechToText(audioBlob);
 
@@ -466,22 +577,27 @@ const ConversationIdPage = ({
 					content: transcription,
 				});
 
-				setProgressBarValue(25);
+				setActiveTask("ASSISTANT");
 
-				setActiveTask(task.ASSISTANT);
-
-				const completionStream = await makeChatCompletionStream([
-					...messageHistory,
+				const completionStream = await makeChatCompletionStream(
+					[
+						...messageHistory,
+						{
+							role: "user",
+							content: transcription,
+						},
+					],
 					{
-						role: "user",
-						content: transcription,
-					},
-				]);
+						chatPartnerId,
+						chatDialect,
+					}
+				);
 
 				const dateStr = new Date().toISOString();
 
 				const completionMessage = {
-					_id: _.uniqueId("message_"),
+					// this id will be replaced by the actual id from the database
+					_id: _.uniqueId("temporary_message_id_"),
 					clerkId: user!.id,
 					conversationId,
 					createdAt: dateStr,
@@ -496,21 +612,20 @@ const ConversationIdPage = ({
 				for await (const data of completionStream) {
 					completionMessage.content = data.content;
 					completionMessage.role = data.role;
-					// update cache, well still need to update the database after
 					await upsertMessageInCache(completionMessage);
 				}
 
-				setProgressBarValue(75);
-
-				setActiveTask(task.TEXT_TO_SPEECH);
+				setActiveTask("TEXT_TO_SPEECH");
 
 				const { base64Audio, wordData } = await textToSpeech(
-					completionMessage.content
+					completionMessage.content,
+					{
+						chatPartnerId,
+						chatDialect,
+					}
 				);
 
 				wordTimestampsRef.current = wordData;
-
-				setProgressBarValue(100);
 
 				if (!audioElementInitialized) {
 					initAudioElement();
@@ -526,13 +641,12 @@ const ConversationIdPage = ({
 					content: completionMessage.content,
 				});
 
-				// // update latest conversation in sidebar
 				updateConversation({
 					_id: conversationId,
 					lastMessage: completionMessage.content,
 				});
 
-				setProgressBarValue(0);
+				stopProgressBar();
 
 				return { success: true };
 			} catch (error) {
@@ -544,6 +658,9 @@ const ConversationIdPage = ({
 			}
 		},
 		[
+			chatPartnerId,
+			chatDialect,
+			startProgressBarInterval,
 			speechToText,
 			messages,
 			updateDisplayedMessageInd,
@@ -551,33 +668,43 @@ const ConversationIdPage = ({
 			makeChatCompletionStream,
 			user,
 			conversationId,
-			logger,
 			textToSpeech,
 			audioElementInitialized,
 			playAudio,
 			updateConversation,
+			stopProgressBar,
 			upsertMessageInCache,
 			initAudioElement,
+			logger,
 			handleError,
 		]
 	);
 
 	const replayBtnHandler = useCallback(async () => {
 		try {
-			if (!displayedMessage) return;
+			if (!chatPartnerId || !chatDialect) {
+				throw new Error("chatPartnerId or chatDialect is null");
+			}
 
-			setProgressBarValue(25);
+			if (!displayedMessage) {
+				throw new Error("displayedMessage is null");
+			}
 
-			setActiveTask(task.TEXT_TO_SPEECH_REPLAY);
+			startProgressBarInterval();
+
+			setActiveTask("TEXT_TO_SPEECH_REPLAY");
 
 			const { base64Audio, wordData } = await textToSpeech(
-				displayedMessage.content
+				displayedMessage.content,
+				{
+					chatPartnerId,
+					chatDialect,
+				}
 			);
+
 			setActiveTask(null);
 
 			wordTimestampsRef.current = wordData;
-
-			setProgressBarValue(100);
 
 			if (!audioElementInitialized) {
 				initAudioElement();
@@ -586,21 +713,23 @@ const ConversationIdPage = ({
 
 			wordTimestampsRef.current = null;
 
-			setActiveTask(null);
-
-			setProgressBarValue(0);
+			stopProgressBar();
 		} catch (error) {
 			logger.error("replayBtnHandler", error);
 			handleError(error, "There was a problem replaying this message");
 		}
 	}, [
-		displayedMessage,
-		textToSpeech,
 		audioElementInitialized,
-		playAudio,
+		chatDialect,
+		chatPartnerId,
+		displayedMessage,
+		handleError,
 		initAudioElement,
 		logger,
-		handleError,
+		playAudio,
+		startProgressBarInterval,
+		stopProgressBar,
+		textToSpeech,
 	]);
 
 	const stopPlayingHandler = useCallback(() => {
@@ -610,13 +739,17 @@ const ConversationIdPage = ({
 	}, [isPlaying, stopPlaying]);
 
 	const redoCompletionHandler = useCallback(
-		async (options: {
-			mode: typeof completionMode.REGENERATE | typeof completionMode.REPHRASE;
-		}) => {
+		async (options: { mode: "REGENERATE" | "REPHRASE" }) => {
 			try {
-				if (!displayedMessage) return;
+				if (!chatPartnerId || !chatDialect) {
+					throw new Error("chatPartnerId or chatDialect is null");
+				}
 
-				setProgressBarValue(25);
+				if (!displayedMessage) {
+					throw new Error("displayedMessage is null");
+				}
+
+				startProgressBarInterval();
 
 				const messageHistory = messages
 					.map(({ role, content }) => ({
@@ -626,9 +759,9 @@ const ConversationIdPage = ({
 					.slice(0, displayedMessageInd ?? 0);
 
 				setActiveTask(
-					options.mode === completionMode.REGENERATE
-						? task.ASSISTANT_REGENERATE
-						: task.ASSISTANT_REPHRASE
+					options.mode === "REGENERATE"
+						? "ASSISTANT_REGENERATE"
+						: "ASSISTANT_REPHRASE"
 				);
 
 				const completionStream = await makeChatCompletionStream(
@@ -639,7 +772,11 @@ const ConversationIdPage = ({
 							content: displayedMessage.content,
 						},
 					],
-					options
+					{
+						mode: options.mode,
+						chatPartnerId,
+						chatDialect,
+					}
 				);
 
 				const completionMessage = {
@@ -655,21 +792,20 @@ const ConversationIdPage = ({
 
 				for await (const data of completionStream) {
 					completionMessage.content = data.content;
-					// update cache, well still need to update the database after
 					await upsertMessageInCache(completionMessage);
 				}
 
-				setProgressBarValue(75);
-
-				setActiveTask(task.TEXT_TO_SPEECH);
+				setActiveTask("TEXT_TO_SPEECH");
 
 				const { base64Audio, wordData } = await textToSpeech(
-					completionMessage.content
+					completionMessage.content,
+					{
+						chatPartnerId,
+						chatDialect,
+					}
 				);
 
 				wordTimestampsRef.current = wordData;
-
-				setProgressBarValue(100);
 
 				if (!audioElementInitialized) {
 					initAudioElement();
@@ -690,33 +826,38 @@ const ConversationIdPage = ({
 					_id: conversationId,
 					lastMessage: completionMessage.content,
 				});
-				setProgressBarValue(0);
+
+				stopProgressBar();
 			} catch (error) {
 				logger.error("redoCompletion", error);
 
 				handleError(
 					error,
 					`There was a problem ${
-						completionMode.REGENERATE ? "regenerating" : "rephrasing"
+						options.mode === "REGENERATE" ? "regenerating" : "rephrasing"
 					} this message`
 				);
 			}
 		},
 		[
-			displayedMessage,
-			messages,
-			displayedMessageInd,
-			makeChatCompletionStream,
-			conversationId,
-			textToSpeech,
 			audioElementInitialized,
-			playAudio,
-			updateMessage,
-			updateConversation,
-			upsertMessageInCache,
+			chatDialect,
+			chatPartnerId,
+			conversationId,
+			displayedMessage,
+			displayedMessageInd,
+			handleError,
 			initAudioElement,
 			logger,
-			handleError,
+			makeChatCompletionStream,
+			messages,
+			playAudio,
+			startProgressBarInterval,
+			stopProgressBar,
+			textToSpeech,
+			updateConversation,
+			updateMessage,
+			upsertMessageInCache,
 		]
 	);
 
@@ -728,12 +869,18 @@ const ConversationIdPage = ({
 
 	const translateBtnHandler = useCallback(async () => {
 		try {
-			if (!displayedMessage) return;
+			if (!chatPartnerId || !chatDialect) {
+				throw new Error("chatPartnerId or chatDialect is null");
+			}
+
+			if (!displayedMessage) {
+				throw new Error("displayedMessage is null");
+			}
 
 			setTranslationMode(true);
-			setProgressBarValue(25);
+			startProgressBarInterval();
 
-			setActiveTask(task.ASSISTANT_TRANSLATE);
+			setActiveTask("ASSISTANT_TRANSLATE");
 
 			const completionStream = await makeChatCompletionStream(
 				[
@@ -742,7 +889,7 @@ const ConversationIdPage = ({
 						content: displayedMessage.content,
 					},
 				],
-				{ mode: completionMode.TRANSLATE }
+				{ mode: "TRANSLATE", chatPartnerId, chatDialect }
 			);
 
 			const completionMessage = {
@@ -757,21 +904,20 @@ const ConversationIdPage = ({
 
 			for await (const data of completionStream) {
 				completionMessage.translation = data.content;
-				// update cache, well still need to update the database after
 				await upsertMessageInCache(completionMessage);
 			}
 
-			setProgressBarValue(75);
-
-			setActiveTask(task.TEXT_TO_SPEECH);
+			setActiveTask("TEXT_TO_SPEECH");
 
 			const { base64Audio, wordData } = await textToSpeech(
-				completionMessage.translation!
+				completionMessage.translation!,
+				{
+					chatPartnerId,
+					chatDialect,
+				}
 			);
 
 			wordTimestampsRef.current = wordData;
-
-			setProgressBarValue(100);
 
 			if (!audioElementInitialized) {
 				initAudioElement();
@@ -788,11 +934,11 @@ const ConversationIdPage = ({
 					translation: completionMessage.translation,
 				},
 				{
-					mode: completionMode.TRANSLATE,
+					mode: "TRANSLATE",
 				}
 			);
 
-			setProgressBarValue(0);
+			stopProgressBar();
 		} catch (error) {
 			logger.error("translateBtnHandler", error);
 
@@ -800,12 +946,16 @@ const ConversationIdPage = ({
 		}
 	}, [
 		audioElementInitialized,
+		chatDialect,
+		chatPartnerId,
 		displayedMessage,
 		handleError,
 		initAudioElement,
 		logger,
 		makeChatCompletionStream,
 		playAudio,
+		startProgressBarInterval,
+		stopProgressBar,
 		textToSpeech,
 		updateMessage,
 		upsertMessageInCache,
@@ -1049,6 +1199,10 @@ const ConversationIdPage = ({
 			return null;
 		}
 
+		if (!chatPartner || !chatDialect) {
+			return null;
+		}
+
 		const messageCardDetails = {
 			name: "",
 			avatarSrc: "",
@@ -1057,9 +1211,11 @@ const ConversationIdPage = ({
 
 		switch (displayedMessage?.role) {
 			case "assistant":
-				messageCardDetails.name = "ArabyBuddy";
-				messageCardDetails.avatarSrc = "/assets/arabybuddy.svg";
-				messageCardDetails.avatarAlt = "ArabyBuddy avatar";
+				messageCardDetails.name = chatPartner.flag
+					? `${chatPartner.name}`
+					: chatPartner.name;
+				messageCardDetails.avatarSrc = chatPartner.image;
+				messageCardDetails.avatarAlt = chatPartner.name;
 				break;
 			case "user":
 			default:
@@ -1070,9 +1226,13 @@ const ConversationIdPage = ({
 		}
 
 		const menuContent = isPlaying ? (
-			<SpeakerWaveIcon className="w-5 h-5 sm:w-6 sm:h-6 text-slate-400 transition ease-in-out" />
+			<SpeakerWaveIcon className="w-6 h-6 sm:w-7 sm:h-7 text-slate-400 transition ease-in-out" />
 		) : (
-			<div />
+			<DialectBadge
+				className="self-start text-md"
+				dialect={chatDialect}
+				shorten
+			/>
 		);
 
 		return (
@@ -1097,11 +1257,14 @@ const ConversationIdPage = ({
 		);
 	}, [
 		displayedMessage,
-		STATUS,
-		isPlaying,
-		messageCardInnerContent,
 		isLoading,
 		isNewChat,
+		chatPartner,
+		chatDialect,
+		isPlaying,
+		STATUS,
+		messageCardInnerContent,
+		user?.imageUrl,
 	]);
 
 	const messageIndexContent = useMemo(
@@ -1114,7 +1277,7 @@ const ConversationIdPage = ({
 		[displayedMessageInd, displayedMessageText, messages.length]
 	);
 
-	const recordingBlob = (
+	const recordingIndicator = (
 		<div
 			className={cn(
 				"relative flex h-4 w-4 my-2",
@@ -1181,7 +1344,7 @@ const ConversationIdPage = ({
 				<div className="hidden xl:block">
 					<h1>xl + up</h1>
 				</div> */}
-				{recordingBlob}
+				{recordingIndicator}
 				<div className="h-12 w-full text-center">{instructionContent}</div>
 				<div className="md:hidden mb-8">{chatPanelContent}</div>
 			</div>
@@ -1189,8 +1352,10 @@ const ConversationIdPage = ({
 				open={drawerOpen}
 				setOpen={setDrawerOpen}
 				words={dictionaryWords}
+				chatPartnerId={chatPartnerId}
+				chatDialect={chatDialect}
 			/>
-			<SupportCard className="absolute bottom-0 right-0" />
+			<SupportCard className="fixed bottom-0 right-0" />
 		</div>
 	);
 };

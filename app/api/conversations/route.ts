@@ -10,7 +10,7 @@ export async function GET(req: Request, res: Response) {
 
 		await connectToDatabase();
 
-		console.log("fetching user conversations - userId", userId);
+		console.log("fetching user conversations for", userId);
 
 		const conversations = await Conversation.find({ clerkId: userId }).sort({
 			updatedAt: -1, // Sort by most recent
@@ -36,13 +36,23 @@ export async function POST(req: Request) {
 
 		await connectToDatabase();
 
-		console.log("creating new conversation - userId", userId);
+		const { chatPartnerId, chatDialect } = await req.json();
+
+		console.log(
+			`creating new ${chatDialect} conversation with ${chatPartnerId} for`,
+			userId
+		);
 
 		const newConversation = await Conversation.create({
 			clerkId: userId,
+			chatPartnerId,
+			chatDialect,
 		});
 
-		console.log("new conversation created", newConversation);
+		console.log(
+			`new ${chatDialect} conversation with ${chatPartnerId} created`,
+			newConversation
+		);
 
 		return Response.json(newConversation, { status: 200 });
 	} catch (error) {

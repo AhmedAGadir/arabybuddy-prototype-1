@@ -43,15 +43,21 @@ import { completionMode } from "@/lib/api/assistant";
 import { useLogger } from "@/hooks/useLogger";
 import { ToastAction } from "@radix-ui/react-toast";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { ChatPartnerId } from "@/lib/chatPartners";
+import { ArabicDialect } from "@/types/types";
 
 const DictionaryDrawer = ({
 	open,
 	setOpen,
 	words,
+	chatPartnerId,
+	chatDialect,
 }: {
 	open: boolean;
 	setOpen: (open: boolean) => void;
 	words: { word: string; id: string }[];
+	chatPartnerId: ChatPartnerId | undefined;
+	chatDialect: ArabicDialect | undefined;
 }) => {
 	const logger = useLogger({ label: "DictionaryDrawer", color: "#ff9662" });
 
@@ -86,6 +92,7 @@ const DictionaryDrawer = ({
 		return () => {
 			abortMakeChatCompletionStream();
 		};
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 
 	// {
@@ -118,6 +125,10 @@ const DictionaryDrawer = ({
 
 	const generateDefinitionMutation = useMutation({
 		mutationFn: async () => {
+			if (!chatPartnerId || !chatDialect) {
+				throw new Error("chatPartnerId or chatDialect is null");
+			}
+
 			const completionStream = await makeChatCompletionStream(
 				[
 					{
@@ -130,7 +141,9 @@ const DictionaryDrawer = ({
 					},
 				],
 				{
-					mode: completionMode.DICTIONARY,
+					mode: "DICTIONARY",
+					chatPartnerId,
+					chatDialect,
 				}
 			);
 

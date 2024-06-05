@@ -1,6 +1,7 @@
 import OpenAI from "openai";
 import { IMessage } from "../database/models/message.model";
-import { IPreferences } from "../database/models/preferences.model";
+import { AssistantPayload } from "@/app/api/chat/assistant/route";
+import { chatPartners } from "@/lib/chatPartners";
 
 export type OpenAIMessage = Pick<IMessage, "role" | "content">;
 
@@ -15,66 +16,66 @@ export const completionMode = {
 export type CompletionMode =
 	(typeof completionMode)[keyof typeof completionMode];
 
-export const getSystemMessage = ({
-	mode,
-	firstName,
-	preferences,
-}: {
-	mode: CompletionMode;
-	firstName: string | undefined;
-	preferences: {
-		arabic_dialect: IPreferences["arabic_dialect"];
-		assistant_language_level: IPreferences["assistant_language_level"];
-		assistant_tone: IPreferences["assistant_tone"];
-		assistant_detail_level: IPreferences["assistant_detail_level"];
-		user_interests: IPreferences["user_interests"];
-	};
-}) => {
-	if (mode === completionMode.DICTIONARY) {
+export const getSystemMessage = (payload: AssistantPayload) => {
+	const {
+		mode,
+		chat: { chatPartnerId, chatDialect },
+		user: { firstName },
+		preferences: {
+			assistant_language_level,
+			assistant_detail_level,
+			user_interests,
+		},
+	} = payload;
+
+	if (mode === "DICTIONARY") {
 		let systemMessage = "";
-		systemMessage += `You are an online arabic dictionary than translates from the ${preferences.arabic_dialect} dialect into either english or modern standard arabic depending on the input.`;
-
+		systemMessage += `You are an online arabic dictionary than translates from the ${chatDialect} dialect into either english or modern standard arabic depending on the input.`;
 		systemMessage += `The input is a JavaScript object with the following format: {word: "string", context: "string", monolingual: boolean}.`;
-
 		systemMessage += `if monolingual is true, you should return the definition in modern standard arabic. Otherwise, you should return the definition in English.`;
-
 		systemMessage += `You must return a JSON object that includes:`;
-
 		systemMessage += `"word" property with the input word as a string.`;
-
 		systemMessage += `"definitions" property containing different meanings for the word as an array of strings.`;
-
 		systemMessage += `"context" property with a 1-2 sentence explanation of what the word means in the context of the input.`;
-
-		systemMessage += `Output should be a raw JSON object with no additional text, comments, or formatting.`;
-
+		systemMessage += `Output should be a raw JSON object with no additional text, comments, or formatting. To facilitate easier reading for the user, ensure that every single letter has the correct tashkeel placed on it, including the final letters of every word.`;
 		return systemMessage;
 	}
 
-	let systemMessage =
-		"You are 'ArabyBuddy', a friendly Arabic language tutor. ";
-
-	if (mode === completionMode.TRANSLATE) {
-		systemMessage += `Our goal is to help the user learn Arabic and have engaging conversations. You should translate the last message from the ${preferences.arabic_dialect} dialect into english.`;
+	if (mode === "TRANSLATE") {
+		let systemMessage = "";
+		systemMessage += `You are an online arabic translation generator. Translate the last message from the ${chatDialect} dialect into english. `;
+		systemMessage += `Output should be the translated text only, with no additional text, comments, or formatting. `;
 		return systemMessage;
 	}
 
-	if (mode === completionMode.REPHRASE) {
-		systemMessage += `Our goal is to help the user learn Arabic and have engaging conversations. You should rephrase the last message to make it sound more natural and flow better in the ${preferences.arabic_dialect} dialect. Rephrase it from the perspective of the user.`;
+	if (mode === "REPHRASE") {
+		let systemMessage = "";
+		systemMessage += `You are an online arabic language tutor that rephrases user input in the ${chatDialect} dialect so that it sounds more natural, flows better and expresses ideas in a way that is more typical of a native speaker. `;
+		systemMessage += `Output should be the rephrased text only, with no additional text, comments, or formatting. To facilitate easier reading for the user, ensure that every single letter has the correct tashkeel placed on it, including the final letters of every word.`;
 		return systemMessage;
 	}
 
-	if (firstName) {
-		systemMessage += `You are here to converse with ${firstName}. make sure you include their name in your initial greeting.`;
+	const chatPartner = chatPartners.find(
+		(partner) => partner.id === chatPartnerId
+	);
+
+	if (!chatPartner) {
+		throw new Error("Chat partner not found");
 	}
 
-	systemMessage += `Offer engaging topics of conversation based on the user's interests.`;
-
-	//  dialect and language level
-	systemMessage += `Speak in ${preferences.arabic_dialect} dialect and at a ${preferences.assistant_language_level} language level.`;
-
-	// tone
-	systemMessage += `Your responses should be ${preferences.assistant_tone}.`;
+	let systemMessage = `You are a role playing character conversing with language learners of the ${chatDialect} Arabic dialect.`;
+	systemMessage += `For this conversation, you are role playing as: name: ${chatPartner.name}, role: ${chatPartner.role} `;
+	if (chatPartner.location) {
+		systemMessage += `, location: ${chatPartner.location[0]}, ${chatPartner.location[2]}. `;
+	}
+	systemMessage += `Here is your personality profile: ${chatPartner.background}`;
+	systemMessage += `Some of the themes your role covers are: ${chatPartner.themes.join(
+		", "
+	)}. `;
+	systemMessage += `You are conversing with ${
+		firstName ?? "a user"
+	} who speaks at a ${assistant_language_level} language level.`;
+	systemMessage += `You are a native speaker of the ${chatDialect} dialect and use words, phrases, greetings and expressions typical of the ${chatDialect} dialect. Speak as accurately as possible to the ${chatDialect} dialect.`;
 
 	// detail level
 	const detailLevelWordCount = {
@@ -82,18 +83,16 @@ export const getSystemMessage = ({
 		medium: [70, 120],
 		high: [120, 160],
 	};
-	systemMessage += `Aim for between ${
-		detailLevelWordCount[preferences.assistant_detail_level][0]
-	} to ${
-		detailLevelWordCount[preferences.assistant_detail_level][1]
-	} words per response. `;
+
+	systemMessage += `Aim for between ${detailLevelWordCount[assistant_detail_level][0]} to ${detailLevelWordCount[assistant_detail_level][1]} words in your responses. `;
+	systemMessage += `Output should be only the role-playing dialogue for ${chatPartner.name}, without including the speaker's name. Do not include any additional text, comments, or formatting. To facilitate easier reading for the user, ensure that every single letter has the correct tashkeel placed on it, including the final letters of every word.`;
 
 	// interests
-	if (preferences.user_interests.length > 0) {
-		systemMessage += `Consider the user's interests such as ${preferences.user_interests.join(
-			", "
-		)} when choosing topics. `;
-	}
+	// if (preferences.user_interests.length > 0) {
+	// 	systemMessage += `Consider the user's interests such as ${user_interests.join(
+	// 		", "
+	// 	)} when choosing topics. `;
+	// }
 
 	return systemMessage;
 };
@@ -122,7 +121,7 @@ export const openAiChatCompletionStream = async ({
 			},
 			...messages,
 		],
-		model: "gpt-4-turbo-preview",
+		model: "gpt-4o",
 		stream: true,
 	});
 
@@ -180,7 +179,7 @@ export const openAiChatCompletionStream = async ({
 // 			},
 // 			...messages,
 // 		],
-// 		model: "gpt-4-turbo-preview",
+// 		model: "gpt-4o",
 // 	});
 
 // 	const completionMessage = completion.choices[0].message;
@@ -208,7 +207,7 @@ export const openAiChatCompletionStream = async ({
 // 	const assistant = await openai.beta.assistants.create({
 // 		name: "ArabyBuddy",
 // 		instructions,
-// 		model: "gpt-4-turbo-preview",
+// 		model: "gpt-4o",
 // 	});
 
 // 	const latestMessage = messageHistory[messageHistory.length - 1];

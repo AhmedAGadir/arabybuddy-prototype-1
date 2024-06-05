@@ -56,41 +56,42 @@ export default function Sidebar({ onClick }: { onClick?: () => void }) {
 		conversations,
 		refetch,
 		deleteConversation,
-		createConversation,
+		// createConversation,
 		isCreatingConversation,
 	} = useConversations();
 
-	useEffect(() => {
-		if (!isPending && error) {
-			toast({
-				title: "Error loading conversations",
-				description: "An error occurred while loading your conversations",
-				action: (
-					<ToastAction altText="Try again">
-						<Button variant="outline" onClick={() => refetch()}>
-							Try again
-						</Button>
-					</ToastAction>
-				),
-				className: "error-toast",
-				duration: Infinity,
-			});
-		}
-	}, [isPending, error, refetch, toast]);
+	// useEffect(() => {
+	// 	if (!isPending && error) {
+	// 		toast({
+	// 			title: "Error loading conversations",
+	// 			description: "An error occurred while loading your conversations",
+	// 			action: (
+	// 				<ToastAction altText="Try again">
+	// 					<Button variant="outline" onClick={() => refetch()}>
+	// 						Try again
+	// 					</Button>
+	// 				</ToastAction>
+	// 			),
+	// 			className: "error-toast",
+	// 			duration: Infinity,
+	// 		});
+	// 	}
+	// }, [isPending, error, refetch, toast]);
 
 	const newChatHandler = useCallback(async () => {
-		try {
-			const data = await createConversation();
-			router.push(`/chat/${data._id}?new=true`);
-			onClick?.();
-		} catch (error) {
-			toast({
-				title: "Error creating conversation",
-				description: "An error occurred while creating a new conversation",
-				className: "error-toast",
-			});
-		}
-	}, [router, createConversation]);
+		router.push("/chat");
+		// try {
+		// 	const data = await createConversation();
+		// 	router.push(`/chat/${data._id}?new=true`);
+		// 	onClick?.();
+		// } catch (error) {
+		// 	toast({
+		// 		title: "Error creating conversation",
+		// 		description: "An error occurred while creating a new conversation",
+		// 		className: "error-toast",
+		// 	});
+		// }
+	}, [router]);
 
 	const [conversationIdToDelete, setConversationIdToDelete] =
 		useState<string>();
@@ -336,7 +337,7 @@ export default function Sidebar({ onClick }: { onClick?: () => void }) {
 				)}
 			</Button>
 		);
-	}, [isPending, isCreatingConversation]);
+	}, [isPending, newChatHandler, isCreatingConversation]);
 
 	return (
 		<aside

@@ -1,98 +1,50 @@
 import { ArabicDialect } from "@/types/types";
 import { IPreferences } from "../database/models/preferences.model";
+import { TextToSpeechPayload } from "@/app/api/chat/text-to-speech/route";
+import { ChatPartnerId } from "../chatPartners";
 // import { streamToBase64 } from "../utils";
 
-type AssistantGender = IPreferences["assistant_gender"];
-
 type VoiceMap = {
-	[D in ArabicDialect]: {
-		[K in AssistantGender]: { name: string; voiceId: string };
-	};
+	[C in ChatPartnerId]: string;
 };
 
 const voiceLibrary = {
 	rachel: { name: "Rachel", voiceId: "JOoOS0ygQqJknGa2C14N" },
+	faris: { name: "Faris", voiceId: "3wSw4sLrInDfXVdwlPRZ" },
 	joey: {
 		name: "Joey - Youthful and Energetic",
 		voiceId: "bjL4GZJa40TcWjwdphFX",
 	},
 	mourad: { name: "Mourad", voiceId: "kERwN6X2cY8g1XbfzJsX" },
 	sana: { name: "Sana", voiceId: "mRdG9GYEjJmIzqbYTidv" },
+	noor: { name: "Noor", voiceId: "WFpAC00N91RVzSO3GG44" },
+	wahab: { name: "Wahab Arabic", voiceId: "ldeGOUQJqLGjlVgYn7YL" },
+	carla: {
+		name: "Carla - young and energetic",
+		voiceId: "1RCoDgfs0Ygdh1c5TPuW",
+	},
+	cowboy: {
+		name: "Cowboy Bob // VF",
+		voiceId: "KTPVrSVAEUSJRClDzBw7",
+	},
 };
 
 const voices: VoiceMap = {
-	"Modern Standard Arabic": {
-		young_female: voiceLibrary.rachel,
-		young_male: voiceLibrary.joey,
-		old_male: voiceLibrary.mourad,
-		old_female: voiceLibrary.sana,
-	},
-	Egyptian: {
-		young_female: voiceLibrary.rachel,
-		young_male: voiceLibrary.joey,
-		old_male: voiceLibrary.mourad,
-		old_female: voiceLibrary.sana,
-	},
-	Levantine: {
-		young_female: voiceLibrary.rachel,
-		young_male: voiceLibrary.joey,
-		old_male: voiceLibrary.mourad,
-		old_female: voiceLibrary.sana,
-	},
-	Gulf: {
-		young_female: voiceLibrary.rachel,
-		young_male: voiceLibrary.joey,
-		old_male: voiceLibrary.mourad,
-		old_female: voiceLibrary.sana,
-	},
-	Maghrebi: {
-		young_female: voiceLibrary.rachel,
-		young_male: voiceLibrary.joey,
-		old_male: voiceLibrary.mourad,
-		old_female: voiceLibrary.sana,
-	},
-	Sudanese: {
-		young_female: voiceLibrary.rachel,
-		young_male: voiceLibrary.joey,
-		old_male: voiceLibrary.mourad,
-		old_female: voiceLibrary.sana,
-	},
-	Iraqi: {
-		young_female: voiceLibrary.rachel,
-		young_male: voiceLibrary.joey,
-		old_male: voiceLibrary.mourad,
-		old_female: voiceLibrary.sana,
-	},
-	Yemeni: {
-		young_female: voiceLibrary.rachel,
-		young_male: voiceLibrary.joey,
-		old_male: voiceLibrary.mourad,
-		old_female: voiceLibrary.sana,
-	},
+	layla: voiceLibrary.rachel.voiceId,
+	mustafa: voiceLibrary.faris.voiceId,
+	"abu-khalid": voiceLibrary.mourad.voiceId,
+	fatima: voiceLibrary.sana.voiceId,
+	youssef: voiceLibrary.joey.voiceId,
+	sofia: voiceLibrary.carla.voiceId,
+	noura: voiceLibrary.noor.voiceId,
+	juha: voiceLibrary.cowboy.voiceId,
+	arabybuddy: voiceLibrary.joey.voiceId,
 };
 
 // were using a stream instead now so we can get timestamps for each word
-export const elevenLabsTextToSpeechStream = async ({
-	text,
-	voice_customization: {
-		arabic_dialect,
-		assistant_gender,
-		voice_similarity_boost,
-		voice_stability,
-		voice_style,
-		voice_use_speaker_boost,
-	},
-}: {
-	text: string;
-	voice_customization: {
-		arabic_dialect: IPreferences["arabic_dialect"];
-		assistant_gender: IPreferences["assistant_gender"];
-		voice_stability: IPreferences["voice_stability"];
-		voice_similarity_boost: IPreferences["voice_similarity_boost"];
-		voice_style: IPreferences["voice_style"];
-		voice_use_speaker_boost: IPreferences["voice_use_speaker_boost"];
-	};
-}) => {
+export const elevenLabsTextToSpeechStream = async (
+	payload: TextToSpeechPayload
+) => {
 	// list of available voices
 	// elevenlabs.voices();
 
@@ -104,7 +56,20 @@ export const elevenLabsTextToSpeechStream = async ({
 	// * mp3_44100_192 - output format, mp3 with 44.1kHz sample rate at 192kbps. Requires you to be subscribed to Creator tier or above.
 	// output_format:
 
-	const voice = voices[arabic_dialect][assistant_gender].voiceId;
+	const {
+		text,
+		chat: { chatPartnerId, chatDialect },
+		preferences: {
+			voice_customization: {
+				voice_stability,
+				voice_similarity_boost,
+				voice_style,
+				voice_use_speaker_boost,
+			},
+		},
+	} = payload;
+
+	const voice = voices[chatPartnerId];
 
 	const voice_settings = {
 		stability: voice_stability,

@@ -8,34 +8,42 @@ import {
 	completionMode,
 } from "@/lib/api/assistant";
 import { useServerlessRequest } from "./useServerlessRequest";
+import { AssistantPayload } from "@/app/api/chat/assistant/route";
+import { ArabicDialect } from "@/types/types";
+import { ChatPartnerId } from "@/lib/chatPartners";
 
 const useChatService = () => {
 	const logger = useLogger({ label: "ChatService", color: "#fe7de9" });
-	const { user } = useUser();
-	const { preferences } = usePreferences();
 
 	const { makeServerlessRequest, abortRequest: abortMakeChatCompletionStream } =
 		useServerlessRequest();
 
+	const { user } = useUser();
+	const { preferences } = usePreferences();
+
 	async function* makeChatCompletionGenerator(
 		messages: OpenAIMessage[],
-		options: { mode: CompletionMode }
+		params: {
+			mode: CompletionMode;
+			chatPartnerId: ChatPartnerId;
+			chatDialect: ArabicDialect;
+		}
 	) {
 		try {
-			const params = {
+			const payload: AssistantPayload = {
 				messages,
-				mode: options.mode,
-				firstName: user?.firstName,
+				mode: params.mode,
+				chat: {
+					chatPartnerId: params.chatPartnerId,
+					chatDialect: params.chatDialect,
+				},
+				user: {
+					firstName: user?.firstName ?? undefined,
+				},
 				preferences: {
-					arabic_dialect:
-						preferences.arabic_dialect ??
-						DEFAULT_USER_PREFERENCES.arabic_dialect,
 					assistant_language_level:
 						preferences.assistant_language_level ??
 						DEFAULT_USER_PREFERENCES.assistant_language_level,
-					assistant_tone:
-						preferences.assistant_tone ??
-						DEFAULT_USER_PREFERENCES.assistant_tone,
 					assistant_detail_level:
 						preferences.assistant_detail_level ??
 						DEFAULT_USER_PREFERENCES.assistant_detail_level,
@@ -45,9 +53,9 @@ const useChatService = () => {
 				},
 			};
 
-			logger.log("making request to: /api/chat/assistant...", params);
+			logger.log("making request to: /api/chat/assistant...", payload);
 
-			const res = await makeServerlessRequest("/api/chat/assistant", params);
+			const res = await makeServerlessRequest("/api/chat/assistant", payload);
 
 			if (!res.ok) {
 				throw new Error(`HTTP error status: ${res.status}`);
@@ -59,7 +67,7 @@ const useChatService = () => {
 
 			let role: "assistant" | "user";
 
-			if (options.mode === completionMode.DEFAULT) {
+			if (params.mode === "DEFAULT") {
 				role = "assistant";
 			} else {
 				role = messages[messages.length - 1].role;
@@ -88,10 +96,17 @@ const useChatService = () => {
 
 	const makeChatCompletionStream = async (
 		messageHistory: OpenAIMessage[],
-		options: { mode: CompletionMode } = {
-			mode: completionMode.DEFAULT,
+		params: {
+			mode?: CompletionMode;
+			chatPartnerId: ChatPartnerId;
+			chatDialect: ArabicDialect;
 		}
-	) => makeChatCompletionGenerator(messageHistory, options);
+	) =>
+		makeChatCompletionGenerator(messageHistory, {
+			mode: params.mode ?? "DEFAULT",
+			chatPartnerId: params.chatPartnerId,
+			chatDialect: params.chatDialect,
+		});
 
 	return { makeChatCompletionStream, abortMakeChatCompletionStream };
 

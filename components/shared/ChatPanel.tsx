@@ -84,7 +84,7 @@ const ChatPanel = ({
 	abortProcessingBtnHandler: () => void;
 	stopPlayingHandler: () => void;
 	redoCompletionHandler: (params: {
-		mode: typeof completionMode.REGENERATE | typeof completionMode.REPHRASE;
+		mode: "REGENERATE" | "REPHRASE";
 	}) => Promise<void>;
 	toggleRecordingHandler: () => void;
 	toggleDictionaryHandler: () => void;
@@ -146,8 +146,7 @@ const ChatPanel = ({
 							label: "Rephrase",
 							icon: SparklesIcon,
 							new: true,
-							onClick: () =>
-								redoCompletionHandler({ mode: completionMode.REPHRASE }),
+							onClick: () => redoCompletionHandler({ mode: "REPHRASE" }),
 							disabled: !isMessage || !isIdle,
 						},
 				  ]
@@ -155,8 +154,7 @@ const ChatPanel = ({
 						{
 							label: "Regenerate",
 							icon: ArrowPathIcon,
-							onClick: () =>
-								redoCompletionHandler({ mode: completionMode.REGENERATE }),
+							onClick: () => redoCompletionHandler({ mode: "REGENERATE" }),
 							disabled: !isMessage || !isIdle,
 						},
 				  ]),
