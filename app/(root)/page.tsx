@@ -64,7 +64,7 @@ export default function Home() {
 			</SignedOut>
 			{/* even though we will redirect away from here, we dont want to leave a chance of users getting stuck logged in */}
 			<SignedIn>
-				<div className="flex flex-col md:flex-row w-full md:w-fit">
+				<div className="flex flex-col w-full gap-4 mx-auto">
 					<SignOutButton>
 						<Button size="lg">Log out</Button>
 					</SignOutButton>

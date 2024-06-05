@@ -349,7 +349,7 @@ const PreferencesPage = () => {
 		return (
 			<div className="flex-1 flex items-center justify-center min-h-screen min-h-svh ">
 				<SkewLoader
-					color="#38B6FF"
+					color="black"
 					loading
 					size={20}
 					aria-label="Loading Spinner"
