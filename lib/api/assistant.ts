@@ -37,7 +37,7 @@ export const getSystemMessage = (payload: AssistantPayload) => {
 		systemMessage += `"word" property with the input word as a string.`;
 		systemMessage += `"definitions" property containing different meanings for the word as an array of strings.`;
 		systemMessage += `"context" property with a 1-2 sentence explanation of what the word means in the context of the input.`;
-		systemMessage += `Output should be a raw JSON object with no additional text, comments, or formatting.`;
+		systemMessage += `Output should be a raw JSON object with no additional text, comments, or formatting. Ensure that tashkeel is included on every single letter to facilitate easier reading for the user.`;
 		return systemMessage;
 	}
 
@@ -51,7 +51,7 @@ export const getSystemMessage = (payload: AssistantPayload) => {
 	if (mode === "REPHRASE") {
 		let systemMessage = "";
 		systemMessage += `You are an online arabic language tutor that rephrases user input in the ${chatDialect} dialect so that it sounds more natural, flows better and expresses ideas in a way that is more typical of a native speaker. `;
-		systemMessage += `Output should be the rephrased text only, with no additional text, comments, or formatting. `;
+		systemMessage += `Output should be the rephrased text only, with no additional text, comments, or formatting. Ensure that tashkeel is included on every single letter to facilitate easier reading for the user.`;
 		return systemMessage;
 	}
 
@@ -63,15 +63,15 @@ export const getSystemMessage = (payload: AssistantPayload) => {
 		throw new Error("Chat partner not found");
 	}
 
-	let systemMessage = `You are a role playing character conversing with language learners of the ${chatDialect} arabic dialect.`;
-	systemMessage += `For this conversation, you are role playing as name: ${chatPartner.name}, role: ${chatPartner.role} `;
+	let systemMessage = `You are a role playing character conversing with language learners of the ${chatDialect} Arabic dialect.`;
+	systemMessage += `For this conversation, you are role playing as: name: ${chatPartner.name}, role: ${chatPartner.role} `;
 	if (chatPartner.location) {
-		systemMessage += `, location: ${chatPartner.location[0]}, ${chatPartner.location[2]}`;
+		systemMessage += `, location: ${chatPartner.location[0]}, ${chatPartner.location[2]}. `;
 	}
 	systemMessage += `Here is your personality profile: ${chatPartner.background}`;
 	systemMessage += `Some of the themes your role covers are: ${chatPartner.themes.join(
 		", "
-	)}`;
+	)}. `;
 	systemMessage += `You are conversing with ${
 		firstName ?? "a user"
 	} who speaks at a ${assistant_language_level} language level.`;
@@ -85,7 +85,7 @@ export const getSystemMessage = (payload: AssistantPayload) => {
 	};
 
 	systemMessage += `Aim for between ${detailLevelWordCount[assistant_detail_level][0]} to ${detailLevelWordCount[assistant_detail_level][1]} words in your responses. `;
-	systemMessage += `Output should be only the role-playing dialogue for ${chatPartner.name}. Do not include any additional text, comments, or formatting.`;
+	systemMessage += `Output should be only the role-playing dialogue for ${chatPartner.name}, without including the speaker's name. Do not include any additional text, comments, or formatting. Ensure that tashkeel is included on every single letter to facilitate easier reading for the user, even on the final letter in a word.`;
 
 	// interests
 	// if (preferences.user_interests.length > 0) {
@@ -121,7 +121,7 @@ export const openAiChatCompletionStream = async ({
 			},
 			...messages,
 		],
-		model: "gpt-4-turbo-preview",
+		model: "gpt-4o",
 		stream: true,
 	});
 
@@ -179,7 +179,7 @@ export const openAiChatCompletionStream = async ({
 // 			},
 // 			...messages,
 // 		],
-// 		model: "gpt-4-turbo-preview",
+// 		model: "gpt-4o",
 // 	});
 
 // 	const completionMessage = completion.choices[0].message;
@@ -207,7 +207,7 @@ export const openAiChatCompletionStream = async ({
 // 	const assistant = await openai.beta.assistants.create({
 // 		name: "ArabyBuddy",
 // 		instructions,
-// 		model: "gpt-4-turbo-preview",
+// 		model: "gpt-4o",
 // 	});
 
 // 	const latestMessage = messageHistory[messageHistory.length - 1];
