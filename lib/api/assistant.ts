@@ -37,7 +37,7 @@ export const getSystemMessage = (payload: AssistantPayload) => {
 		systemMessage += `"word" property with the input word as a string.`;
 		systemMessage += `"definitions" property containing different meanings for the word as an array of strings.`;
 		systemMessage += `"context" property with a 1-2 sentence explanation of what the word means in the context of the input.`;
-		systemMessage += `Output should be a raw JSON object with no additional text, comments, or formatting. Ensure that tashkeel is included on every single letter to facilitate easier reading for the user.`;
+		systemMessage += `Output should be a raw JSON object with no additional text, comments, or formatting. To facilitate easier reading for the user, ensure that every single letter has the correct tashkeel placed on it, including the final letters of every word.`;
 		return systemMessage;
 	}
 
@@ -51,7 +51,7 @@ export const getSystemMessage = (payload: AssistantPayload) => {
 	if (mode === "REPHRASE") {
 		let systemMessage = "";
 		systemMessage += `You are an online arabic language tutor that rephrases user input in the ${chatDialect} dialect so that it sounds more natural, flows better and expresses ideas in a way that is more typical of a native speaker. `;
-		systemMessage += `Output should be the rephrased text only, with no additional text, comments, or formatting. Ensure that tashkeel is included on every single letter to facilitate easier reading for the user.`;
+		systemMessage += `Output should be the rephrased text only, with no additional text, comments, or formatting. To facilitate easier reading for the user, ensure that every single letter has the correct tashkeel placed on it, including the final letters of every word.`;
 		return systemMessage;
 	}
 
@@ -85,7 +85,7 @@ export const getSystemMessage = (payload: AssistantPayload) => {
 	};
 
 	systemMessage += `Aim for between ${detailLevelWordCount[assistant_detail_level][0]} to ${detailLevelWordCount[assistant_detail_level][1]} words in your responses. `;
-	systemMessage += `Output should be only the role-playing dialogue for ${chatPartner.name}, without including the speaker's name. Do not include any additional text, comments, or formatting. Ensure that tashkeel is included on every single letter to facilitate easier reading for the user, even on the final letter in a word.`;
+	systemMessage += `Output should be only the role-playing dialogue for ${chatPartner.name}, without including the speaker's name. Do not include any additional text, comments, or formatting. To facilitate easier reading for the user, ensure that every single letter has the correct tashkeel placed on it, including the final letters of every word.`;
 
 	// interests
 	// if (preferences.user_interests.length > 0) {
