@@ -27,11 +27,15 @@ const voiceLibrary = {
 		name: "Cowboy Bob // VF",
 		voiceId: "KTPVrSVAEUSJRClDzBw7",
 	},
+	theo: {
+		name: "Theo - Smart, warm, open",
+		voiceId: "NyxenPOqNyllHIzSoPbJ",
+	},
 };
 
 const voices: VoiceMap = {
 	layla: voiceLibrary.rachel.voiceId,
-	mustafa: voiceLibrary.faris.voiceId,
+	mustafa: voiceLibrary.theo.voiceId,
 	"abu-khalid": voiceLibrary.mourad.voiceId,
 	fatima: voiceLibrary.sana.voiceId,
 	youssef: voiceLibrary.joey.voiceId,

@@ -55,6 +55,13 @@ export const getSystemMessage = (payload: AssistantPayload) => {
 		return systemMessage;
 	}
 
+	if (mode === "REGENERATE") {
+		let systemMessage = "";
+		systemMessage += `You are an online arabic language tutor that regenerates previous assistant chat completions in the ${chatDialect} dialect to give a different perspective or to provide additional information. `;
+		systemMessage += `Output should be the regenerated text only, with no additional text, comments, or formatting. To facilitate easier reading for the user, ensure that every single letter has the correct tashkeel placed on it, including the final letters of every word.`;
+		return systemMessage;
+	}
+
 	const chatPartner = chatPartners.find(
 		(partner) => partner.id === chatPartnerId
 	);

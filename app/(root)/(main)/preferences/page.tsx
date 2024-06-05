@@ -975,8 +975,8 @@ const PreferencesPage = () => {
 					</FormSection>
 
 					<FormSection
-						title="Interests and Personality"
-						description="Share your interests and personality traits to enhance your assistant's ability to provide personalized and relevant interactions."
+						title="Interests"
+						description="Share your interests to enhance your assistant's ability to provide personalized and relevant interactions."
 					>
 						<div className="sm:col-span-6">
 							<FormField
@@ -986,7 +986,10 @@ const PreferencesPage = () => {
 									return (
 										<FormItem>
 											<div>
-												<FormLabel className="block text-md font-medium leading-6 text-gray-900">
+												<FormLabel
+													className="block text-md font-medium leading-6 text-gray-900 hidden"
+													aria-hidden
+												>
 													Interests
 												</FormLabel>
 												<div className="mt-2 grid grid-cols-1 gap-6 lg:grid-cols-2">
