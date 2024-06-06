@@ -96,29 +96,25 @@ const useConversations = () => {
 		},
 		onMutate: async (conversationId) => {
 			// Cancel any outgoing refetches
-			await queryClient.cancelQueries({ queryKey: ["conversations"] });
+			await queryClient.cancelQueries({ queryKey });
 
 			// Snapshot the previous value
 			const previousConversations: IConversation[] =
-				queryClient.getQueryData(["conversations"]) ?? [];
+				(queryClient.getQueryData(queryKey) as any)?.conversations ?? [];
 
 			// Optimistically update to remove the conversation
-			queryClient.setQueryData(
-				["conversations"],
-				previousConversations.filter(
+			queryClient.setQueryData(queryKey, {
+				conversations: previousConversations.filter(
 					(conversation: IConversation) => conversation._id !== conversationId
-				)
-			);
+				),
+			});
 
 			return { previousConversations };
 		},
 		onError: (err, variables, context) => {
 			logger.error("Error deleting conversation:", err);
 			// Rollback on error
-			queryClient.setQueryData(
-				["conversations"],
-				context?.previousConversations ?? ""
-			);
+			queryClient.setQueryData(queryKey, context?.previousConversations ?? "");
 			throw err;
 		},
 		onSettled: () => {
