@@ -70,6 +70,16 @@ const ChatPage = () => {
 		[pathname, router, searchParams]
 	);
 
+	const removeQueryStr = useCallback(
+		(name: string) => {
+			const params = new URLSearchParams(searchParams.toString());
+			params.delete(name);
+
+			router.replace(pathname + "?" + params.toString());
+		},
+		[pathname, router, searchParams]
+	);
+
 	const newChatPartnerId = searchParams.get(
 		"newChatPartnerId"
 	) as ChatPartnerId | null;
@@ -397,15 +407,19 @@ const ChatPage = () => {
 				<DialectDialog
 					key={newChatPartnerId}
 					open={dialectDialogOpen}
-					onOpenChange={setDialectDialogOpen}
+					onOpenChange={(open) => {
+						setDialectDialogOpen(open);
+						if (!open) {
+							removeQueryStr("newChatPartnerId");
+						}
+					}}
 					chatPartner={newChatPartner}
-					onDialectSelected={(dialect) => {
-						createAndOpenChat({
+					onDialectSelected={async (dialect) => {
+						await createAndOpenChat({
 							chatPartnerId: newChatPartnerId!,
 							chatDialect: dialect,
 						});
 					}}
-					isPending={isCreatingConversation}
 				/>
 			)}
 			<SupportCard className="fixed bottom-0 right-0" />

@@ -30,35 +30,38 @@ export const getSystemMessage = (payload: AssistantPayload) => {
 
 	if (mode === "DICTIONARY") {
 		let systemMessage = "";
-		systemMessage += `You are an online arabic dictionary than translates from the ${chatDialect} dialect into either english or modern standard arabic depending on the input.`;
-		systemMessage += `The input is a JavaScript object with the following format: {word: "string", context: "string", monolingual: boolean}.`;
-		systemMessage += `if monolingual is true, you should return the definition in modern standard arabic. Otherwise, you should return the definition in English.`;
-		systemMessage += `You must return a JSON object that includes:`;
-		systemMessage += `"word" property with the input word as a string.`;
-		systemMessage += `"definitions" property containing different meanings for the word as an array of strings.`;
-		systemMessage += `"context" property with a 1-2 sentence explanation of what the word means in the context of the input.`;
-		systemMessage += `Output should be a raw JSON object with no additional text, comments, or formatting. To facilitate easier reading for the user, ensure that every single letter has the correct tashkeel placed on it, including the final letters of every word.`;
+		systemMessage += `You are an online arabic dictionary than translates from the ${chatDialect} dialect into either english or modern standard arabic depending on the input. `;
+		systemMessage += `The input is a JavaScript object with the following format: {word: "string", context: "string", monolingual: boolean}. `;
+		systemMessage += `if monolingual is true, you should return the definition in modern standard arabic. Otherwise, you should return the definition in English. `;
+		systemMessage += `For easier reading, ensure that every letter has the correct tashkeel, including final letters of each word. Exclude the sukoon. `;
+		systemMessage += `You must return a JSON object that includes: `;
+		systemMessage += `"word" property with the input word as a string. `;
+		systemMessage += `"definitions" property containing different meanings for the word as an array of strings. `;
+		systemMessage += `"context" property with a 1-2 sentence explanation of what the word means in the context of the input. `;
+		systemMessage += `Output should be a raw JSON object with no additional text, comments, or formatting.`;
 		return systemMessage;
 	}
 
 	if (mode === "TRANSLATE") {
 		let systemMessage = "";
 		systemMessage += `You are an online arabic translation generator. Translate the last message from the ${chatDialect} dialect into english. `;
-		systemMessage += `Output should be the translated text only, with no additional text, comments, or formatting. `;
+		systemMessage += `Output should be the translated text only, with no additional text, comments, or formatting.`;
 		return systemMessage;
 	}
 
 	if (mode === "REPHRASE") {
 		let systemMessage = "";
 		systemMessage += `You are an online arabic language tutor that rephrases user input in the ${chatDialect} dialect so that it sounds more natural, flows better and expresses ideas in a way that is more typical of a native speaker. `;
-		systemMessage += `Output should be the rephrased text only, with no additional text, comments, or formatting. To facilitate easier reading for the user, ensure that every single letter has the correct tashkeel placed on it, including the final letters of every word.`;
+		systemMessage += `For easier reading, ensure that every letter has the correct tashkeel, including final letters of each word. Exclude the sukoon. `;
+		systemMessage += `Output should be the rephrased text only, with no additional text, comments, or formatting. To facilitate easier reading for the user, ensure that every single letter has the correct tashkeel placed on it, except for sukoon, including the final letters of every word.`;
 		return systemMessage;
 	}
 
 	if (mode === "REGENERATE") {
 		let systemMessage = "";
 		systemMessage += `You are an online arabic language tutor that regenerates previous assistant chat completions in the ${chatDialect} dialect to give a different perspective or to provide additional information. `;
-		systemMessage += `Output should be the regenerated text only, with no additional text, comments, or formatting. To facilitate easier reading for the user, ensure that every single letter has the correct tashkeel placed on it, including the final letters of every word.`;
+		systemMessage += `For easier reading, ensure that every letter has the correct tashkeel, including final letters of each word. Exclude the sukoon. `;
+		systemMessage += `Output should be the regenerated text only, with no additional text, comments, or formatting.`;
 		return systemMessage;
 	}
 
@@ -70,7 +73,7 @@ export const getSystemMessage = (payload: AssistantPayload) => {
 		throw new Error("Chat partner not found");
 	}
 
-	let systemMessage = `You are a role playing character conversing with language learners of the ${chatDialect} Arabic dialect.`;
+	let systemMessage = `You are a role playing character conversing with language learners of the ${chatDialect} Arabic dialect. `;
 	systemMessage += `For this conversation, you are role playing as: name: ${chatPartner.name}, role: ${chatPartner.role} `;
 	if (chatPartner.location) {
 		systemMessage += `, location: ${chatPartner.location[0]}, ${chatPartner.location[2]}. `;
@@ -82,7 +85,7 @@ export const getSystemMessage = (payload: AssistantPayload) => {
 	systemMessage += `You are conversing with ${
 		firstName ?? "a user"
 	} who speaks at a ${assistant_language_level} language level.`;
-	systemMessage += `You are a native speaker of the ${chatDialect} dialect and use words, phrases, greetings and expressions typical of the ${chatDialect} dialect. Speak as accurately as possible to the ${chatDialect} dialect.`;
+	systemMessage += `You are a native speaker of the ${chatDialect} dialect and use words, phrases, greetings and expressions typical of the ${chatDialect} dialect. Speak as accurately as possible to the ${chatDialect} dialect. `;
 
 	// detail level
 	const detailLevelWordCount = {
@@ -92,7 +95,8 @@ export const getSystemMessage = (payload: AssistantPayload) => {
 	};
 
 	systemMessage += `Aim for between ${detailLevelWordCount[assistant_detail_level][0]} to ${detailLevelWordCount[assistant_detail_level][1]} words in your responses. `;
-	systemMessage += `Output should be only the role-playing dialogue for ${chatPartner.name}, without including the speaker's name. Do not include any additional text, comments, or formatting. To facilitate easier reading for the user, ensure that every single letter has the correct tashkeel placed on it, including the final letters of every word.`;
+	systemMessage += `For easier reading, ensure that every letter has the correct tashkeel, including final letters of each word. Exclude the sukoon. `;
+	systemMessage += `Output should be only the role-playing dialogue for ${chatPartner.name}, without including the speaker's name. Do not include any additional text, comments, or formatting.`;
 
 	// interests
 	// if (preferences.user_interests.length > 0) {
