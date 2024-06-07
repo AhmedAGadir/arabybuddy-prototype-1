@@ -1,15 +1,28 @@
 import { Schema, model, models } from "mongoose";
 
+export interface ITranslation {
+	arabic: string;
+	english: string;
+}
+
 export interface IMessage extends Document {
 	_id: string;
 	clerkId: string;
 	conversationId: string;
 	role: "user" | "assistant";
 	content: string;
-	translation?: string;
+	translation?: ITranslation[];
 	createdAt: string;
 	updatedAt: string;
 }
+
+const TranslationSchema = new Schema(
+	{
+		arabic: { type: String },
+		english: { type: String },
+	},
+	{ _id: false }
+);
 
 const MessageSchema = new Schema(
 	{
@@ -32,7 +45,8 @@ const MessageSchema = new Schema(
 			required: true,
 		},
 		translation: {
-			type: String,
+			type: [TranslationSchema],
+			required: false,
 		},
 	},
 	{

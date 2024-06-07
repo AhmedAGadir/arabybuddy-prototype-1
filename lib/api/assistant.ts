@@ -31,7 +31,7 @@ export const getSystemMessage = (payload: AssistantPayload) => {
 	if (mode === "DICTIONARY") {
 		let systemMessage = "";
 		systemMessage += `You are an online arabic dictionary than translates from the ${chatDialect} dialect into either english or modern standard arabic depending on the input. `;
-		systemMessage += `The input is a JavaScript object with the following format: {word: "string", context: "string", monolingual: boolean}. `;
+		systemMessage += `The input is a JavaScript object with the following format: {word: string, context: string, monolingual: boolean}. `;
 		systemMessage += `if monolingual is true, you should return the definition in modern standard arabic. Otherwise, you should return the definition in English. `;
 		systemMessage += `For easier reading, ensure that every letter has the correct tashkeel, including final letters of each word. Exclude the sukoon. `;
 		systemMessage += `You must return a JSON object that includes: `;
@@ -44,8 +44,14 @@ export const getSystemMessage = (payload: AssistantPayload) => {
 
 	if (mode === "TRANSLATE") {
 		let systemMessage = "";
-		systemMessage += `You are an online arabic translation generator. Translate the last message from the ${chatDialect} dialect into english. `;
-		systemMessage += `Output should be the translated text only, with no additional text, comments, or formatting.`;
+		systemMessage += `You are an online Arabic translator that translates Arabic chat messages from the ${chatDialect} dialect into English. `;
+		systemMessage += `The input is a JavaScript array of objects with the following format: {arabic: string}[] `;
+		systemMessage += `Map over the input array and return an updated array. Each object in the array should have a new property "english" with the translated text for the "arabic" property. `;
+		systemMessage += `Make sure that if all of the translated words are joined together, the sentence reads coherently and accurately reflects the original meaning. `;
+		systemMessage += `For example, if the input is [{"arabic": "مَاذَا"}, {"arabic": "تُحِبُّ"}, {"arabic": "أَنْ"}, {"arabic": "تَفْعَلَ"}, {"arabic": "فِي"}, {"arabic": "وَقْتِ"}, {"arabic": "الفَرَاغِ؟"}], `;
+		systemMessage += `the output should be [{"arabic": "مَاذَا", "english": "What"}, {"arabic": "تُحِبُّ", "english": "do you like"}, {"arabic": "أَنْ", "english": "to"}, {"arabic": "تَفْعَلَ", "english": "do"}, {"arabic": "فِي", "english": "in"}, {"arabic": "وَقْتِ", "english": "your"}, {"arabic": "الفَرَاغِ؟", "english": "free time?"}], `;
+		systemMessage += `not [{"arabic": "مَاذَا", "english": "What"}, {"arabic": "تُحِبُّ", "english": "love"}, {"arabic": "أَنْ", "english": "that"}, {"arabic": "تَفْعَلَ", "english": "you do"}, {"arabic": "فِي", "english": "in"}, {"arabic": "وَقْتِ", "english": "time"}, {"arabic": "الفَرَاغِ؟", "english": "void?"}]. `;
+		systemMessage += `Output should be the raw JSON array with no additional text, comments, or formatting.`;
 		return systemMessage;
 	}
 

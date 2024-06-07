@@ -284,7 +284,7 @@ const ConversationIdPage = ({
 				}
 				return prev + 1;
 			});
-		}, 40);
+		}, 30);
 	}, []);
 
 	const stopProgressBar = useCallback(() => {
@@ -430,116 +430,116 @@ const ConversationIdPage = ({
 		| null
 	>(null);
 
-	const generateGreeting = useCallback(async () => {
-		try {
-			if (!chatPartnerId || !chatDialect) {
-				throw new Error("chatPartnerId or chatDialect is null");
-			}
+	// const generateGreeting = useCallback(async () => {
+	// 	try {
+	// 		if (!chatPartnerId || !chatDialect) {
+	// 			throw new Error("chatPartnerId or chatDialect is null");
+	// 		}
 
-			startProgressBarInterval();
+	// 		startProgressBarInterval();
 
-			setActiveTask("ASSISTANT");
+	// 		setActiveTask("ASSISTANT");
 
-			const completionStream = await makeChatCompletionStream([], {
-				chatPartnerId,
-				chatDialect,
-			});
+	// 		const completionStream = await makeChatCompletionStream([], {
+	// 			chatPartnerId,
+	// 			chatDialect,
+	// 		});
 
-			const dateStr = new Date().toISOString();
+	// 		const dateStr = new Date().toISOString();
 
-			const completionMessage = {
-				// this id will be replaced by the actual id from the database
-				_id: _.uniqueId("temporary_message_id_"),
-				clerkId: user!.id,
-				conversationId,
-				createdAt: dateStr,
-				updatedAt: dateStr,
-				role: "assistant",
-				content: "",
-			} as IMessage;
+	// 		const completionMessage = {
+	// 			// this id will be replaced by the actual id from the database
+	// 			_id: _.uniqueId("temporary_message_id_"),
+	// 			clerkId: user!.id,
+	// 			conversationId,
+	// 			createdAt: dateStr,
+	// 			updatedAt: dateStr,
+	// 			role: "assistant",
+	// 			content: "",
+	// 		} as IMessage;
 
-			updateDisplayedMessageInd(0);
+	// 		updateDisplayedMessageInd(0);
 
-			for await (const data of completionStream) {
-				completionMessage.content = data.content;
-				completionMessage.role = data.role;
-				await upsertMessageInCache(completionMessage);
-			}
+	// 		for await (const data of completionStream) {
+	// 			completionMessage.content = data.content;
+	// 			completionMessage.role = data.role;
+	// 			await upsertMessageInCache(completionMessage);
+	// 		}
 
-			setActiveTask("TEXT_TO_SPEECH");
+	// 		setActiveTask("TEXT_TO_SPEECH");
 
-			const { base64Audio, wordData } = await textToSpeech(
-				completionMessage.content,
-				{
-					chatPartnerId,
-					chatDialect,
-				}
-			);
+	// 		const { base64Audio, wordData } = await textToSpeech(
+	// 			completionMessage.content,
+	// 			{
+	// 				chatPartnerId,
+	// 				chatDialect,
+	// 			}
+	// 		);
 
-			wordTimestampsRef.current = wordData;
+	// 		wordTimestampsRef.current = wordData;
 
-			if (!audioElementInitialized) {
-				initAudioElement();
-			}
-			await playAudio(base64Audio);
+	// 		if (!audioElementInitialized) {
+	// 			initAudioElement();
+	// 		}
+	// 		await playAudio(base64Audio);
 
-			wordTimestampsRef.current = null;
+	// 		wordTimestampsRef.current = null;
 
-			setActiveTask(null);
+	// 		setActiveTask(null);
 
-			await createMessage({
-				role: completionMessage.role,
-				content: completionMessage.content,
-			});
+	// 		await createMessage({
+	// 			role: completionMessage.role,
+	// 			content: completionMessage.content,
+	// 		});
 
-			updateConversation({
-				_id: conversationId,
-				lastMessage: completionMessage.content,
-			});
+	// 		updateConversation({
+	// 			_id: conversationId,
+	// 			lastMessage: completionMessage.content,
+	// 		});
 
-			stopProgressBar();
+	// 		stopProgressBar();
 
-			return { success: true };
-		} catch (error) {
-			logger.error("generateGreeting failed", error);
+	// 		return { success: true };
+	// 	} catch (error) {
+	// 		logger.error("generateGreeting failed", error);
 
-			handleError(error);
+	// 		handleError(error);
 
-			return { success: false };
-		}
-	}, [
-		audioElementInitialized,
-		chatDialect,
-		chatPartnerId,
-		conversationId,
-		createMessage,
-		handleError,
-		initAudioElement,
-		logger,
-		makeChatCompletionStream,
-		playAudio,
-		startProgressBarInterval,
-		stopProgressBar,
-		textToSpeech,
-		updateConversation,
-		updateDisplayedMessageInd,
-		upsertMessageInCache,
-		user,
-	]);
+	// 		return { success: false };
+	// 	}
+	// }, [
+	// 	audioElementInitialized,
+	// 	chatDialect,
+	// 	chatPartnerId,
+	// 	conversationId,
+	// 	createMessage,
+	// 	handleError,
+	// 	initAudioElement,
+	// 	logger,
+	// 	makeChatCompletionStream,
+	// 	playAudio,
+	// 	startProgressBarInterval,
+	// 	stopProgressBar,
+	// 	textToSpeech,
+	// 	updateConversation,
+	// 	updateDisplayedMessageInd,
+	// 	upsertMessageInCache,
+	// 	user,
+	// ]);
 
-	const greetingGeneratedRef = useRef(false);
+	// const greetingGeneratedRef = useRef(false);
 
-	if (
-		!greetingGeneratedRef.current &&
-		isNewChat &&
-		!isPending &&
-		messages.length === 0 &&
-		chatPartnerId &&
-		user?.id
-	) {
-		generateGreeting();
-		greetingGeneratedRef.current = true;
-	}
+	// if (
+	// 	!greetingGeneratedRef.current &&
+	// 	isNewChat &&
+	// 	!isPending &&
+	// 	messages.length === 0 &&
+	// 	chatPartnerId &&
+	// 	user?.id
+	// ) {
+	// 	// generateGreeting();
+	// 	greetingGeneratedRef.current = true;
+	// }
 
 	const onRecordingComplete = useCallback(
 		async (audioBlob: Blob) => {
@@ -627,6 +627,35 @@ const ConversationIdPage = ({
 
 				wordTimestampsRef.current = wordData;
 
+				setActiveTask("ASSISTANT_TRANSLATE");
+
+				const assistantMessageTranslationStream =
+					await makeChatCompletionStream(
+						[
+							{
+								role: "assistant",
+								content: JSON.stringify(
+									wordData.map(({ word }) => ({ arabic: word }))
+								),
+							},
+						],
+						{
+							mode: "TRANSLATE",
+							chatPartnerId,
+							chatDialect,
+						}
+					);
+
+				let assistantMessageTranslation = "";
+				for await (const data of assistantMessageTranslationStream) {
+					assistantMessageTranslation = data.content;
+				}
+
+				completionMessage.translation = JSON.parse(assistantMessageTranslation);
+				await upsertMessageInCache(completionMessage);
+
+				setActiveTask(null);
+
 				if (!audioElementInitialized) {
 					initAudioElement();
 				}
@@ -634,11 +663,10 @@ const ConversationIdPage = ({
 
 				wordTimestampsRef.current = null;
 
-				setActiveTask(null);
-
 				await createMessage({
 					role: completionMessage.role,
 					content: completionMessage.content,
+					translation: completionMessage.translation,
 				});
 
 				updateConversation({
@@ -783,7 +811,6 @@ const ConversationIdPage = ({
 					_id: displayedMessage._id,
 					clerkId: displayedMessage.clerkId,
 					conversationId: displayedMessage.conversationId,
-					translation: undefined,
 					createdAt: displayedMessage.createdAt,
 					updatedAt: new Date().toISOString(),
 					role: displayedMessage.role,
@@ -867,100 +894,6 @@ const ConversationIdPage = ({
 		setTranslationMode((prev) => !prev);
 	};
 
-	const translateBtnHandler = useCallback(async () => {
-		try {
-			if (!chatPartnerId || !chatDialect) {
-				throw new Error("chatPartnerId or chatDialect is null");
-			}
-
-			if (!displayedMessage) {
-				throw new Error("displayedMessage is null");
-			}
-
-			setTranslationMode(true);
-			startProgressBarInterval();
-
-			setActiveTask("ASSISTANT_TRANSLATE");
-
-			const completionStream = await makeChatCompletionStream(
-				[
-					{
-						role: displayedMessage.role,
-						content: displayedMessage.content,
-					},
-				],
-				{ mode: "TRANSLATE", chatPartnerId, chatDialect }
-			);
-
-			const completionMessage = {
-				_id: displayedMessage._id,
-				clerkId: displayedMessage.clerkId,
-				conversationId: displayedMessage.conversationId,
-				createdAt: displayedMessage.createdAt,
-				updatedAt: new Date().toISOString(),
-				role: displayedMessage.role,
-				content: "",
-			} as IMessage;
-
-			for await (const data of completionStream) {
-				completionMessage.translation = data.content;
-				await upsertMessageInCache(completionMessage);
-			}
-
-			setActiveTask("TEXT_TO_SPEECH");
-
-			const { base64Audio, wordData } = await textToSpeech(
-				completionMessage.translation!,
-				{
-					chatPartnerId,
-					chatDialect,
-				}
-			);
-
-			wordTimestampsRef.current = wordData;
-
-			if (!audioElementInitialized) {
-				initAudioElement();
-			}
-			await playAudio(base64Audio);
-
-			wordTimestampsRef.current = null;
-
-			setActiveTask(null);
-
-			await updateMessage(
-				{
-					...displayedMessage,
-					translation: completionMessage.translation,
-				},
-				{
-					mode: "TRANSLATE",
-				}
-			);
-
-			stopProgressBar();
-		} catch (error) {
-			logger.error("translateBtnHandler", error);
-
-			handleError(error, "There was a problem translating this message");
-		}
-	}, [
-		audioElementInitialized,
-		chatDialect,
-		chatPartnerId,
-		displayedMessage,
-		handleError,
-		initAudioElement,
-		logger,
-		makeChatCompletionStream,
-		playAudio,
-		startProgressBarInterval,
-		stopProgressBar,
-		textToSpeech,
-		updateMessage,
-		upsertMessageInCache,
-	]);
-
 	const [drawerOpen, setDrawerOpen] = useState(false);
 
 	const [dictionaryMode, setDictionaryMode] = useState(false);
@@ -1017,7 +950,6 @@ const ConversationIdPage = ({
 			isFirstMessage={displayedMessageInd === 0}
 			isLastMessage={displayedMessageInd === messages.length - 1}
 			isMessage={displayedMessage !== null}
-			hasTranslation={displayedMessage?.translation !== undefined}
 			isUserMessage={displayedMessage?.role === "user"}
 			isAssistantMessage={displayedMessage?.role === "assistant"}
 			replayBtnHandler={replayBtnHandler}
@@ -1027,7 +959,6 @@ const ConversationIdPage = ({
 			toggleRecordingHandler={toggleRecordingHandler}
 			toggleDictionaryHandler={toggleDictionaryHandler}
 			toggleTranslationHandler={toggleTranslationHandler}
-			translateBtnHandler={translateBtnHandler}
 			dictionaryMode={dictionaryMode}
 			translationMode={translationMode}
 		/>
@@ -1062,17 +993,6 @@ const ConversationIdPage = ({
 		/>
 	);
 
-	// needed for streaming updates in the messageCard component
-	const displayedMessageText = useMemo(() => {
-		if (translationMode && displayedMessage?.translation) {
-			return displayedMessage?.translation;
-		}
-
-		return displayedMessage?.content;
-		// NOTE: displayedMessage?.content must be included in the deps array
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [displayedMessage, displayedMessage?.content, translationMode]);
-
 	const dictionaryWords = useMemo(() => {
 		if (!displayedMessage) return [];
 
@@ -1087,16 +1007,13 @@ const ConversationIdPage = ({
 	}, [displayedMessage]);
 
 	const messageCardInnerContent = useMemo(() => {
-		const isShowingTranslation =
-			translationMode &&
-			displayedMessage?.translation &&
-			(!dictionaryMode || isPlaying);
+		const isShowingDictionaryBadges = dictionaryMode && STATUS === status.IDLE;
 
-		if (dictionaryMode && STATUS === status.IDLE) {
+		if (isShowingDictionaryBadges) {
 			return (
 				<div
 					style={{
-						direction: isShowingTranslation ? "ltr" : "rtl",
+						direction: "rtl",
 					}}
 				>
 					<div className="flex flex-wrap gap-2">
@@ -1119,15 +1036,17 @@ const ConversationIdPage = ({
 			);
 		}
 
-		if (isPlaying && wordTimestampsRef.current) {
+		const isShowingPlayingWords = isPlaying && wordTimestampsRef.current;
+
+		if (isShowingPlayingWords) {
 			return (
 				<div
 					style={{
-						direction: isShowingTranslation ? "ltr" : "rtl",
+						direction: "rtl",
 					}}
 					className="p-1"
 				>
-					{wordTimestampsRef.current.map((word, ind) => {
+					{wordTimestampsRef.current?.map((word, ind) => {
 						if (
 							!wordTimestampsRef.current ||
 							wordTimestampsRef.current[ind] === undefined
@@ -1135,12 +1054,7 @@ const ConversationIdPage = ({
 							return null;
 						}
 
-						const {
-							word: timestampedWord,
-							startTime,
-							endTime,
-							id,
-						} = wordTimestampsRef.current![ind];
+						const { word: timestampedWord, startTime, endTime, id } = word;
 
 						const isLastWord = ind === wordTimestampsRef.current!.length - 1;
 
@@ -1168,22 +1082,41 @@ const ConversationIdPage = ({
 			);
 		}
 
-		return (
-			<div
-				style={{
-					direction: isShowingTranslation ? "ltr" : "rtl",
-				}}
-			>
-				{displayedMessageText}
-			</div>
-		);
+		const isShowingTranslation =
+			translationMode && displayedMessage?.translation;
+		// && (!dictionaryMode || isPlaying);
+
+		if (isShowingTranslation) {
+			return (
+				<div
+					style={{
+						direction: "rtl",
+					}}
+					className="flex flex-wrap gap-3 sm:gap-4"
+				>
+					{displayedMessage?.translation?.map(({ arabic, english }) => (
+						<div key={arabic} className="flex flex-col items-center">
+							<div className="text-lg sm:text-xl tracking-wide">{arabic}</div>
+							<div
+								className="text-lg sm:text-xl text-muted-foreground font-light leading-tight"
+								style={{ direction: "ltr" }}
+							>
+								{english}
+							</div>
+						</div>
+					))}
+				</div>
+			);
+		}
+
+		return <span>{displayedMessage?.content}</span>;
 	}, [
 		STATUS,
 		currentTime,
 		dictionaryMode,
 		dictionaryWords,
+		displayedMessage?.content,
 		displayedMessage?.translation,
-		displayedMessageText,
 		isPlaying,
 		translationMode,
 		updateQueryStr,
@@ -1269,12 +1202,12 @@ const ConversationIdPage = ({
 
 	const messageIndexContent = useMemo(
 		() =>
-			displayedMessageText && (
+			displayedMessage?.content && (
 				<div className="text-slate-400 mt-1 w-full flex justify-end px-4 text-sm">
 					{(displayedMessageInd ?? 0) + 1} / {messages.length}
 				</div>
 			),
-		[displayedMessageInd, displayedMessageText, messages.length]
+		[displayedMessageInd, displayedMessage, messages.length]
 	);
 
 	const recordingIndicator = (
