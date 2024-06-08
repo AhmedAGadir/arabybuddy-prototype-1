@@ -29,7 +29,7 @@ const TranslationWrapper = ({
 	arabicWordContent: JSX.Element;
 	englishWordContent: JSX.Element;
 }) => (
-	<div className="flex flex-col items-center gap-1">
+	<div className="flex flex-col items-center gap-1 p-1">
 		<div className="text-lg sm:text-xl tracking-wide">{arabicWordContent}</div>
 		<div
 			className="text-lg text-muted-foreground font-light leading-tight"

@@ -167,7 +167,7 @@ const ChatPanel = ({
 				pressed: dictionaryMode,
 				onPressed: toggleDictionaryHandler,
 				icon: BookOpenIcon,
-				disabled: !isMessage || !isIdle,
+				disabled: false,
 			},
 			{
 				label: "Translate",
@@ -175,7 +175,7 @@ const ChatPanel = ({
 				isToggle: true,
 				pressed: translationMode,
 				onPressed: toggleTranslationHandler,
-				disabled: !isIdle,
+				disabled: false,
 			},
 			{
 				label: "Next",
