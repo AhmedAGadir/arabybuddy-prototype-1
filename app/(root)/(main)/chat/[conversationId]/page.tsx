@@ -20,25 +20,10 @@ import { useConversations } from "@/hooks/useConversations";
 
 import { Button } from "@/components/ui/button";
 
-import {
-	ArrowPathIcon,
-	ArrowTopRightOnSquareIcon,
-	BookOpenIcon,
-	ChevronLeftIcon,
-	ChevronRightIcon,
-	EllipsisVerticalIcon,
-	InformationCircleIcon,
-	MicrophoneIcon as MicrophoneIconOutline,
-	PlayIcon,
-	SparklesIcon,
-	SpeakerWaveIcon,
-} from "@heroicons/react/24/outline";
-
 import { useToast } from "@/components/ui/use-toast";
 
 import { Progress } from "@/components/ui/progress";
 
-import Microphone from "@/components/shared/Microphone";
 import MessageCard from "@/components/shared/MessageCard";
 
 import PulseLoader from "react-spinners/PulseLoader";
@@ -51,52 +36,19 @@ import { useUser } from "@clerk/nextjs";
 
 import SupportCard from "@/components/shared/SupportCard";
 
-import { useMediaQuery } from "@react-hooks-hub/use-media-query";
-
-import {
-	Tooltip,
-	TooltipContent,
-	TooltipProvider,
-	TooltipTrigger,
-} from "@/components/ui/tooltip";
-
 import _ from "lodash";
 import { Transition } from "@headlessui/react";
 
 import { cn } from "@/lib/utils";
 import { cairo } from "@/lib/fonts";
 
-import { Toggle } from "@/components/ui/toggle";
-import {
-	StopIcon,
-	StopCircleIcon,
-	XCircleIcon,
-	MicrophoneIcon as MicrophoneIconSolid,
-	SparklesIcon as SparklesIconSolid,
-} from "@heroicons/react/20/solid";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardFooter,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
-
-import { Badge } from "@/components/ui/badge";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCyclingText } from "@/hooks/useCyclingText";
-import { nonWordCharactersRegExp } from "@/lib/constants";
-import {
-	CompletionMode,
-	OpenAIMessage,
-	completionMode,
-} from "@/lib/api/assistant";
 import { DictionaryDrawer } from "@/components/shared/DictionaryDrawer";
 import ChatPanel from "@/components/shared/ChatPanel";
 import { status, type Status } from "@/types/types";
-import { DialectBadge } from "@/components/shared/DialectBadge";
 import { chatPartners } from "@/lib/chatPartners";
+const { ObjectId } = require("bson");
 
 const task = {
 	SPEECH_TO_TEXT: "SPEECH_TO_TEXT",
@@ -264,15 +216,7 @@ const ConversationIdPage = ({
 
 	const [activeTask, setActiveTask] = useState<Task | null>(null);
 
-	useEffect(() => {
-		logger.log("active task", activeTask);
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [activeTask]);
-
 	const [progressBarValue, setProgressBarValue] = useState(0);
-	// TODO: can remove this?
-	const progressBarValueRef = useRef<number>();
-	progressBarValueRef.current = progressBarValue;
 
 	const progressBarIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -301,17 +245,6 @@ const ConversationIdPage = ({
 		return status.IDLE;
 	}, [activeTask, isPlaying, isRecording]);
 
-	const isProcessing = STATUS === status.PROCESSING;
-	const isIdle = STATUS === status.IDLE;
-
-	const isDoingSpeechToText = activeTask === "SPEECH_TO_TEXT";
-	const isDoingAssistant = activeTask === "ASSISTANT";
-	const isDoingAssistantRegenerate = activeTask === "ASSISTANT_REGENERATE";
-	const isDoingAssistantRephrase = activeTask === "ASSISTANT_REPHRASE";
-	const isDoingAssistantTranslate = activeTask === "ASSISTANT_TRANSLATE";
-	const isDoingTextToSpeech = activeTask === "TEXT_TO_SPEECH";
-	const isDoingTextToSpeechReplay = activeTask === "TEXT_TO_SPEECH_REPLAY";
-
 	const instructions: {
 		[key in Status]: string[];
 	} = useMemo(
@@ -330,27 +263,24 @@ const ConversationIdPage = ({
 			],
 			PLAYING: [""],
 			PROCESSING: [
-				...(isDoingSpeechToText ? ["Transcribing..."] : []),
-				...(isDoingAssistant ? ["Generating a response..."] : []),
-				...(isDoingTextToSpeech ? ["Preparing audio..."] : []),
-				...(isDoingTextToSpeechReplay ? ["Regenerating audio..."] : []),
-				...(isDoingAssistantRegenerate ? ["Regenerating response..."] : []),
-				...(isDoingAssistantRephrase
+				...(activeTask === "SPEECH_TO_TEXT" ? ["Transcribing..."] : []),
+				...(activeTask === "ASSISTANT" ? ["Generating a response..."] : []),
+				...(activeTask === "TEXT_TO_SPEECH" ? ["Preparing audio..."] : []),
+				...(activeTask === "TEXT_TO_SPEECH_REPLAY"
+					? ["Regenerating audio..."]
+					: []),
+				...(activeTask === "ASSISTANT_REGENERATE"
+					? ["Regenerating response..."]
+					: []),
+				...(activeTask === "ASSISTANT_REPHRASE"
 					? ["Rephrasing your message to make it sound more natural..."]
 					: []),
-				...(isDoingAssistantTranslate ? ["Translating your message..."] : []),
+				...(activeTask === "ASSISTANT_TRANSLATE"
+					? ["Translating your message..."]
+					: []),
 			],
 		}),
-		[
-			isDoingAssistant,
-			isDoingAssistantRegenerate,
-			isDoingAssistantRephrase,
-			isDoingSpeechToText,
-			isDoingTextToSpeech,
-			isDoingTextToSpeechReplay,
-			isDoingAssistantTranslate,
-			messages.length,
-		]
+		[activeTask, messages.length]
 	);
 
 	const {
@@ -360,7 +290,7 @@ const ConversationIdPage = ({
 	} = useCyclingText(instructions[STATUS]);
 
 	const abortProcessingBtnHandler = useCallback(() => {
-		if (!isProcessing) return;
+		if (STATUS !== status.PROCESSING) return;
 		switch (activeTask) {
 			case "SPEECH_TO_TEXT":
 				abortSpeechToText();
@@ -379,11 +309,11 @@ const ConversationIdPage = ({
 				break;
 		}
 	}, [
+		STATUS,
 		abortMakeChatCompletionStream,
 		abortSpeechToText,
 		abortTextToSpeech,
 		activeTask,
-		isProcessing,
 	]);
 
 	useEffect(() => {
@@ -420,16 +350,6 @@ const ConversationIdPage = ({
 		[isPlaying, stopPlaying, stopProgressBar, toast]
 	);
 
-	const wordTimestampsRef = useRef<
-		| {
-				word: string;
-				id: string;
-				startTime: number;
-				endTime: number;
-		  }[]
-		| null
-	>(null);
-
 	// const generateGreeting = useCallback(async () => {
 	// 	try {
 	// 		if (!chatPartnerId || !chatDialect) {
@@ -449,7 +369,7 @@ const ConversationIdPage = ({
 
 	// 		const completionMessage = {
 	// 			// this id will be replaced by the actual id from the database
-	// 			_id: _.uniqueId("temporary_message_id_"),
+	// 			_id: new ObjectId().toHexString(),
 	// 			clerkId: user!.id,
 	// 			conversationId,
 	// 			createdAt: dateStr,
@@ -476,14 +396,10 @@ const ConversationIdPage = ({
 	// 			}
 	// 		);
 
-	// 		wordTimestampsRef.current = wordData;
-
 	// 		if (!audioElementInitialized) {
 	// 			initAudioElement();
 	// 		}
 	// 		await playAudio(base64Audio);
-
-	// 		wordTimestampsRef.current = null;
 
 	// 		setActiveTask(null);
 
@@ -575,6 +491,7 @@ const ConversationIdPage = ({
 				await createMessage({
 					role: "user",
 					content: transcription,
+					wordMetadata: [],
 				});
 
 				setActiveTask("ASSISTANT");
@@ -595,16 +512,20 @@ const ConversationIdPage = ({
 
 				const dateStr = new Date().toISOString();
 
-				const completionMessage = {
+				const ObjectId1 = ObjectId;
+				debugger;
+
+				const completionMessage: IMessage = {
 					// this id will be replaced by the actual id from the database
-					_id: _.uniqueId("temporary_message_id_"),
+					_id: new ObjectId().toHexString(),
 					clerkId: user!.id,
 					conversationId,
 					createdAt: dateStr,
 					updatedAt: dateStr,
 					role: "assistant",
 					content: "",
-				} as IMessage;
+					wordMetadata: [],
+				};
 
 				latestMessageInd++;
 				updateDisplayedMessageInd(latestMessageInd);
@@ -625,33 +546,66 @@ const ConversationIdPage = ({
 					}
 				);
 
-				wordTimestampsRef.current = wordData;
+				console.log("worddata", wordData);
 
 				setActiveTask("ASSISTANT_TRANSLATE");
 
-				const assistantMessageTranslationStream =
-					await makeChatCompletionStream(
-						[
-							{
-								role: "assistant",
-								content: JSON.stringify(
-									wordData.map(({ word }) => ({ arabic: word }))
-								),
-							},
-						],
+				const wordMetadataCompletionStream = await makeChatCompletionStream(
+					[
 						{
-							mode: "TRANSLATE",
-							chatPartnerId,
-							chatDialect,
-						}
-					);
+							role: "assistant",
+							content: JSON.stringify(
+								wordData.map(({ _id, word }) => ({ _id, arabic: word }))
+							),
+						},
+					],
+					{
+						mode: "TRANSLATE",
+						chatPartnerId,
+						chatDialect,
+					}
+				);
 
-				let assistantMessageTranslation = "";
-				for await (const data of assistantMessageTranslationStream) {
-					assistantMessageTranslation = data.content;
+				let wordMetadataCompletion = "";
+				for await (const data of wordMetadataCompletionStream) {
+					wordMetadataCompletion = data.content;
 				}
 
-				completionMessage.translation = JSON.parse(assistantMessageTranslation);
+				const wordMetadataCompletionArr = JSON.parse(
+					wordMetadataCompletion
+				) as { _id: string; arabic: string; english: string }[];
+
+				if (
+					!Array.isArray(wordMetadataCompletionArr) ||
+					wordMetadataCompletionArr.length !== wordData.length
+				) {
+					throw new Error(
+						"Word metadata completion stream did not return the expected data"
+					);
+				}
+
+				completionMessage.wordMetadata = wordMetadataCompletionArr.map(
+					({ _id, arabic, english }, ind) => {
+						const wordInd = wordData.findIndex((word) => word._id === _id);
+
+						return {
+							_id,
+							arabic,
+							english,
+							startTime:
+								wordInd !== -1
+									? wordData[wordInd].startTime
+									: wordData[ind].startTime,
+							endTime:
+								wordInd !== -1
+									? wordData[wordInd].endTime
+									: wordData[ind].endTime,
+						};
+					}
+				);
+
+				console.log("completionMessage", completionMessage);
+
 				await upsertMessageInCache(completionMessage);
 
 				setActiveTask(null);
@@ -661,12 +615,10 @@ const ConversationIdPage = ({
 				}
 				await playAudio(base64Audio);
 
-				wordTimestampsRef.current = null;
-
 				await createMessage({
 					role: completionMessage.role,
 					content: completionMessage.content,
-					translation: completionMessage.translation,
+					wordMetadata: completionMessage.wordMetadata,
 				});
 
 				updateConversation({
@@ -732,14 +684,10 @@ const ConversationIdPage = ({
 
 			setActiveTask(null);
 
-			wordTimestampsRef.current = wordData;
-
 			if (!audioElementInitialized) {
 				initAudioElement();
 			}
 			await playAudio(base64Audio);
-
-			wordTimestampsRef.current = null;
 
 			stopProgressBar();
 		} catch (error) {
@@ -832,14 +780,10 @@ const ConversationIdPage = ({
 					}
 				);
 
-				wordTimestampsRef.current = wordData;
-
 				if (!audioElementInitialized) {
 					initAudioElement();
 				}
 				await playAudio(base64Audio);
-
-				wordTimestampsRef.current = null;
 
 				setActiveTask(null);
 
@@ -964,6 +908,60 @@ const ConversationIdPage = ({
 		/>
 	);
 
+	const messageCardContent = displayedMessage && chatPartner && chatDialect && (
+		<MessageCard
+			message={displayedMessage}
+			assistant={chatPartner}
+			dialect={chatDialect}
+			isPlaying={isPlaying}
+			currentTime={currentTime}
+			dictionaryMode={dictionaryMode && STATUS === status.IDLE}
+			translationMode={translationMode}
+			onDictionaryWordClicked={(id: string) => {
+				// using the index instead of the id allows us to use pagination in the drawer
+				updateQueryStr("wordId", id);
+				setDrawerOpen(true);
+			}}
+			showLoadingOverlay={STATUS === status.PROCESSING}
+			// isLoading is only true for the first fetch
+			showSkeleton={isLoading}
+		/>
+	);
+
+	const messageIndexContent = displayedMessage &&
+		chatPartner &&
+		chatDialect && (
+			<div className="text-slate-400 mt-1 w-full flex justify-end px-4 text-sm">
+				{(displayedMessageInd ?? 0) + 1} / {messages.length}
+			</div>
+		);
+
+	const progressBarContent = (
+		<Progress
+			className="rounded-none h-1"
+			// innerClassName="bg-gradient-to-r to-araby-purple from-araby-purple"
+			innerClassName="bg-araby-blue"
+			value={progressBarValue}
+		/>
+	);
+
+	const recordingIndicator = (
+		<div
+			className={cn(
+				"relative flex h-4 w-4 my-2",
+				// if were not recording, hide the blob on mobile (to save space)
+				!isRecording && "hidden md:flex"
+			)}
+		>
+			{isRecording && (
+				<>
+					<span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#FF0066] opacity-75" />
+					<span className="relative inline-flex rounded-full h-4 w-4 bg-[#FF0066]" />
+				</>
+			)}
+		</div>
+	);
+
 	const instructionContent = (
 		<Transition
 			className={cn(
@@ -982,249 +980,6 @@ const ConversationIdPage = ({
 		>
 			{instruction}
 		</Transition>
-	);
-
-	const progressBarContent = (
-		<Progress
-			className="rounded-none h-1"
-			// innerClassName="bg-gradient-to-r to-araby-purple from-araby-purple"
-			innerClassName="bg-araby-blue"
-			value={progressBarValueRef.current}
-		/>
-	);
-
-	const dictionaryWords = useMemo(() => {
-		if (!displayedMessage) return [];
-
-		const words = _.words(
-			displayedMessage?.content.replace(nonWordCharactersRegExp, "")
-		).map((word) => ({
-			word,
-			id: _.uniqueId("word_"),
-		}));
-
-		return words;
-	}, [displayedMessage]);
-
-	const messageCardInnerContent = useMemo(() => {
-		const isShowingDictionaryBadges = dictionaryMode && STATUS === status.IDLE;
-
-		if (isShowingDictionaryBadges) {
-			return (
-				<div
-					style={{
-						direction: "rtl",
-					}}
-				>
-					<div className="flex flex-wrap gap-2">
-						{dictionaryWords.map(({ word, id }, ind) => (
-							<Badge
-								key={id}
-								variant="secondary"
-								className="text-lg cursor-pointer hover:bg-primary hover:text-white"
-								onClick={() => {
-									// using the index instead of the id allows us to use pagination in the drawer
-									updateQueryStr("wordInd", ind.toString());
-									setDrawerOpen(true);
-								}}
-							>
-								{word}
-							</Badge>
-						))}
-					</div>
-				</div>
-			);
-		}
-
-		const isShowingPlayingWords = isPlaying && wordTimestampsRef.current;
-
-		if (isShowingPlayingWords) {
-			return (
-				<div
-					style={{
-						direction: "rtl",
-					}}
-					className="p-1"
-				>
-					{wordTimestampsRef.current?.map((word, ind) => {
-						if (
-							!wordTimestampsRef.current ||
-							wordTimestampsRef.current[ind] === undefined
-						) {
-							return null;
-						}
-
-						const { word: timestampedWord, startTime, endTime, id } = word;
-
-						const isLastWord = ind === wordTimestampsRef.current!.length - 1;
-
-						const currentTimeMoreThanStartTime = currentTime >= startTime;
-
-						const nextWordStarted = isLastWord
-							? false
-							: currentTime >= wordTimestampsRef.current![ind + 1]?.startTime;
-
-						const isActive = currentTimeMoreThanStartTime && !nextWordStarted;
-
-						return (
-							<span
-								key={id}
-								className={cn(
-									isActive && "bg-indigo-600 text-white",
-									"rounded-md p-1"
-								)}
-							>
-								{timestampedWord}{" "}
-							</span>
-						);
-					})}
-				</div>
-			);
-		}
-
-		const isShowingTranslation =
-			translationMode && displayedMessage?.translation;
-		// && (!dictionaryMode || isPlaying);
-
-		if (isShowingTranslation) {
-			return (
-				<div
-					style={{
-						direction: "rtl",
-					}}
-					className="flex flex-wrap gap-3 sm:gap-4"
-				>
-					{displayedMessage?.translation?.map(({ arabic, english }) => (
-						<div key={arabic} className="flex flex-col items-center">
-							<div className="text-lg sm:text-xl tracking-wide">{arabic}</div>
-							<div
-								className="text-lg sm:text-xl text-muted-foreground font-light leading-tight"
-								style={{ direction: "ltr" }}
-							>
-								{english}
-							</div>
-						</div>
-					))}
-				</div>
-			);
-		}
-
-		return <span>{displayedMessage?.content}</span>;
-	}, [
-		STATUS,
-		currentTime,
-		dictionaryMode,
-		dictionaryWords,
-		displayedMessage?.content,
-		displayedMessage?.translation,
-		isPlaying,
-		translationMode,
-		updateQueryStr,
-	]);
-
-	const messageCardContent = useMemo(() => {
-		// don't show message card if there is no message to display
-		if (!displayedMessage && !isLoading) return null;
-
-		// don't show skeleton loaders on new chats that are still
-		// doing their first fetch
-		if (!displayedMessage && isNewChat && isLoading) {
-			return null;
-		}
-
-		if (!chatPartner || !chatDialect) {
-			return null;
-		}
-
-		const messageCardDetails = {
-			name: "",
-			avatarSrc: "",
-			avatarAlt: "",
-		};
-
-		switch (displayedMessage?.role) {
-			case "assistant":
-				messageCardDetails.name = chatPartner.flag
-					? `${chatPartner.name}`
-					: chatPartner.name;
-				messageCardDetails.avatarSrc = chatPartner.image;
-				messageCardDetails.avatarAlt = chatPartner.name;
-				break;
-			case "user":
-			default:
-				messageCardDetails.name = "You";
-				messageCardDetails.avatarSrc = user?.imageUrl ?? "/assets/user.svg";
-				messageCardDetails.avatarAlt = "User avatar";
-				break;
-		}
-
-		const menuContent = isPlaying ? (
-			<SpeakerWaveIcon className="w-6 h-6 sm:w-7 sm:h-7 text-slate-400 transition ease-in-out" />
-		) : (
-			<DialectBadge
-				className="self-start text-md"
-				dialect={chatDialect}
-				shorten
-			/>
-		);
-
-		return (
-			<MessageCard
-				className={cn(
-					"h-full bg-white text-slate-900 dark:text-white"
-					// isPlaying &&
-					// 	"text-transparent bg-clip-text bg-gradient-to-r to-indigo-500 from-sky-500 shadow-blue-500/50"
-				)}
-				name={messageCardDetails?.name}
-				avatar={{
-					src: messageCardDetails?.avatarSrc,
-					alt: messageCardDetails?.avatarAlt,
-				}}
-				// glow={isPlaying}
-				showLoadingOverlay={STATUS === status.PROCESSING}
-				// isLoading is only true for the first fetch
-				showSkeleton={isLoading}
-				menuContent={menuContent}
-				content={messageCardInnerContent}
-			/>
-		);
-	}, [
-		displayedMessage,
-		isLoading,
-		isNewChat,
-		chatPartner,
-		chatDialect,
-		isPlaying,
-		STATUS,
-		messageCardInnerContent,
-		user?.imageUrl,
-	]);
-
-	const messageIndexContent = useMemo(
-		() =>
-			displayedMessage?.content && (
-				<div className="text-slate-400 mt-1 w-full flex justify-end px-4 text-sm">
-					{(displayedMessageInd ?? 0) + 1} / {messages.length}
-				</div>
-			),
-		[displayedMessageInd, displayedMessage, messages.length]
-	);
-
-	const recordingIndicator = (
-		<div
-			className={cn(
-				"relative flex h-4 w-4 my-2",
-				// if were not recording, hide the blob on mobile (to save space)
-				!isRecording && "hidden md:flex"
-			)}
-		>
-			{isRecording && (
-				<>
-					<span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#FF0066] opacity-75" />
-					<span className="relative inline-flex rounded-full h-4 w-4 bg-[#FF0066]" />
-				</>
-			)}
-		</div>
 	);
 
 	// if (isPending) {
@@ -1261,8 +1016,29 @@ const ConversationIdPage = ({
 					</div>
 					{messageIndexContent}
 				</div>
-				{/* divs to view each size */}
-				{/* <div className="sm:hidden">
+				{recordingIndicator}
+				<div className="h-12 w-full text-center">{instructionContent}</div>
+				<div className="md:hidden mb-8">{chatPanelContent}</div>
+			</div>
+			<DictionaryDrawer
+				open={drawerOpen}
+				setOpen={setDrawerOpen}
+				wordData={
+					displayedMessage?.wordMetadata.map(({ _id, arabic }) => ({
+						_id,
+						word: arabic,
+					})) ?? []
+				}
+				chatPartnerId={chatPartnerId}
+				chatDialect={chatDialect}
+			/>
+			<SupportCard className="fixed bottom-0 right-0" />
+		</div>
+	);
+
+	{
+		/* divs to view each size */
+		/* <div className="sm:hidden">
 					<h1>xs</h1>
 				</div>
 				<div className="hidden sm:block md:hidden">
@@ -1276,21 +1052,8 @@ const ConversationIdPage = ({
 				</div>
 				<div className="hidden xl:block">
 					<h1>xl + up</h1>
-				</div> */}
-				{recordingIndicator}
-				<div className="h-12 w-full text-center">{instructionContent}</div>
-				<div className="md:hidden mb-8">{chatPanelContent}</div>
-			</div>
-			<DictionaryDrawer
-				open={drawerOpen}
-				setOpen={setDrawerOpen}
-				words={dictionaryWords}
-				chatPartnerId={chatPartnerId}
-				chatDialect={chatDialect}
-			/>
-			<SupportCard className="fixed bottom-0 right-0" />
-		</div>
-	);
+				</div> */
+	}
 };
 
 export default ConversationIdPage;

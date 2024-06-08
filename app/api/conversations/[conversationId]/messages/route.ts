@@ -55,7 +55,7 @@ export async function POST(
 
 		const message: IMessage = await req.json();
 
-		const { content, role, translation, _id } = message;
+		const { content, role, wordMetadata, _id } = message;
 
 		console.log("creating new message - conversationId:", conversationId);
 
@@ -65,7 +65,7 @@ export async function POST(
 			...(_id ? { _id } : {}),
 			role,
 			content,
-			...(translation ? { translation } : {}),
+			wordMetadata,
 		});
 
 		console.log("new message created", newMessage);

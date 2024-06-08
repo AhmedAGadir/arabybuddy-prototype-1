@@ -45,12 +45,12 @@ export const getSystemMessage = (payload: AssistantPayload) => {
 	if (mode === "TRANSLATE") {
 		let systemMessage = "";
 		systemMessage += `You are an online Arabic translator that translates Arabic chat messages from the ${chatDialect} dialect into English. `;
-		systemMessage += `The input is a JavaScript array of objects with the following format: {arabic: string}[] `;
+		systemMessage += `The input is a JavaScript array of objects with the following format: {_id: string, arabic: string}[] `;
 		systemMessage += `Map over the input array and return an updated array. Each object in the array should have a new property "english" with the translated text for the "arabic" property. `;
 		systemMessage += `Make sure that if all of the translated words are joined together, the sentence reads coherently and accurately reflects the original meaning. `;
-		systemMessage += `For example, if the input is [{"arabic": "مَاذَا"}, {"arabic": "تُحِبُّ"}, {"arabic": "أَنْ"}, {"arabic": "تَفْعَلَ"}, {"arabic": "فِي"}, {"arabic": "وَقْتِ"}, {"arabic": "الفَرَاغِ؟"}], `;
-		systemMessage += `the output should be [{"arabic": "مَاذَا", "english": "What"}, {"arabic": "تُحِبُّ", "english": "do you like"}, {"arabic": "أَنْ", "english": "to"}, {"arabic": "تَفْعَلَ", "english": "do"}, {"arabic": "فِي", "english": "in"}, {"arabic": "وَقْتِ", "english": "your"}, {"arabic": "الفَرَاغِ؟", "english": "free time?"}], `;
-		systemMessage += `not [{"arabic": "مَاذَا", "english": "What"}, {"arabic": "تُحِبُّ", "english": "love"}, {"arabic": "أَنْ", "english": "that"}, {"arabic": "تَفْعَلَ", "english": "you do"}, {"arabic": "فِي", "english": "in"}, {"arabic": "وَقْتِ", "english": "time"}, {"arabic": "الفَرَاغِ؟", "english": "void?"}]. `;
+		systemMessage += `For example, if the input is [{_id: '1', arabic: مَاذَا}, {_id: '2', arabic: تُحِبُّ}, {_id: '3', arabic: أَنْ}, {_id: '4', arabic: تَفْعَلَ}, {_id: '5', arabic: فِي}, {_id: '6', arabic: وَقْتِ}, {_id: '7', arabic: الفَرَاغِ؟}], `;
+		systemMessage += `the output should be [{_id: '1', arabic: مَاذَا, english: "What"}, {_id: '2', arabic: تُحِبُّ, english: "do you like"}, {_id: '3', arabic: أَنْ, english: "to"}, {_id: '4', arabic: تَفْعَلَ, english: "do"}, {_id: '5', arabic: فِي, english: "in"}, {_id: '6', arabic: وَقْتِ, english: "your"}, {_id: '7', arabic: الفَرَاغِ؟, english: "free time?"}], `;
+		systemMessage += `not [{_id: '1', arabic: مَاذَا, english: "What"}, {_id: '2', arabic: تُحِبُّ, english: "love"}, {_id: '3', arabic: أَنْ, english: "that"}, {_id: '4', arabic: تَفْعَلَ, english: "you do"}, {_id: '5', arabic: فِي, english: "in"}, {_id: '6', arabic: وَقْتِ, english: "time"}, {_id: '7', arabic: الفَرَاغِ؟, english: "void?"}]. `;
 		systemMessage += `Output should be the raw JSON array with no additional text, comments, or formatting.`;
 		return systemMessage;
 	}
