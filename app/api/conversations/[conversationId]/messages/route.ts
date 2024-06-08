@@ -1,5 +1,5 @@
 import Conversation from "@/lib/database/models/conversation.model";
-import Message from "@/lib/database/models/message.model";
+import Message, { IMessage } from "@/lib/database/models/message.model";
 import { connectToDatabase } from "@/lib/database/mongoose";
 import { auth } from "@clerk/nextjs/server";
 
@@ -53,7 +53,9 @@ export async function POST(
 
 		await connectToDatabase();
 
-		const { content, role, _id } = await req.json();
+		const message: IMessage = await req.json();
+
+		const { content, role, wordMetadata, _id } = message;
 
 		console.log("creating new message - conversationId:", conversationId);
 
@@ -63,6 +65,7 @@ export async function POST(
 			...(_id ? { _id } : {}),
 			role,
 			content,
+			wordMetadata,
 		});
 
 		console.log("new message created", newMessage);

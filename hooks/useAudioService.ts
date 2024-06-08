@@ -8,6 +8,14 @@ import _ from "lodash";
 import { ArabicDialect } from "@/types/types";
 import { TextToSpeechPayload } from "@/app/api/chat/text-to-speech/route";
 import { ChatPartnerId } from "@/lib/chatPartners";
+const { ObjectId } = require("bson");
+
+export type WordData = {
+	_id: string;
+	word: string;
+	startTime: number;
+	endTime: number;
+};
 
 const useAudioService = () => {
 	const logger = useLogger({ label: "AudioService", color: "#87de74" });
@@ -120,12 +128,7 @@ const useAudioService = () => {
 				const decodedBuffer = new TextDecoder().decode(concatenatedBuffer);
 
 				const base64Audios: string[] = [];
-				const wordData: {
-					id: string;
-					word: string;
-					startTime: number;
-					endTime: number;
-				}[] = [];
+				const wordData: WordData[] = [];
 
 				decodedBuffer
 					.split("\n\n")
@@ -166,9 +169,9 @@ const useAudioService = () => {
 
 									if (character === " ") {
 										if (word) {
-											const id = _.uniqueId();
+											const id = new ObjectId().toHexString();
 											wordData.push({
-												id,
+												_id: id,
 												word,
 												startTime: wordStartTimeSeconds,
 												endTime: wordEndTimeSeconds,
@@ -185,9 +188,9 @@ const useAudioService = () => {
 										word += character;
 
 										if (i === characters.length - 1) {
-											const id = _.uniqueId();
+											const id = new ObjectId().toHexString();
 											wordData.push({
-												id,
+												_id: id,
 												word,
 												startTime: wordStartTimeSeconds,
 												endTime: wordEndTimeSeconds,

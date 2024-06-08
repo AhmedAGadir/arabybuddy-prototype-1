@@ -49,13 +49,13 @@ import { ArabicDialect } from "@/types/types";
 const DictionaryDrawer = ({
 	open,
 	setOpen,
-	words,
+	wordData,
 	chatPartnerId,
 	chatDialect,
 }: {
 	open: boolean;
 	setOpen: (open: boolean) => void;
-	words: { word: string; id: string }[];
+	wordData: { _id: string; word: string }[];
 	chatPartnerId: ChatPartnerId | undefined;
 	chatDialect: ArabicDialect | undefined;
 }) => {
@@ -65,22 +65,23 @@ const DictionaryDrawer = ({
 	const pathname = usePathname();
 	const searchParams = useSearchParams();
 
-	const wordIndParam = searchParams.get("wordInd");
+	const wordId = searchParams.get("wordId");
 
-	const wordInd = wordIndParam ? parseInt(wordIndParam) : null;
+	const wordInd = wordId ? wordData.findIndex((w) => w._id === wordId) : null;
 
-	const wordData = wordInd !== null ? words[wordInd] : null;
-
-	const word = wordData?.word;
+	const word =
+		wordInd !== null && wordInd !== -1 ? wordData[wordInd].word : null;
 
 	// some state for monolingual mode, initialized from local storage,
 	const [monolingualMode, setMonolingualMode] = React.useState(
-		localStorage?.getItem("monolingualMode") === "true" || false
+		localStorage ? localStorage.getItem("monolingualMode") === "true" : false
 	);
 
 	const toggleMonolingualMode = () => {
 		setMonolingualMode((prev) => {
-			localStorage?.setItem("monolingualMode", String(!prev));
+			if (localStorage) {
+				localStorage.setItem("monolingualMode", String(!prev));
+			}
 			return !prev;
 		});
 	};
@@ -135,7 +136,7 @@ const DictionaryDrawer = ({
 						role: "user",
 						content: JSON.stringify({
 							word,
-							context: words.map((w) => w.word).join(" "),
+							context: wordData.map((w) => w.word).join(" "),
 							monolingual: monolingualMode,
 						}),
 					},
@@ -176,7 +177,7 @@ const DictionaryDrawer = ({
 					</ToastAction>
 				),
 				className: "error-toast",
-				duration: Infinity,
+				duration: 5000,
 			});
 		},
 	});
@@ -197,15 +198,35 @@ const DictionaryDrawer = ({
 		[pathname, router, searchParams]
 	);
 
+	const removeQueryStr = useCallback(
+		(name: string) => {
+			const params = new URLSearchParams(searchParams.toString());
+			params.delete(name);
+
+			router.replace(pathname + "?" + params.toString());
+		},
+		[pathname, router, searchParams]
+	);
+
 	const viewPreviousWord = () => {
 		if (wordInd !== null && wordInd > 0) {
-			updateQueryStr("wordInd", String(wordInd - 1));
+			const prevWordId = wordData[wordInd - 1]._id;
+			updateQueryStr("wordId", prevWordId);
 		}
 	};
 
 	const viewNextWord = () => {
-		if (wordInd !== null && wordInd < words.length - 1) {
-			updateQueryStr("wordInd", String(wordInd + 1));
+		if (wordInd !== null && wordInd < wordData.length - 1) {
+			const nextWordId = wordData[wordInd + 1]._id;
+			updateQueryStr("wordId", nextWordId);
+		}
+	};
+
+	const onOpenChange = (open: boolean) => {
+		setOpen(open);
+
+		if (!open) {
+			removeQueryStr("wordId");
 		}
 	};
 
@@ -216,13 +237,16 @@ const DictionaryDrawer = ({
 					variant="outline"
 					className="h-12 w-12 shrink-0 rounded-full"
 					onClick={viewNextWord}
-					disabled={wordInd === words.length - 1}
+					disabled={wordInd === wordData.length - 1}
 				>
 					<span className="sr-only">next word</span>
 					<ChevronLeftIcon className="w-5 h-5" />
 				</Button>
 				<div className="flex-1 text-center">
-					<div className={cn("text-4xl md:text-6xl m", cairo.className)}>
+					<div
+						className={cn("text-4xl md:text-6xl", cairo.className)}
+						style={{ direction: "rtl" }}
+					>
 						{word && word}
 					</div>
 				</div>
@@ -331,7 +355,7 @@ const DictionaryDrawer = ({
 	);
 
 	return (
-		<Drawer open={open} onOpenChange={setOpen}>
+		<Drawer open={open} onOpenChange={onOpenChange}>
 			{/* <DrawerTrigger asChild>
 				<Button variant="outline">Open Drawer</Button>
 			</DrawerTrigger> */}

@@ -1,15 +1,31 @@
 import { Schema, model, models } from "mongoose";
 
-export interface IMessage extends Document {
+export interface WordMetadata {
+	_id: string;
+	arabic: string;
+	english: string;
+	startTime: number;
+	endTime: number;
+}
+
+// export interface IMessage extends Document {
+export interface IMessage {
 	_id: string;
 	clerkId: string;
 	conversationId: string;
 	role: "user" | "assistant";
 	content: string;
-	translation?: string;
+	wordMetadata: WordMetadata[];
 	createdAt: string;
 	updatedAt: string;
 }
+
+const WordMetadataSchema = new Schema({
+	arabic: { type: String },
+	english: { type: String },
+	startTime: { type: Number },
+	endTime: { type: Number },
+});
 
 const MessageSchema = new Schema(
 	{
@@ -31,8 +47,10 @@ const MessageSchema = new Schema(
 			type: String,
 			required: true,
 		},
-		translation: {
-			type: String,
+		wordMetadata: {
+			type: [WordMetadataSchema],
+			default: [],
+			required: true,
 		},
 	},
 	{

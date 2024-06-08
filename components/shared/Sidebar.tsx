@@ -73,7 +73,7 @@ export default function Sidebar({ onClick }: { onClick?: () => void }) {
 	// 				</ToastAction>
 	// 			),
 	// 			className: "error-toast",
-	// 			duration: Infinity,
+	// 			duration: 5000,
 	// 		});
 	// 	}
 	// }, [isPending, error, refetch, toast]);
@@ -190,7 +190,14 @@ export default function Sidebar({ onClick }: { onClick?: () => void }) {
 				})}
 			</ul>
 		);
-	}, [conversations, error, isPending, pathname, searchParams]);
+	}, [
+		conversations,
+		error,
+		isPending,
+		openConversation,
+		pathname,
+		searchParams,
+	]);
 
 	const authContent = useMemo(() => {
 		if (!isLoaded && user) {
@@ -309,7 +316,7 @@ export default function Sidebar({ onClick }: { onClick?: () => void }) {
 				{authContent}
 			</ul>
 		);
-	}, [authContent, pathname, isPending]);
+	}, [isPending, authContent, pathname, openPage]);
 
 	const newChatButtonContent = useMemo(() => {
 		if (isPending) {
@@ -358,13 +365,12 @@ export default function Sidebar({ onClick }: { onClick?: () => void }) {
 			</div>
 			<nav className="flex-1 min-h-0  flex flex-col">
 				{newChatButtonContent}
-				<ul role="list" className="flex-1 min-h-0 flex flex-col gap-y-7 mt-4 ">
-					<li className="flex-1 overflow-y-scroll min-h-0 px-1">
+				<div className="flex-1 min-h-0 flex flex-col gap-y-7 mt-4">
+					<div className="flex-1 overflow-y-scroll min-h-0 px-1">
 						{conversationListContent}
-					</li>
-
-					<li className="mt-auto mb-3">{otherNavItemsContent}</li>
-				</ul>
+					</div>
+					<div className="mt-auto mb-3">{otherNavItemsContent}</div>
+				</div>
 			</nav>
 			<ConfirmationDialog
 				description="This action cannot be undone. This will permanently delete this conversation and all its messages from our servers."

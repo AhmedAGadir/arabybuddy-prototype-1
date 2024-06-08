@@ -23,7 +23,7 @@ import {
 import { StopIcon, XCircleIcon } from "@heroicons/react/20/solid";
 
 import { TranslateIcon } from "@/components/shared/icons/Translate";
-import { completionMode, type CompletionMode } from "@/lib/api/assistant";
+import { IMessage } from "@/lib/database/models/message.model";
 
 type IconType = React.FC<any> | (() => JSX.Element);
 
@@ -37,13 +37,13 @@ interface BasePanelItem {
 
 interface ButtonPanelItem extends BasePanelItem {
 	onClick: () => void;
-	toggle?: never;
+	isToggle?: never;
 	pressed?: never;
 	onPressed?: never;
 }
 
 interface TogglePanelItem extends BasePanelItem {
-	toggle: boolean;
+	isToggle: boolean;
 	pressed: boolean;
 	onPressed: (pressed: boolean) => void;
 	onClick?: never;
@@ -53,13 +53,11 @@ type PanelItem = ButtonPanelItem | TogglePanelItem;
 
 const ChatPanel = ({
 	chatStatus,
+	message,
 	previousMessageHandler,
 	nextMessageHandler,
 	isFirstMessage,
 	isLastMessage,
-	isMessage,
-	hasTranslation,
-	isUserMessage,
 	replayBtnHandler,
 	abortProcessingBtnHandler,
 	stopPlayingHandler,
@@ -67,19 +65,15 @@ const ChatPanel = ({
 	toggleRecordingHandler,
 	toggleDictionaryHandler,
 	toggleTranslationHandler,
-	translateBtnHandler,
 	dictionaryMode,
 	translationMode,
 }: {
 	chatStatus: Status;
+	message: IMessage | null;
 	previousMessageHandler: () => void;
 	nextMessageHandler: () => void;
 	isFirstMessage: boolean;
 	isLastMessage: boolean;
-	isMessage: boolean;
-	hasTranslation: boolean;
-	isUserMessage: boolean;
-	isAssistantMessage: boolean;
 	replayBtnHandler: () => void;
 	abortProcessingBtnHandler: () => void;
 	stopPlayingHandler: () => void;
@@ -89,10 +83,12 @@ const ChatPanel = ({
 	toggleRecordingHandler: () => void;
 	toggleDictionaryHandler: () => void;
 	toggleTranslationHandler: () => void;
-	translateBtnHandler: () => void;
 	dictionaryMode: boolean;
 	translationMode: boolean;
 }) => {
+	const isMessage = message !== null;
+	const isUserMessage = message?.role === "user";
+
 	const isIdle = chatStatus === status.IDLE;
 	const isRecording = chatStatus === status.RECORDING;
 	const isPlaying = chatStatus === status.PLAYING;
@@ -122,7 +118,7 @@ const ChatPanel = ({
 							label: "Cancel",
 							icon: XCircleIcon,
 							iconClasses: "text-white w-8 h-8",
-							toggle: true,
+							isToggle: true,
 							pressed: true,
 							onPressed: abortProcessingBtnHandler,
 							disabled: false,
@@ -160,7 +156,7 @@ const ChatPanel = ({
 				  ]),
 			{
 				label: "Record",
-				toggle: true,
+				isToggle: true,
 				pressed: isRecording,
 				onPressed: toggleRecordingHandler,
 				icon: MicrophoneIconOutline,
@@ -168,31 +164,20 @@ const ChatPanel = ({
 			},
 			{
 				label: "Dictionary",
-				toggle: true,
+				isToggle: true,
 				pressed: dictionaryMode,
 				onPressed: toggleDictionaryHandler,
 				icon: BookOpenIcon,
-				disabled: !isMessage || !isIdle,
+				disabled: false,
 			},
-			...(hasTranslation
-				? [
-						{
-							label: "Translate",
-							icon: TranslateIcon,
-							toggle: true,
-							pressed: translationMode,
-							onPressed: toggleTranslationHandler,
-							disabled: !isIdle,
-						},
-				  ]
-				: [
-						{
-							label: "Translate",
-							icon: TranslateIcon,
-							onClick: translateBtnHandler,
-							disabled: !isMessage || !isIdle,
-						},
-				  ]),
+			{
+				label: "Translate",
+				icon: TranslateIcon,
+				isToggle: true,
+				pressed: translationMode,
+				onPressed: toggleTranslationHandler,
+				disabled: false,
+			},
 			{
 				label: "Next",
 				icon: () => <span>Next</span>,
@@ -201,6 +186,9 @@ const ChatPanel = ({
 			},
 		];
 	}, [
+		previousMessageHandler,
+		isMessage,
+		isFirstMessage,
 		isRecording,
 		isPlaying,
 		isIdle,
@@ -208,11 +196,14 @@ const ChatPanel = ({
 		isProcessing,
 		abortProcessingBtnHandler,
 		stopPlayingHandler,
+		isUserMessage,
 		toggleRecordingHandler,
 		dictionaryMode,
 		toggleDictionaryHandler,
 		translationMode,
-		translateBtnHandler,
+		toggleTranslationHandler,
+		nextMessageHandler,
+		isLastMessage,
 		redoCompletionHandler,
 	]);
 
@@ -226,7 +217,7 @@ const ChatPanel = ({
 								<Tooltip>
 									<TooltipTrigger>
 										<>
-											{item.toggle && (
+											{item.isToggle && (
 												<Toggle
 													size="default"
 													className={
@@ -247,7 +238,7 @@ const ChatPanel = ({
 													/>
 												</Toggle>
 											)}
-											{!item.toggle && (
+											{!item.isToggle && (
 												<Button
 													size="icon"
 													variant="ghost"

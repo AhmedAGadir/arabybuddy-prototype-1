@@ -11,7 +11,7 @@ import React, {
 import Image from "next/image";
 
 import { useLogger } from "@/hooks/useLogger";
-import { useAudioService } from "@/hooks/useAudioService";
+import { WordData, useAudioService } from "@/hooks/useAudioService";
 import { useChatService } from "@/hooks/useChatService";
 import { useAudioPlayer } from "@/hooks/useAudioPlayer";
 import { useRecording } from "@/hooks/useRecording";
@@ -20,25 +20,10 @@ import { useConversations } from "@/hooks/useConversations";
 
 import { Button } from "@/components/ui/button";
 
-import {
-	ArrowPathIcon,
-	ArrowTopRightOnSquareIcon,
-	BookOpenIcon,
-	ChevronLeftIcon,
-	ChevronRightIcon,
-	EllipsisVerticalIcon,
-	InformationCircleIcon,
-	MicrophoneIcon as MicrophoneIconOutline,
-	PlayIcon,
-	SparklesIcon,
-	SpeakerWaveIcon,
-} from "@heroicons/react/24/outline";
-
 import { useToast } from "@/components/ui/use-toast";
 
 import { Progress } from "@/components/ui/progress";
 
-import Microphone from "@/components/shared/Microphone";
 import MessageCard from "@/components/shared/MessageCard";
 
 import PulseLoader from "react-spinners/PulseLoader";
@@ -51,52 +36,63 @@ import { useUser } from "@clerk/nextjs";
 
 import SupportCard from "@/components/shared/SupportCard";
 
-import { useMediaQuery } from "@react-hooks-hub/use-media-query";
-
-import {
-	Tooltip,
-	TooltipContent,
-	TooltipProvider,
-	TooltipTrigger,
-} from "@/components/ui/tooltip";
-
 import _ from "lodash";
 import { Transition } from "@headlessui/react";
 
 import { cn } from "@/lib/utils";
 import { cairo } from "@/lib/fonts";
 
-import { Toggle } from "@/components/ui/toggle";
-import {
-	StopIcon,
-	StopCircleIcon,
-	XCircleIcon,
-	MicrophoneIcon as MicrophoneIconSolid,
-	SparklesIcon as SparklesIconSolid,
-} from "@heroicons/react/20/solid";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardFooter,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
-
-import { Badge } from "@/components/ui/badge";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCyclingText } from "@/hooks/useCyclingText";
-import { nonWordCharactersRegExp } from "@/lib/constants";
-import {
-	CompletionMode,
-	OpenAIMessage,
-	completionMode,
-} from "@/lib/api/assistant";
 import { DictionaryDrawer } from "@/components/shared/DictionaryDrawer";
 import ChatPanel from "@/components/shared/ChatPanel";
 import { status, type Status } from "@/types/types";
-import { DialectBadge } from "@/components/shared/DialectBadge";
 import { chatPartners } from "@/lib/chatPartners";
+const { ObjectId } = require("bson");
+
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import {
+	ExclamationCircleIcon,
+	InformationCircleIcon,
+	NoSymbolIcon,
+} from "@heroicons/react/20/solid";
+
+const MessageAlert = ({
+	dictionaryMode,
+	translationMode,
+}: {
+	dictionaryMode: boolean;
+	translationMode: boolean;
+}) => {
+	const content = useMemo(() => {
+		if (dictionaryMode && translationMode) {
+			return "This is a transcribed user message, so translation and dictionary data are not available.";
+		} else if (dictionaryMode) {
+			return "This is a transcribed user message, so dictionary data is not available.";
+		} else if (translationMode) {
+			return "This is a transcribed user message, so translation data is not available.";
+		} else {
+			return "";
+		}
+	}, [dictionaryMode, translationMode]);
+
+	return (
+		<Alert variant="indigo" className="flex gap-1">
+			<div>
+				<NoSymbolIcon className="h-5 w-5 fill-inherit" />
+			</div>
+			<AlertDescription>
+				{content}
+				{/* <div
+				href="#"
+				className="font-medium text-purple-700 underline hover:text-purple-600 cursor-pointer"
+			>
+				Upgrade your account to unlock all dialects for every chat partner.
+			</div> */}
+			</AlertDescription>
+		</Alert>
+	);
+};
 
 const task = {
 	SPEECH_TO_TEXT: "SPEECH_TO_TEXT",
@@ -178,7 +174,7 @@ const ConversationIdPage = ({
 					</ToastAction>
 				),
 				className: "error-toast",
-				duration: Infinity,
+				duration: 5000,
 			});
 		}
 	}, [isPending, error, refetch, toast]);
@@ -208,12 +204,6 @@ const ConversationIdPage = ({
 		},
 		[updateQueryStr]
 	);
-
-	const previousMessageHandler = () =>
-		updateDisplayedMessageInd((displayedMessageInd ?? 0) - 1);
-
-	const nextMessageHandler = () =>
-		updateDisplayedMessageInd((displayedMessageInd ?? 0) + 1);
 
 	if (searchParams.get("ind") === null && messages.length > 0) {
 		logger.log("init displayedMessageInd to last message index");
@@ -264,15 +254,7 @@ const ConversationIdPage = ({
 
 	const [activeTask, setActiveTask] = useState<Task | null>(null);
 
-	useEffect(() => {
-		logger.log("active task", activeTask);
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [activeTask]);
-
 	const [progressBarValue, setProgressBarValue] = useState(0);
-	// TODO: can remove this?
-	const progressBarValueRef = useRef<number>();
-	progressBarValueRef.current = progressBarValue;
 
 	const progressBarIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -284,7 +266,7 @@ const ConversationIdPage = ({
 				}
 				return prev + 1;
 			});
-		}, 40);
+		}, 30);
 	}, []);
 
 	const stopProgressBar = useCallback(() => {
@@ -300,17 +282,6 @@ const ConversationIdPage = ({
 		if (activeTask !== null) return status.PROCESSING;
 		return status.IDLE;
 	}, [activeTask, isPlaying, isRecording]);
-
-	const isProcessing = STATUS === status.PROCESSING;
-	const isIdle = STATUS === status.IDLE;
-
-	const isDoingSpeechToText = activeTask === "SPEECH_TO_TEXT";
-	const isDoingAssistant = activeTask === "ASSISTANT";
-	const isDoingAssistantRegenerate = activeTask === "ASSISTANT_REGENERATE";
-	const isDoingAssistantRephrase = activeTask === "ASSISTANT_REPHRASE";
-	const isDoingAssistantTranslate = activeTask === "ASSISTANT_TRANSLATE";
-	const isDoingTextToSpeech = activeTask === "TEXT_TO_SPEECH";
-	const isDoingTextToSpeechReplay = activeTask === "TEXT_TO_SPEECH_REPLAY";
 
 	const instructions: {
 		[key in Status]: string[];
@@ -330,27 +301,24 @@ const ConversationIdPage = ({
 			],
 			PLAYING: [""],
 			PROCESSING: [
-				...(isDoingSpeechToText ? ["Transcribing..."] : []),
-				...(isDoingAssistant ? ["Generating a response..."] : []),
-				...(isDoingTextToSpeech ? ["Preparing audio..."] : []),
-				...(isDoingTextToSpeechReplay ? ["Regenerating audio..."] : []),
-				...(isDoingAssistantRegenerate ? ["Regenerating response..."] : []),
-				...(isDoingAssistantRephrase
+				...(activeTask === "SPEECH_TO_TEXT" ? ["Transcribing..."] : []),
+				...(activeTask === "ASSISTANT" ? ["Generating a response..."] : []),
+				...(activeTask === "TEXT_TO_SPEECH" ? ["Preparing audio..."] : []),
+				...(activeTask === "TEXT_TO_SPEECH_REPLAY"
+					? ["Regenerating audio..."]
+					: []),
+				...(activeTask === "ASSISTANT_REGENERATE"
+					? ["Regenerating response..."]
+					: []),
+				...(activeTask === "ASSISTANT_REPHRASE"
 					? ["Rephrasing your message to make it sound more natural..."]
 					: []),
-				...(isDoingAssistantTranslate ? ["Translating your message..."] : []),
+				...(activeTask === "ASSISTANT_TRANSLATE"
+					? ["Translating your message..."]
+					: []),
 			],
 		}),
-		[
-			isDoingAssistant,
-			isDoingAssistantRegenerate,
-			isDoingAssistantRephrase,
-			isDoingSpeechToText,
-			isDoingTextToSpeech,
-			isDoingTextToSpeechReplay,
-			isDoingAssistantTranslate,
-			messages.length,
-		]
+		[activeTask, messages.length]
 	);
 
 	const {
@@ -360,7 +328,7 @@ const ConversationIdPage = ({
 	} = useCyclingText(instructions[STATUS]);
 
 	const abortProcessingBtnHandler = useCallback(() => {
-		if (!isProcessing) return;
+		if (STATUS !== status.PROCESSING) return;
 		switch (activeTask) {
 			case "SPEECH_TO_TEXT":
 				abortSpeechToText();
@@ -379,11 +347,11 @@ const ConversationIdPage = ({
 				break;
 		}
 	}, [
+		STATUS,
 		abortMakeChatCompletionStream,
 		abortSpeechToText,
 		abortTextToSpeech,
 		activeTask,
-		isProcessing,
 	]);
 
 	useEffect(() => {
@@ -420,126 +388,190 @@ const ConversationIdPage = ({
 		[isPlaying, stopPlaying, stopProgressBar, toast]
 	);
 
-	const wordTimestampsRef = useRef<
-		| {
-				word: string;
-				id: string;
-				startTime: number;
-				endTime: number;
-		  }[]
-		| null
-	>(null);
-
-	const generateGreeting = useCallback(async () => {
-		try {
-			if (!chatPartnerId || !chatDialect) {
-				throw new Error("chatPartnerId or chatDialect is null");
-			}
-
-			startProgressBarInterval();
-
-			setActiveTask("ASSISTANT");
-
-			const completionStream = await makeChatCompletionStream([], {
-				chatPartnerId,
-				chatDialect,
-			});
-
-			const dateStr = new Date().toISOString();
-
-			const completionMessage = {
-				// this id will be replaced by the actual id from the database
-				_id: _.uniqueId("temporary_message_id_"),
-				clerkId: user!.id,
-				conversationId,
-				createdAt: dateStr,
-				updatedAt: dateStr,
-				role: "assistant",
-				content: "",
-			} as IMessage;
-
-			updateDisplayedMessageInd(0);
-
-			for await (const data of completionStream) {
-				completionMessage.content = data.content;
-				completionMessage.role = data.role;
-				await upsertMessageInCache(completionMessage);
-			}
-
-			setActiveTask("TEXT_TO_SPEECH");
-
-			const { base64Audio, wordData } = await textToSpeech(
-				completionMessage.content,
-				{
-					chatPartnerId,
-					chatDialect,
+	const getWordMetadata = useCallback(
+		async (wordData: WordData[], role: "assistant" | "user") => {
+			try {
+				if (!chatPartnerId || !chatDialect) {
+					throw new Error("chatPartnerId or chatDialect is null");
 				}
-			);
 
-			wordTimestampsRef.current = wordData;
+				const wordMetadataCompletionStream = await makeChatCompletionStream(
+					[
+						{
+							role,
+							content: JSON.stringify(
+								wordData.map(({ _id, word }) => ({ _id, arabic: word }))
+							),
+						},
+					],
+					{
+						mode: "TRANSLATE",
+						chatPartnerId,
+						chatDialect,
+					}
+				);
 
-			if (!audioElementInitialized) {
-				initAudioElement();
+				let wordMetadataCompletion = "";
+				for await (const data of wordMetadataCompletionStream) {
+					wordMetadataCompletion = data.content;
+				}
+
+				const wordMetadataCompletionArr = JSON.parse(
+					wordMetadataCompletion
+				) as {
+					_id: string;
+					arabic: string;
+					english: string;
+				}[];
+
+				if (
+					!Array.isArray(wordMetadataCompletionArr) ||
+					wordMetadataCompletionArr.length !== wordData.length
+				) {
+					throw new Error(
+						"Word metadata completion stream did not return the expected data"
+					);
+				}
+
+				const wordMetadata = wordMetadataCompletionArr.map(
+					({ _id, arabic, english }, ind) => {
+						const wordInd = wordData.findIndex((word) => word._id === _id);
+
+						return {
+							_id,
+							arabic,
+							english,
+							startTime:
+								wordInd !== -1
+									? wordData[wordInd].startTime
+									: wordData[ind].startTime,
+							endTime:
+								wordInd !== -1
+									? wordData[wordInd].endTime
+									: wordData[ind].endTime,
+						};
+					}
+				);
+
+				return wordMetadata;
+			} catch (error) {
+				toast({
+					title: "Failed to translate message",
+					description: "There was a problem translating this message.",
+					className: "error-toast",
+					duration: 5000,
+				});
 			}
-			await playAudio(base64Audio);
+		},
+		[chatDialect, chatPartnerId, makeChatCompletionStream, toast]
+	);
 
-			wordTimestampsRef.current = null;
+	// const generateGreeting = useCallback(async () => {
+	// 	try {
+	// 		if (!chatPartnerId || !chatDialect) {
+	// 			throw new Error("chatPartnerId or chatDialect is null");
+	// 		}
 
-			setActiveTask(null);
+	// 		startProgressBarInterval();
 
-			await createMessage({
-				role: completionMessage.role,
-				content: completionMessage.content,
-			});
+	// 		setActiveTask("ASSISTANT");
 
-			updateConversation({
-				_id: conversationId,
-				lastMessage: completionMessage.content,
-			});
+	// 		const completionStream = await makeChatCompletionStream([], {
+	// 			chatPartnerId,
+	// 			chatDialect,
+	// 		});
 
-			stopProgressBar();
+	// 		const dateStr = new Date().toISOString();
 
-			return { success: true };
-		} catch (error) {
-			logger.error("generateGreeting failed", error);
+	// 		const completionMessage = {
+	// 			// this id will be replaced by the actual id from the database
+	// 			_id: new ObjectId().toHexString(),
+	// 			clerkId: user!.id,
+	// 			conversationId,
+	// 			createdAt: dateStr,
+	// 			updatedAt: dateStr,
+	// 			role: "assistant",
+	// 			content: "",
+	// 		} as IMessage;
 
-			handleError(error);
+	// 		updateDisplayedMessageInd(0);
 
-			return { success: false };
-		}
-	}, [
-		audioElementInitialized,
-		chatDialect,
-		chatPartnerId,
-		conversationId,
-		createMessage,
-		handleError,
-		initAudioElement,
-		logger,
-		makeChatCompletionStream,
-		playAudio,
-		startProgressBarInterval,
-		stopProgressBar,
-		textToSpeech,
-		updateConversation,
-		updateDisplayedMessageInd,
-		upsertMessageInCache,
-		user,
-	]);
+	// 		for await (const data of completionStream) {
+	// 			completionMessage.content = data.content;
+	// 			completionMessage.role = data.role;
+	// 			await upsertMessageInCache(completionMessage);
+	// 		}
 
-	const greetingGeneratedRef = useRef(false);
+	// 		setActiveTask("TEXT_TO_SPEECH");
 
-	if (
-		!greetingGeneratedRef.current &&
-		isNewChat &&
-		!isPending &&
-		messages.length === 0 &&
-		chatPartnerId &&
-		user?.id
-	) {
-		generateGreeting();
-		greetingGeneratedRef.current = true;
-	}
+	// 		const { base64Audio, wordData } = await textToSpeech(
+	// 			completionMessage.content,
+	// 			{
+	// 				chatPartnerId,
+	// 				chatDialect,
+	// 			}
+	// 		);
+
+	// 		if (!audioElementInitialized) {
+	// 			initAudioElement();
+	// 		}
+	// 		await playAudio(base64Audio);
+
+	// 		setActiveTask(null);
+
+	// 		await createMessage({
+	// 			role: completionMessage.role,
+	// 			content: completionMessage.content,
+	// 		});
+
+	// 		updateConversation({
+	// 			_id: conversationId,
+	// 			lastMessage: completionMessage.content,
+	// 		});
+
+	// 		stopProgressBar();
+
+	// 		return { success: true };
+	// 	} catch (error) {
+	// 		logger.error("generateGreeting failed", error);
+
+	// 		handleError(error);
+
+	// 		return { success: false };
+	// 	}
+	// }, [
+	// 	audioElementInitialized,
+	// 	chatDialect,
+	// 	chatPartnerId,
+	// 	conversationId,
+	// 	createMessage,
+	// 	handleError,
+	// 	initAudioElement,
+	// 	logger,
+	// 	makeChatCompletionStream,
+	// 	playAudio,
+	// 	startProgressBarInterval,
+	// 	stopProgressBar,
+	// 	textToSpeech,
+	// 	updateConversation,
+	// 	updateDisplayedMessageInd,
+	// 	upsertMessageInCache,
+	// 	user,
+	// ]);
+
+	// const greetingGeneratedRef = useRef(false);
+
+	// if (
+	// 	!greetingGeneratedRef.current &&
+	// 	isNewChat &&
+	// 	!isPending &&
+	// 	messages.length === 0 &&
+	// 	chatPartnerId &&
+	// 	user?.id
+	// ) {
+	// 	// generateGreeting();
+	// 	greetingGeneratedRef.current = true;
+	// }
 
 	const onRecordingComplete = useCallback(
 		async (audioBlob: Blob) => {
@@ -570,12 +602,14 @@ const ConversationIdPage = ({
 				let latestMessageInd = messageHistory.length - 1;
 
 				latestMessageInd++;
-				updateDisplayedMessageInd(latestMessageInd);
 
 				await createMessage({
 					role: "user",
 					content: transcription,
+					wordMetadata: [],
 				});
+
+				updateDisplayedMessageInd(latestMessageInd);
 
 				setActiveTask("ASSISTANT");
 
@@ -595,24 +629,25 @@ const ConversationIdPage = ({
 
 				const dateStr = new Date().toISOString();
 
-				const completionMessage = {
+				const completionMessage: IMessage = {
 					// this id will be replaced by the actual id from the database
-					_id: _.uniqueId("temporary_message_id_"),
+					_id: new ObjectId().toHexString(),
 					clerkId: user!.id,
 					conversationId,
 					createdAt: dateStr,
 					updatedAt: dateStr,
 					role: "assistant",
 					content: "",
-				} as IMessage;
+					wordMetadata: [],
+				};
 
 				latestMessageInd++;
-				updateDisplayedMessageInd(latestMessageInd);
 
 				for await (const data of completionStream) {
 					completionMessage.content = data.content;
 					completionMessage.role = data.role;
 					await upsertMessageInCache(completionMessage);
+					updateDisplayedMessageInd(latestMessageInd);
 				}
 
 				setActiveTask("TEXT_TO_SPEECH");
@@ -625,20 +660,25 @@ const ConversationIdPage = ({
 					}
 				);
 
-				wordTimestampsRef.current = wordData;
+				setActiveTask("ASSISTANT_TRANSLATE");
+
+				const wordMetadata = await getWordMetadata(wordData, "assistant");
+
+				completionMessage.wordMetadata = wordMetadata ?? [];
+
+				await upsertMessageInCache(completionMessage);
+
+				setActiveTask(null);
 
 				if (!audioElementInitialized) {
 					initAudioElement();
 				}
 				await playAudio(base64Audio);
 
-				wordTimestampsRef.current = null;
-
-				setActiveTask(null);
-
 				await createMessage({
 					role: completionMessage.role,
 					content: completionMessage.content,
+					wordMetadata: completionMessage.wordMetadata,
 				});
 
 				updateConversation({
@@ -663,17 +703,18 @@ const ConversationIdPage = ({
 			startProgressBarInterval,
 			speechToText,
 			messages,
-			updateDisplayedMessageInd,
 			createMessage,
 			makeChatCompletionStream,
 			user,
 			conversationId,
 			textToSpeech,
+			getWordMetadata,
+			upsertMessageInCache,
 			audioElementInitialized,
 			playAudio,
 			updateConversation,
 			stopProgressBar,
-			upsertMessageInCache,
+			updateDisplayedMessageInd,
 			initAudioElement,
 			logger,
 			handleError,
@@ -702,16 +743,26 @@ const ConversationIdPage = ({
 				}
 			);
 
-			setActiveTask(null);
+			setActiveTask("ASSISTANT_TRANSLATE");
 
-			wordTimestampsRef.current = wordData;
+			const wordMetadata = await getWordMetadata(
+				wordData,
+				displayedMessage.role
+			);
+
+			const updatedMessage = {
+				...displayedMessage,
+				wordMetadata: wordMetadata ?? [],
+			};
+
+			await updateMessage(updatedMessage);
+
+			setActiveTask(null);
 
 			if (!audioElementInitialized) {
 				initAudioElement();
 			}
 			await playAudio(base64Audio);
-
-			wordTimestampsRef.current = null;
 
 			stopProgressBar();
 		} catch (error) {
@@ -723,6 +774,7 @@ const ConversationIdPage = ({
 		chatDialect,
 		chatPartnerId,
 		displayedMessage,
+		getWordMetadata,
 		handleError,
 		initAudioElement,
 		logger,
@@ -730,6 +782,7 @@ const ConversationIdPage = ({
 		startProgressBarInterval,
 		stopProgressBar,
 		textToSpeech,
+		updateMessage,
 	]);
 
 	const stopPlayingHandler = useCallback(() => {
@@ -779,16 +832,10 @@ const ConversationIdPage = ({
 					}
 				);
 
-				const completionMessage = {
-					_id: displayedMessage._id,
-					clerkId: displayedMessage.clerkId,
-					conversationId: displayedMessage.conversationId,
-					translation: undefined,
-					createdAt: displayedMessage.createdAt,
+				const completionMessage: IMessage = {
+					...displayedMessage,
 					updatedAt: new Date().toISOString(),
-					role: displayedMessage.role,
-					content: "",
-				} as IMessage;
+				};
 
 				for await (const data of completionStream) {
 					completionMessage.content = data.content;
@@ -805,27 +852,25 @@ const ConversationIdPage = ({
 					}
 				);
 
-				wordTimestampsRef.current = wordData;
+				setActiveTask("ASSISTANT_TRANSLATE");
+
+				const wordMetadata = await getWordMetadata(
+					wordData,
+					displayedMessage.role
+				);
+
+				completionMessage.wordMetadata = wordMetadata ?? [];
+
+				await updateMessage(completionMessage);
+
+				setActiveTask(null);
 
 				if (!audioElementInitialized) {
 					initAudioElement();
 				}
 				await playAudio(base64Audio);
 
-				wordTimestampsRef.current = null;
-
 				setActiveTask(null);
-
-				updateMessage({
-					...displayedMessage,
-					role: completionMessage.role,
-					content: completionMessage.content,
-				});
-
-				updateConversation({
-					_id: conversationId,
-					lastMessage: completionMessage.content,
-				});
 
 				stopProgressBar();
 			} catch (error) {
@@ -843,9 +888,9 @@ const ConversationIdPage = ({
 			audioElementInitialized,
 			chatDialect,
 			chatPartnerId,
-			conversationId,
 			displayedMessage,
 			displayedMessageInd,
+			getWordMetadata,
 			handleError,
 			initAudioElement,
 			logger,
@@ -855,7 +900,6 @@ const ConversationIdPage = ({
 			startProgressBarInterval,
 			stopProgressBar,
 			textToSpeech,
-			updateConversation,
 			updateMessage,
 			upsertMessageInCache,
 		]
@@ -866,100 +910,6 @@ const ConversationIdPage = ({
 	const toggleTranslationHandler = () => {
 		setTranslationMode((prev) => !prev);
 	};
-
-	const translateBtnHandler = useCallback(async () => {
-		try {
-			if (!chatPartnerId || !chatDialect) {
-				throw new Error("chatPartnerId or chatDialect is null");
-			}
-
-			if (!displayedMessage) {
-				throw new Error("displayedMessage is null");
-			}
-
-			setTranslationMode(true);
-			startProgressBarInterval();
-
-			setActiveTask("ASSISTANT_TRANSLATE");
-
-			const completionStream = await makeChatCompletionStream(
-				[
-					{
-						role: displayedMessage.role,
-						content: displayedMessage.content,
-					},
-				],
-				{ mode: "TRANSLATE", chatPartnerId, chatDialect }
-			);
-
-			const completionMessage = {
-				_id: displayedMessage._id,
-				clerkId: displayedMessage.clerkId,
-				conversationId: displayedMessage.conversationId,
-				createdAt: displayedMessage.createdAt,
-				updatedAt: new Date().toISOString(),
-				role: displayedMessage.role,
-				content: "",
-			} as IMessage;
-
-			for await (const data of completionStream) {
-				completionMessage.translation = data.content;
-				await upsertMessageInCache(completionMessage);
-			}
-
-			setActiveTask("TEXT_TO_SPEECH");
-
-			const { base64Audio, wordData } = await textToSpeech(
-				completionMessage.translation!,
-				{
-					chatPartnerId,
-					chatDialect,
-				}
-			);
-
-			wordTimestampsRef.current = wordData;
-
-			if (!audioElementInitialized) {
-				initAudioElement();
-			}
-			await playAudio(base64Audio);
-
-			wordTimestampsRef.current = null;
-
-			setActiveTask(null);
-
-			await updateMessage(
-				{
-					...displayedMessage,
-					translation: completionMessage.translation,
-				},
-				{
-					mode: "TRANSLATE",
-				}
-			);
-
-			stopProgressBar();
-		} catch (error) {
-			logger.error("translateBtnHandler", error);
-
-			handleError(error, "There was a problem translating this message");
-		}
-	}, [
-		audioElementInitialized,
-		chatDialect,
-		chatPartnerId,
-		displayedMessage,
-		handleError,
-		initAudioElement,
-		logger,
-		makeChatCompletionStream,
-		playAudio,
-		startProgressBarInterval,
-		stopProgressBar,
-		textToSpeech,
-		updateMessage,
-		upsertMessageInCache,
-	]);
 
 	const [drawerOpen, setDrawerOpen] = useState(false);
 
@@ -1009,17 +959,20 @@ const ConversationIdPage = ({
 		stopRecording,
 	]);
 
+	const previousMessageHandler = () =>
+		updateDisplayedMessageInd((displayedMessageInd ?? 0) - 1);
+
+	const nextMessageHandler = () =>
+		updateDisplayedMessageInd((displayedMessageInd ?? 0) + 1);
+
 	const chatPanelContent = (
 		<ChatPanel
 			chatStatus={STATUS}
+			message={displayedMessage}
 			previousMessageHandler={previousMessageHandler}
 			nextMessageHandler={nextMessageHandler}
 			isFirstMessage={displayedMessageInd === 0}
 			isLastMessage={displayedMessageInd === messages.length - 1}
-			isMessage={displayedMessage !== null}
-			hasTranslation={displayedMessage?.translation !== undefined}
-			isUserMessage={displayedMessage?.role === "user"}
-			isAssistantMessage={displayedMessage?.role === "assistant"}
 			replayBtnHandler={replayBtnHandler}
 			abortProcessingBtnHandler={abortProcessingBtnHandler}
 			stopPlayingHandler={stopPlayingHandler}
@@ -1027,10 +980,74 @@ const ConversationIdPage = ({
 			toggleRecordingHandler={toggleRecordingHandler}
 			toggleDictionaryHandler={toggleDictionaryHandler}
 			toggleTranslationHandler={toggleTranslationHandler}
-			translateBtnHandler={translateBtnHandler}
 			dictionaryMode={dictionaryMode}
 			translationMode={translationMode}
 		/>
+	);
+
+	const onDictionaryWordClicked = (id: string) => {
+		// using the index instead of the id allows us to use pagination in the drawer
+		updateQueryStr("wordId", id);
+		setDrawerOpen(true);
+	};
+
+	const messageCardContent = displayedMessage && chatPartner && chatDialect && (
+		<MessageCard
+			message={displayedMessage}
+			assistant={chatPartner}
+			dialect={chatDialect}
+			isPlaying={isPlaying}
+			currentTime={currentTime}
+			dictionaryMode={dictionaryMode && STATUS === status.IDLE}
+			translationMode={translationMode}
+			onDictionaryWordClicked={onDictionaryWordClicked}
+			showLoadingOverlay={STATUS === status.PROCESSING}
+			// isLoading is only true for the first fetch
+			showSkeleton={isLoading}
+		/>
+	);
+
+	const messageIndexContent = displayedMessage &&
+		chatPartner &&
+		chatDialect && (
+			<div className="text-slate-400 mt-1 w-full flex justify-end px-4 text-sm">
+				{(displayedMessageInd ?? 0) + 1} / {messages.length}
+			</div>
+		);
+
+	const messageAlertContent = displayedMessage &&
+		displayedMessage.wordMetadata.length === 0 &&
+		(dictionaryMode || translationMode) && (
+			<MessageAlert
+				dictionaryMode={dictionaryMode}
+				translationMode={translationMode}
+			/>
+		);
+
+	const progressBarContent = (
+		<Progress
+			className="rounded-none h-1"
+			// innerClassName="bg-gradient-to-r to-araby-purple from-araby-purple"
+			innerClassName="bg-araby-blue"
+			value={progressBarValue}
+		/>
+	);
+
+	const recordingIndicator = (
+		<div
+			className={cn(
+				"relative flex h-4 w-4 my-2",
+				// if were not recording, hide the blob on mobile (to save space)
+				!isRecording && "hidden md:flex"
+			)}
+		>
+			{isRecording && (
+				<>
+					<span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#FF0066] opacity-75" />
+					<span className="relative inline-flex rounded-full h-4 w-4 bg-[#FF0066]" />
+				</>
+			)}
+		</div>
 	);
 
 	const instructionContent = (
@@ -1053,247 +1070,6 @@ const ConversationIdPage = ({
 		</Transition>
 	);
 
-	const progressBarContent = (
-		<Progress
-			className="rounded-none h-1"
-			// innerClassName="bg-gradient-to-r to-araby-purple from-araby-purple"
-			innerClassName="bg-araby-blue"
-			value={progressBarValueRef.current}
-		/>
-	);
-
-	// needed for streaming updates in the messageCard component
-	const displayedMessageText = useMemo(() => {
-		if (translationMode && displayedMessage?.translation) {
-			return displayedMessage?.translation;
-		}
-
-		return displayedMessage?.content;
-		// NOTE: displayedMessage?.content must be included in the deps array
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [displayedMessage, displayedMessage?.content, translationMode]);
-
-	const dictionaryWords = useMemo(() => {
-		if (!displayedMessage) return [];
-
-		const words = _.words(
-			displayedMessage?.content.replace(nonWordCharactersRegExp, "")
-		).map((word) => ({
-			word,
-			id: _.uniqueId("word_"),
-		}));
-
-		return words;
-	}, [displayedMessage]);
-
-	const messageCardInnerContent = useMemo(() => {
-		const isShowingTranslation =
-			translationMode &&
-			displayedMessage?.translation &&
-			(!dictionaryMode || isPlaying);
-
-		if (dictionaryMode && STATUS === status.IDLE) {
-			return (
-				<div
-					style={{
-						direction: isShowingTranslation ? "ltr" : "rtl",
-					}}
-				>
-					<div className="flex flex-wrap gap-2">
-						{dictionaryWords.map(({ word, id }, ind) => (
-							<Badge
-								key={id}
-								variant="secondary"
-								className="text-lg cursor-pointer hover:bg-primary hover:text-white"
-								onClick={() => {
-									// using the index instead of the id allows us to use pagination in the drawer
-									updateQueryStr("wordInd", ind.toString());
-									setDrawerOpen(true);
-								}}
-							>
-								{word}
-							</Badge>
-						))}
-					</div>
-				</div>
-			);
-		}
-
-		if (isPlaying && wordTimestampsRef.current) {
-			return (
-				<div
-					style={{
-						direction: isShowingTranslation ? "ltr" : "rtl",
-					}}
-					className="p-1"
-				>
-					{wordTimestampsRef.current.map((word, ind) => {
-						if (
-							!wordTimestampsRef.current ||
-							wordTimestampsRef.current[ind] === undefined
-						) {
-							return null;
-						}
-
-						const {
-							word: timestampedWord,
-							startTime,
-							endTime,
-							id,
-						} = wordTimestampsRef.current![ind];
-
-						const isLastWord = ind === wordTimestampsRef.current!.length - 1;
-
-						const currentTimeMoreThanStartTime = currentTime >= startTime;
-
-						const nextWordStarted = isLastWord
-							? false
-							: currentTime >= wordTimestampsRef.current![ind + 1]?.startTime;
-
-						const isActive = currentTimeMoreThanStartTime && !nextWordStarted;
-
-						return (
-							<span
-								key={id}
-								className={cn(
-									isActive && "bg-indigo-600 text-white",
-									"rounded-md p-1"
-								)}
-							>
-								{timestampedWord}{" "}
-							</span>
-						);
-					})}
-				</div>
-			);
-		}
-
-		return (
-			<div
-				style={{
-					direction: isShowingTranslation ? "ltr" : "rtl",
-				}}
-			>
-				{displayedMessageText}
-			</div>
-		);
-	}, [
-		STATUS,
-		currentTime,
-		dictionaryMode,
-		dictionaryWords,
-		displayedMessage?.translation,
-		displayedMessageText,
-		isPlaying,
-		translationMode,
-		updateQueryStr,
-	]);
-
-	const messageCardContent = useMemo(() => {
-		// don't show message card if there is no message to display
-		if (!displayedMessage && !isLoading) return null;
-
-		// don't show skeleton loaders on new chats that are still
-		// doing their first fetch
-		if (!displayedMessage && isNewChat && isLoading) {
-			return null;
-		}
-
-		if (!chatPartner || !chatDialect) {
-			return null;
-		}
-
-		const messageCardDetails = {
-			name: "",
-			avatarSrc: "",
-			avatarAlt: "",
-		};
-
-		switch (displayedMessage?.role) {
-			case "assistant":
-				messageCardDetails.name = chatPartner.flag
-					? `${chatPartner.name}`
-					: chatPartner.name;
-				messageCardDetails.avatarSrc = chatPartner.image;
-				messageCardDetails.avatarAlt = chatPartner.name;
-				break;
-			case "user":
-			default:
-				messageCardDetails.name = "You";
-				messageCardDetails.avatarSrc = user?.imageUrl ?? "/assets/user.svg";
-				messageCardDetails.avatarAlt = "User avatar";
-				break;
-		}
-
-		const menuContent = isPlaying ? (
-			<SpeakerWaveIcon className="w-6 h-6 sm:w-7 sm:h-7 text-slate-400 transition ease-in-out" />
-		) : (
-			<DialectBadge
-				className="self-start text-md"
-				dialect={chatDialect}
-				shorten
-			/>
-		);
-
-		return (
-			<MessageCard
-				className={cn(
-					"h-full bg-white text-slate-900 dark:text-white"
-					// isPlaying &&
-					// 	"text-transparent bg-clip-text bg-gradient-to-r to-indigo-500 from-sky-500 shadow-blue-500/50"
-				)}
-				name={messageCardDetails?.name}
-				avatar={{
-					src: messageCardDetails?.avatarSrc,
-					alt: messageCardDetails?.avatarAlt,
-				}}
-				// glow={isPlaying}
-				showLoadingOverlay={STATUS === status.PROCESSING}
-				// isLoading is only true for the first fetch
-				showSkeleton={isLoading}
-				menuContent={menuContent}
-				content={messageCardInnerContent}
-			/>
-		);
-	}, [
-		displayedMessage,
-		isLoading,
-		isNewChat,
-		chatPartner,
-		chatDialect,
-		isPlaying,
-		STATUS,
-		messageCardInnerContent,
-		user?.imageUrl,
-	]);
-
-	const messageIndexContent = useMemo(
-		() =>
-			displayedMessageText && (
-				<div className="text-slate-400 mt-1 w-full flex justify-end px-4 text-sm">
-					{(displayedMessageInd ?? 0) + 1} / {messages.length}
-				</div>
-			),
-		[displayedMessageInd, displayedMessageText, messages.length]
-	);
-
-	const recordingIndicator = (
-		<div
-			className={cn(
-				"relative flex h-4 w-4 my-2",
-				// if were not recording, hide the blob on mobile (to save space)
-				!isRecording && "hidden md:flex"
-			)}
-		>
-			{isRecording && (
-				<>
-					<span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#FF0066] opacity-75" />
-					<span className="relative inline-flex rounded-full h-4 w-4 bg-[#FF0066]" />
-				</>
-			)}
-		</div>
-	);
-
 	// if (isPending) {
 	// 	return (
 	// 		<div className="flex-1 flex items-center justify-center background-texture">
@@ -1313,23 +1089,45 @@ const ConversationIdPage = ({
 	}
 
 	return (
-		<div className={cn("w-full background-texture")}>
+		<div className={cn("flex-1 w-full background-texture flex flex-col")}>
 			<div className="absolute top-0 left-0 z-30 w-screen">
 				{progressBarContent}
 			</div>
 			{/* wrapper */}
-			<div className="h-full flex flex-col items-center justify-between mx-auto gap-4 px-4 py-4 md:pt-6 md:pb-14">
+			<div className="flex-1 flex flex-col items-center justify-between mx-auto gap-4 px-4 py-4 md:pt-6 md:pb-14">
 				<div className="hidden md:block">{chatPanelContent}</div>
 				{/* chat bubble and pagination wrapper */}
-				<div className="flex-1 min-h-0 basis-0 flex flex-col justify-center items-center w-full h-full max-w-2xl">
+				<div className="flex-1 min-h-0 basis-0 flex flex-col justify-center items-center w-full h-full max-w-2xl gap-2">
+					{messageAlertContent}
 					{/* message card container */}
 					<div className={cn("min-h-0 w-full max-w-2xl ")}>
 						{messageCardContent}
 					</div>
 					{messageIndexContent}
 				</div>
-				{/* divs to view each size */}
-				{/* <div className="sm:hidden">
+				{recordingIndicator}
+				<div className="h-12 w-full text-center">{instructionContent}</div>
+				<div className="md:hidden mb-8">{chatPanelContent}</div>
+			</div>
+			<DictionaryDrawer
+				open={drawerOpen}
+				setOpen={setDrawerOpen}
+				wordData={
+					displayedMessage?.wordMetadata.map(({ _id, arabic }) => ({
+						_id,
+						word: arabic,
+					})) ?? []
+				}
+				chatPartnerId={chatPartnerId}
+				chatDialect={chatDialect}
+			/>
+			<SupportCard className="fixed bottom-0 right-0" />
+		</div>
+	);
+
+	{
+		/* divs to view each size */
+		/* <div className="sm:hidden">
 					<h1>xs</h1>
 				</div>
 				<div className="hidden sm:block md:hidden">
@@ -1343,21 +1141,8 @@ const ConversationIdPage = ({
 				</div>
 				<div className="hidden xl:block">
 					<h1>xl + up</h1>
-				</div> */}
-				{recordingIndicator}
-				<div className="h-12 w-full text-center">{instructionContent}</div>
-				<div className="md:hidden mb-8">{chatPanelContent}</div>
-			</div>
-			<DictionaryDrawer
-				open={drawerOpen}
-				setOpen={setDrawerOpen}
-				words={dictionaryWords}
-				chatPartnerId={chatPartnerId}
-				chatDialect={chatDialect}
-			/>
-			<SupportCard className="fixed bottom-0 right-0" />
-		</div>
-	);
+				</div> */
+	}
 };
 
 export default ConversationIdPage;

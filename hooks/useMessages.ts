@@ -4,7 +4,6 @@ import { IMessage } from "@/lib/database/models/message.model";
 import { useUser } from "@clerk/nextjs";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLogger } from "./useLogger";
-import { useTypewriter } from "./useTypewriter";
 import { CompletionMode, completionMode } from "@/lib/api/assistant";
 
 const useMessages = ({ conversationId }: { conversationId: string }) => {
@@ -31,7 +30,10 @@ const useMessages = ({ conversationId }: { conversationId: string }) => {
 	});
 
 	const createMessageMutation = useMutation({
-		mutationFn: async (message: Partial<IMessage>) => {
+		mutationFn: async (
+			message: Pick<IMessage, "role" | "content" | "wordMetadata"> &
+				Partial<IMessage>
+		) => {
 			logger.log("creating message...");
 			const response = await fetch(
 				`/api/conversations/${conversationId}/messages`,
@@ -63,15 +65,6 @@ const useMessages = ({ conversationId }: { conversationId: string }) => {
 				message,
 			]);
 
-			// const setTypedContent = (value: string) => {
-			// 	queryClient.setQueryData(
-			// 		queryKey,
-			// 		(old: IMessage[] = []) => [...old, message]
-			// 	);
-			// };
-
-			// await typewriter(content, setTypedContent, 30);
-
 			// Return a context object with the snapshotted value
 			return { previousMessages };
 		},
@@ -86,7 +79,10 @@ const useMessages = ({ conversationId }: { conversationId: string }) => {
 		},
 	});
 
-	const createMessage = async (message: Partial<IMessage>) => {
+	const createMessage = async (
+		message: Pick<IMessage, "role" | "content" | "wordMetadata"> &
+			Partial<IMessage>
+	) => {
 		return await createMessageMutation.mutateAsync(message);
 	};
 
@@ -126,7 +122,7 @@ const useMessages = ({ conversationId }: { conversationId: string }) => {
 		mutationFn: async ({
 			message,
 		}: {
-			message: Pick<IMessage, "_id" | "content"> & Partial<IMessage>;
+			message: Pick<IMessage, "_id"> & Partial<IMessage>;
 			options: { mode: CompletionMode };
 		}) => {
 			logger.log("updating message...", message);
@@ -159,22 +155,10 @@ const useMessages = ({ conversationId }: { conversationId: string }) => {
 			// Snapshot the previous value
 			const previousMessages = queryClient.getQueryData(queryKey) ?? [];
 
-			const isTranslating = options.mode === "TRANSLATE";
-
 			// Optimistically update to the new value
 			logger.log("optimistically updating messages...");
 			queryClient.setQueryData(queryKey, (old: IMessage[] = []) =>
-				old.map((m) =>
-					m._id === message._id
-						? {
-								...m,
-								translation: isTranslating
-									? message.translation
-									: m.translation,
-								content: isTranslating ? m.content : message.content,
-						  }
-						: m
-				)
+				old.map((m) => (m._id === message._id ? message : m))
 			);
 
 			// Return a context object with the snapshotted value
@@ -189,7 +173,7 @@ const useMessages = ({ conversationId }: { conversationId: string }) => {
 	});
 
 	const updateMessage = async (
-		message: Pick<IMessage, "_id" | "content"> & Partial<IMessage>,
+		message: Pick<IMessage, "_id"> & Partial<IMessage>,
 		options: { mode: CompletionMode } = { mode: "DEFAULT" }
 	) => {
 		return await updateMessageMutation.mutateAsync({ message, options });
