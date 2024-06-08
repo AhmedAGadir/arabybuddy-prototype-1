@@ -29,10 +29,10 @@ const TranslationWrapper = ({
 	arabicWordContent: JSX.Element;
 	englishWordContent: JSX.Element;
 }) => (
-	<div className="flex flex-col items-center gap-1 p-1">
+	<div className="flex flex-col items-center p-1">
 		<div className="text-lg sm:text-xl tracking-wide">{arabicWordContent}</div>
 		<div
-			className="text-lg text-muted-foreground font-light leading-tight"
+			className="text-md sm:text-lg text-muted-foreground font-light leading-tight"
 			style={{ direction: "ltr" }}
 		>
 			{englishWordContent}
@@ -128,7 +128,10 @@ const MessageCard = ({
 			translationMode && message.wordMetadata.length > 0;
 		// && (!dictionaryMode || isPlaying);
 
-		if (!dictionaryMode && !isShowingTranslation && !isPlaying) {
+		const isShowingDictionary =
+			dictionaryMode && message.wordMetadata.length > 0;
+
+		if (!isShowingDictionary && !isShowingTranslation && !isPlaying) {
 			return <span>{message?.content}</span>;
 		}
 
@@ -141,7 +144,7 @@ const MessageCard = ({
 					"flex flex-wrap p-1",
 					dictionaryMode && "gap-2",
 					isPlaying && "gap-1",
-					isShowingTranslation && "gap-3 sm:gap-4"
+					isShowingTranslation && "gap-2"
 				)}
 			>
 				{message?.wordMetadata.map(
@@ -186,7 +189,7 @@ const MessageCard = ({
 
 							if (isPlaying) {
 								arabicWordContent = playingWord;
-							} else if (dictionaryMode) {
+							} else if (isShowingDictionary) {
 								arabicWordContent = dictionaryWord;
 							} else {
 								arabicWordContent = <span>{arabic}</span>;
@@ -205,7 +208,7 @@ const MessageCard = ({
 							return playingWord;
 						}
 
-						if (dictionaryMode) {
+						if (isShowingDictionary) {
 							return dictionaryWord;
 						}
 

@@ -11,7 +11,7 @@ import React, {
 import Image from "next/image";
 
 import { useLogger } from "@/hooks/useLogger";
-import { useAudioService } from "@/hooks/useAudioService";
+import { WordData, useAudioService } from "@/hooks/useAudioService";
 import { useChatService } from "@/hooks/useChatService";
 import { useAudioPlayer } from "@/hooks/useAudioPlayer";
 import { useRecording } from "@/hooks/useRecording";
@@ -49,6 +49,50 @@ import ChatPanel from "@/components/shared/ChatPanel";
 import { status, type Status } from "@/types/types";
 import { chatPartners } from "@/lib/chatPartners";
 const { ObjectId } = require("bson");
+
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import {
+	ExclamationCircleIcon,
+	InformationCircleIcon,
+	NoSymbolIcon,
+} from "@heroicons/react/20/solid";
+
+const MessageAlert = ({
+	dictionaryMode,
+	translationMode,
+}: {
+	dictionaryMode: boolean;
+	translationMode: boolean;
+}) => {
+	const content = useMemo(() => {
+		if (dictionaryMode && translationMode) {
+			return "This is a transcribed user message, so translation and dictionary data are not available.";
+		} else if (dictionaryMode) {
+			return "This is a transcribed user message, so dictionary data is not available.";
+		} else if (translationMode) {
+			return "This is a transcribed user message, so translation data is not available.";
+		} else {
+			return "";
+		}
+	}, [dictionaryMode, translationMode]);
+
+	return (
+		<Alert variant="indigo" className="flex gap-1">
+			<div>
+				<NoSymbolIcon className="h-5 w-5 fill-inherit" />
+			</div>
+			<AlertDescription>
+				{content}
+				{/* <div
+				href="#"
+				className="font-medium text-purple-700 underline hover:text-purple-600 cursor-pointer"
+			>
+				Upgrade your account to unlock all dialects for every chat partner.
+			</div> */}
+			</AlertDescription>
+		</Alert>
+	);
+};
 
 const task = {
 	SPEECH_TO_TEXT: "SPEECH_TO_TEXT",
@@ -130,7 +174,7 @@ const ConversationIdPage = ({
 					</ToastAction>
 				),
 				className: "error-toast",
-				duration: Infinity,
+				duration: 5000,
 			});
 		}
 	}, [isPending, error, refetch, toast]);
@@ -160,12 +204,6 @@ const ConversationIdPage = ({
 		},
 		[updateQueryStr]
 	);
-
-	const previousMessageHandler = () =>
-		updateDisplayedMessageInd((displayedMessageInd ?? 0) - 1);
-
-	const nextMessageHandler = () =>
-		updateDisplayedMessageInd((displayedMessageInd ?? 0) + 1);
 
 	if (searchParams.get("ind") === null && messages.length > 0) {
 		logger.log("init displayedMessageInd to last message index");
@@ -350,6 +388,84 @@ const ConversationIdPage = ({
 		[isPlaying, stopPlaying, stopProgressBar, toast]
 	);
 
+	const getWordMetadata = useCallback(
+		async (wordData: WordData[], role: "assistant" | "user") => {
+			try {
+				if (!chatPartnerId || !chatDialect) {
+					throw new Error("chatPartnerId or chatDialect is null");
+				}
+
+				const wordMetadataCompletionStream = await makeChatCompletionStream(
+					[
+						{
+							role,
+							content: JSON.stringify(
+								wordData.map(({ _id, word }) => ({ _id, arabic: word }))
+							),
+						},
+					],
+					{
+						mode: "TRANSLATE",
+						chatPartnerId,
+						chatDialect,
+					}
+				);
+
+				let wordMetadataCompletion = "";
+				for await (const data of wordMetadataCompletionStream) {
+					wordMetadataCompletion = data.content;
+				}
+
+				const wordMetadataCompletionArr = JSON.parse(
+					wordMetadataCompletion
+				) as {
+					_id: string;
+					arabic: string;
+					english: string;
+				}[];
+
+				if (
+					!Array.isArray(wordMetadataCompletionArr) ||
+					wordMetadataCompletionArr.length !== wordData.length
+				) {
+					throw new Error(
+						"Word metadata completion stream did not return the expected data"
+					);
+				}
+
+				const wordMetadata = wordMetadataCompletionArr.map(
+					({ _id, arabic, english }, ind) => {
+						const wordInd = wordData.findIndex((word) => word._id === _id);
+
+						return {
+							_id,
+							arabic,
+							english,
+							startTime:
+								wordInd !== -1
+									? wordData[wordInd].startTime
+									: wordData[ind].startTime,
+							endTime:
+								wordInd !== -1
+									? wordData[wordInd].endTime
+									: wordData[ind].endTime,
+						};
+					}
+				);
+
+				return wordMetadata;
+			} catch (error) {
+				toast({
+					title: "Failed to translate message",
+					description: "There was a problem translating this message.",
+					className: "error-toast",
+					duration: 5000,
+				});
+			}
+		},
+		[chatDialect, chatPartnerId, makeChatCompletionStream, toast]
+	);
+
 	// const generateGreeting = useCallback(async () => {
 	// 	try {
 	// 		if (!chatPartnerId || !chatDialect) {
@@ -486,13 +602,14 @@ const ConversationIdPage = ({
 				let latestMessageInd = messageHistory.length - 1;
 
 				latestMessageInd++;
-				updateDisplayedMessageInd(latestMessageInd);
 
 				await createMessage({
 					role: "user",
 					content: transcription,
 					wordMetadata: [],
 				});
+
+				updateDisplayedMessageInd(latestMessageInd);
 
 				setActiveTask("ASSISTANT");
 
@@ -512,9 +629,6 @@ const ConversationIdPage = ({
 
 				const dateStr = new Date().toISOString();
 
-				const ObjectId1 = ObjectId;
-				debugger;
-
 				const completionMessage: IMessage = {
 					// this id will be replaced by the actual id from the database
 					_id: new ObjectId().toHexString(),
@@ -528,12 +642,12 @@ const ConversationIdPage = ({
 				};
 
 				latestMessageInd++;
-				updateDisplayedMessageInd(latestMessageInd);
 
 				for await (const data of completionStream) {
 					completionMessage.content = data.content;
 					completionMessage.role = data.role;
 					await upsertMessageInCache(completionMessage);
+					updateDisplayedMessageInd(latestMessageInd);
 				}
 
 				setActiveTask("TEXT_TO_SPEECH");
@@ -546,65 +660,11 @@ const ConversationIdPage = ({
 					}
 				);
 
-				console.log("worddata", wordData);
-
 				setActiveTask("ASSISTANT_TRANSLATE");
 
-				const wordMetadataCompletionStream = await makeChatCompletionStream(
-					[
-						{
-							role: "assistant",
-							content: JSON.stringify(
-								wordData.map(({ _id, word }) => ({ _id, arabic: word }))
-							),
-						},
-					],
-					{
-						mode: "TRANSLATE",
-						chatPartnerId,
-						chatDialect,
-					}
-				);
+				const wordMetadata = await getWordMetadata(wordData, "assistant");
 
-				let wordMetadataCompletion = "";
-				for await (const data of wordMetadataCompletionStream) {
-					wordMetadataCompletion = data.content;
-				}
-
-				const wordMetadataCompletionArr = JSON.parse(
-					wordMetadataCompletion
-				) as { _id: string; arabic: string; english: string }[];
-
-				if (
-					!Array.isArray(wordMetadataCompletionArr) ||
-					wordMetadataCompletionArr.length !== wordData.length
-				) {
-					throw new Error(
-						"Word metadata completion stream did not return the expected data"
-					);
-				}
-
-				completionMessage.wordMetadata = wordMetadataCompletionArr.map(
-					({ _id, arabic, english }, ind) => {
-						const wordInd = wordData.findIndex((word) => word._id === _id);
-
-						return {
-							_id,
-							arabic,
-							english,
-							startTime:
-								wordInd !== -1
-									? wordData[wordInd].startTime
-									: wordData[ind].startTime,
-							endTime:
-								wordInd !== -1
-									? wordData[wordInd].endTime
-									: wordData[ind].endTime,
-						};
-					}
-				);
-
-				console.log("completionMessage", completionMessage);
+				completionMessage.wordMetadata = wordMetadata ?? [];
 
 				await upsertMessageInCache(completionMessage);
 
@@ -643,17 +703,18 @@ const ConversationIdPage = ({
 			startProgressBarInterval,
 			speechToText,
 			messages,
-			updateDisplayedMessageInd,
 			createMessage,
 			makeChatCompletionStream,
 			user,
 			conversationId,
 			textToSpeech,
+			getWordMetadata,
+			upsertMessageInCache,
 			audioElementInitialized,
 			playAudio,
 			updateConversation,
 			stopProgressBar,
-			upsertMessageInCache,
+			updateDisplayedMessageInd,
 			initAudioElement,
 			logger,
 			handleError,
@@ -682,6 +743,20 @@ const ConversationIdPage = ({
 				}
 			);
 
+			setActiveTask("ASSISTANT_TRANSLATE");
+
+			const wordMetadata = await getWordMetadata(
+				wordData,
+				displayedMessage.role
+			);
+
+			const updatedMessage = {
+				...displayedMessage,
+				wordMetadata: wordMetadata ?? [],
+			};
+
+			await updateMessage(updatedMessage);
+
 			setActiveTask(null);
 
 			if (!audioElementInitialized) {
@@ -699,6 +774,7 @@ const ConversationIdPage = ({
 		chatDialect,
 		chatPartnerId,
 		displayedMessage,
+		getWordMetadata,
 		handleError,
 		initAudioElement,
 		logger,
@@ -706,6 +782,7 @@ const ConversationIdPage = ({
 		startProgressBarInterval,
 		stopProgressBar,
 		textToSpeech,
+		updateMessage,
 	]);
 
 	const stopPlayingHandler = useCallback(() => {
@@ -755,15 +832,10 @@ const ConversationIdPage = ({
 					}
 				);
 
-				const completionMessage = {
-					_id: displayedMessage._id,
-					clerkId: displayedMessage.clerkId,
-					conversationId: displayedMessage.conversationId,
-					createdAt: displayedMessage.createdAt,
+				const completionMessage: IMessage = {
+					...displayedMessage,
 					updatedAt: new Date().toISOString(),
-					role: displayedMessage.role,
-					content: "",
-				} as IMessage;
+				};
 
 				for await (const data of completionStream) {
 					completionMessage.content = data.content;
@@ -780,23 +852,25 @@ const ConversationIdPage = ({
 					}
 				);
 
+				setActiveTask("ASSISTANT_TRANSLATE");
+
+				const wordMetadata = await getWordMetadata(
+					wordData,
+					displayedMessage.role
+				);
+
+				completionMessage.wordMetadata = wordMetadata ?? [];
+
+				await updateMessage(completionMessage);
+
+				setActiveTask(null);
+
 				if (!audioElementInitialized) {
 					initAudioElement();
 				}
 				await playAudio(base64Audio);
 
 				setActiveTask(null);
-
-				updateMessage({
-					...displayedMessage,
-					role: completionMessage.role,
-					content: completionMessage.content,
-				});
-
-				updateConversation({
-					_id: conversationId,
-					lastMessage: completionMessage.content,
-				});
 
 				stopProgressBar();
 			} catch (error) {
@@ -814,9 +888,9 @@ const ConversationIdPage = ({
 			audioElementInitialized,
 			chatDialect,
 			chatPartnerId,
-			conversationId,
 			displayedMessage,
 			displayedMessageInd,
+			getWordMetadata,
 			handleError,
 			initAudioElement,
 			logger,
@@ -826,7 +900,6 @@ const ConversationIdPage = ({
 			startProgressBarInterval,
 			stopProgressBar,
 			textToSpeech,
-			updateConversation,
 			updateMessage,
 			upsertMessageInCache,
 		]
@@ -886,16 +959,20 @@ const ConversationIdPage = ({
 		stopRecording,
 	]);
 
+	const previousMessageHandler = () =>
+		updateDisplayedMessageInd((displayedMessageInd ?? 0) - 1);
+
+	const nextMessageHandler = () =>
+		updateDisplayedMessageInd((displayedMessageInd ?? 0) + 1);
+
 	const chatPanelContent = (
 		<ChatPanel
 			chatStatus={STATUS}
+			message={displayedMessage}
 			previousMessageHandler={previousMessageHandler}
 			nextMessageHandler={nextMessageHandler}
 			isFirstMessage={displayedMessageInd === 0}
 			isLastMessage={displayedMessageInd === messages.length - 1}
-			isMessage={displayedMessage !== null}
-			isUserMessage={displayedMessage?.role === "user"}
-			isAssistantMessage={displayedMessage?.role === "assistant"}
 			replayBtnHandler={replayBtnHandler}
 			abortProcessingBtnHandler={abortProcessingBtnHandler}
 			stopPlayingHandler={stopPlayingHandler}
@@ -908,6 +985,12 @@ const ConversationIdPage = ({
 		/>
 	);
 
+	const onDictionaryWordClicked = (id: string) => {
+		// using the index instead of the id allows us to use pagination in the drawer
+		updateQueryStr("wordId", id);
+		setDrawerOpen(true);
+	};
+
 	const messageCardContent = displayedMessage && chatPartner && chatDialect && (
 		<MessageCard
 			message={displayedMessage}
@@ -917,11 +1000,7 @@ const ConversationIdPage = ({
 			currentTime={currentTime}
 			dictionaryMode={dictionaryMode && STATUS === status.IDLE}
 			translationMode={translationMode}
-			onDictionaryWordClicked={(id: string) => {
-				// using the index instead of the id allows us to use pagination in the drawer
-				updateQueryStr("wordId", id);
-				setDrawerOpen(true);
-			}}
+			onDictionaryWordClicked={onDictionaryWordClicked}
 			showLoadingOverlay={STATUS === status.PROCESSING}
 			// isLoading is only true for the first fetch
 			showSkeleton={isLoading}
@@ -934,6 +1013,15 @@ const ConversationIdPage = ({
 			<div className="text-slate-400 mt-1 w-full flex justify-end px-4 text-sm">
 				{(displayedMessageInd ?? 0) + 1} / {messages.length}
 			</div>
+		);
+
+	const messageAlertContent = displayedMessage &&
+		displayedMessage.wordMetadata.length === 0 &&
+		(dictionaryMode || translationMode) && (
+			<MessageAlert
+				dictionaryMode={dictionaryMode}
+				translationMode={translationMode}
+			/>
 		);
 
 	const progressBarContent = (
@@ -1001,15 +1089,16 @@ const ConversationIdPage = ({
 	}
 
 	return (
-		<div className={cn("w-full background-texture")}>
+		<div className={cn("flex-1 w-full background-texture flex flex-col")}>
 			<div className="absolute top-0 left-0 z-30 w-screen">
 				{progressBarContent}
 			</div>
 			{/* wrapper */}
-			<div className="h-full flex flex-col items-center justify-between mx-auto gap-4 px-4 py-4 md:pt-6 md:pb-14">
+			<div className="flex-1 flex flex-col items-center justify-between mx-auto gap-4 px-4 py-4 md:pt-6 md:pb-14">
 				<div className="hidden md:block">{chatPanelContent}</div>
 				{/* chat bubble and pagination wrapper */}
-				<div className="flex-1 min-h-0 basis-0 flex flex-col justify-center items-center w-full h-full max-w-2xl">
+				<div className="flex-1 min-h-0 basis-0 flex flex-col justify-center items-center w-full h-full max-w-2xl gap-2">
+					{messageAlertContent}
 					{/* message card container */}
 					<div className={cn("min-h-0 w-full max-w-2xl ")}>
 						{messageCardContent}

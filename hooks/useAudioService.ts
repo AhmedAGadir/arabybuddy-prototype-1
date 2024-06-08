@@ -10,6 +10,13 @@ import { TextToSpeechPayload } from "@/app/api/chat/text-to-speech/route";
 import { ChatPartnerId } from "@/lib/chatPartners";
 const { ObjectId } = require("bson");
 
+export type WordData = {
+	_id: string;
+	word: string;
+	startTime: number;
+	endTime: number;
+};
+
 const useAudioService = () => {
 	const logger = useLogger({ label: "AudioService", color: "#87de74" });
 
@@ -121,12 +128,7 @@ const useAudioService = () => {
 				const decodedBuffer = new TextDecoder().decode(concatenatedBuffer);
 
 				const base64Audios: string[] = [];
-				const wordData: {
-					_id: string;
-					word: string;
-					startTime: number;
-					endTime: number;
-				}[] = [];
+				const wordData: WordData[] = [];
 
 				decodedBuffer
 					.split("\n\n")

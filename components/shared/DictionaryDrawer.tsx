@@ -69,16 +69,19 @@ const DictionaryDrawer = ({
 
 	const wordInd = wordId ? wordData.findIndex((w) => w._id === wordId) : null;
 
-	const word = wordInd !== null ? wordData[wordInd].word : null;
+	const word =
+		wordInd !== null && wordInd !== -1 ? wordData[wordInd].word : null;
 
 	// some state for monolingual mode, initialized from local storage,
 	const [monolingualMode, setMonolingualMode] = React.useState(
-		localStorage?.getItem("monolingualMode") === "true" || false
+		localStorage ? localStorage.getItem("monolingualMode") === "true" : false
 	);
 
 	const toggleMonolingualMode = () => {
 		setMonolingualMode((prev) => {
-			localStorage?.setItem("monolingualMode", String(!prev));
+			if (localStorage) {
+				localStorage.setItem("monolingualMode", String(!prev));
+			}
 			return !prev;
 		});
 	};
@@ -174,7 +177,7 @@ const DictionaryDrawer = ({
 					</ToastAction>
 				),
 				className: "error-toast",
-				duration: Infinity,
+				duration: 5000,
 			});
 		},
 	});
@@ -240,7 +243,10 @@ const DictionaryDrawer = ({
 					<ChevronLeftIcon className="w-5 h-5" />
 				</Button>
 				<div className="flex-1 text-center">
-					<div className={cn("text-4xl md:text-6xl m", cairo.className)}>
+					<div
+						className={cn("text-4xl md:text-6xl", cairo.className)}
+						style={{ direction: "rtl" }}
+					>
 						{word && word}
 					</div>
 				</div>

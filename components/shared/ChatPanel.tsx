@@ -23,6 +23,7 @@ import {
 import { StopIcon, XCircleIcon } from "@heroicons/react/20/solid";
 
 import { TranslateIcon } from "@/components/shared/icons/Translate";
+import { IMessage } from "@/lib/database/models/message.model";
 
 type IconType = React.FC<any> | (() => JSX.Element);
 
@@ -52,12 +53,11 @@ type PanelItem = ButtonPanelItem | TogglePanelItem;
 
 const ChatPanel = ({
 	chatStatus,
+	message,
 	previousMessageHandler,
 	nextMessageHandler,
 	isFirstMessage,
 	isLastMessage,
-	isMessage,
-	isUserMessage,
 	replayBtnHandler,
 	abortProcessingBtnHandler,
 	stopPlayingHandler,
@@ -69,13 +69,11 @@ const ChatPanel = ({
 	translationMode,
 }: {
 	chatStatus: Status;
+	message: IMessage | null;
 	previousMessageHandler: () => void;
 	nextMessageHandler: () => void;
 	isFirstMessage: boolean;
 	isLastMessage: boolean;
-	isMessage: boolean;
-	isUserMessage: boolean;
-	isAssistantMessage: boolean;
 	replayBtnHandler: () => void;
 	abortProcessingBtnHandler: () => void;
 	stopPlayingHandler: () => void;
@@ -88,6 +86,9 @@ const ChatPanel = ({
 	dictionaryMode: boolean;
 	translationMode: boolean;
 }) => {
+	const isMessage = message !== null;
+	const isUserMessage = message?.role === "user";
+
 	const isIdle = chatStatus === status.IDLE;
 	const isRecording = chatStatus === status.RECORDING;
 	const isPlaying = chatStatus === status.PLAYING;

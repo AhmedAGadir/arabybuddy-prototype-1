@@ -155,7 +155,9 @@ const ChatPage = () => {
 
 	const clearDialectFilters = () => {
 		setFilteredDialects([]);
-		localStorage?.removeItem("filteredDialects");
+		if (localStorage) {
+			localStorage.removeItem("filteredDialects");
+		}
 	};
 
 	const onDialectFilterChange = useCallback(
