@@ -48,6 +48,7 @@ import { DictionaryDrawer } from "@/components/shared/DictionaryDrawer";
 import ChatPanel from "@/components/shared/ChatPanel";
 import { status, type Status } from "@/types/types";
 import { chatPartners } from "@/lib/chatPartners";
+import { nonWordCharactersRegExp } from "@/lib/constants";
 const { ObjectId } = require("bson");
 
 const task = {
@@ -572,10 +573,20 @@ const ConversationIdPage = ({
 
 				latestMessageInd++;
 
+				const transcriptionMetaData: WordMetadata[] = _.words(
+					(transcription as string).replace(nonWordCharactersRegExp, "")
+				).map((word) => ({
+					_id: new ObjectId().toHexString(),
+					arabic: word,
+					english: null,
+					startTime: 0,
+					endTime: 0,
+				}));
+
 				await createMessage({
 					role: "user",
 					content: transcription,
-					wordMetadata: [],
+					wordMetadata: transcriptionMetaData,
 				});
 
 				updateDisplayedMessageInd(latestMessageInd);
@@ -611,12 +622,12 @@ const ConversationIdPage = ({
 				};
 
 				latestMessageInd++;
+				updateDisplayedMessageInd(latestMessageInd);
 
 				for await (const data of completionStream) {
 					completionMessage.content = data.content;
 					completionMessage.role = data.role;
 					await upsertMessageInCache(completionMessage);
-					updateDisplayedMessageInd(latestMessageInd);
 				}
 
 				setActiveTask("TEXT_TO_SPEECH");
@@ -729,10 +740,10 @@ const ConversationIdPage = ({
 				displayedMessage.wordMetadata.length > 0 &&
 				displayedMessage.wordMetadata[0].english !== null;
 
-			let wordMetadata: WordMetadata[];
+			let updatedWordMetadata: WordMetadata[];
 
 			if (displayedMessageAlreadyHasTranslation) {
-				wordMetadata = wordData.map(
+				updatedWordMetadata = wordData.map(
 					({ _id, word, startTime, endTime }, ind) => {
 						return {
 							_id,
@@ -746,20 +757,22 @@ const ConversationIdPage = ({
 			} else if (translationMode) {
 				setActiveTask("ASSISTANT_TRANSLATE");
 
-				wordMetadata = await generateWordMetadataTranslations(wordData);
+				updatedWordMetadata = await generateWordMetadataTranslations(wordData);
 			} else {
-				wordMetadata = wordData.map(({ _id, word, startTime, endTime }) => ({
-					_id,
-					arabic: word,
-					english: null,
-					startTime,
-					endTime,
-				}));
+				updatedWordMetadata = wordData.map(
+					({ _id, word, startTime, endTime }) => ({
+						_id,
+						arabic: word,
+						english: null,
+						startTime,
+						endTime,
+					})
+				);
 			}
 
 			const updatedMessage = {
 				...displayedMessage,
-				wordMetadata: wordMetadata,
+				wordMetadata: updatedWordMetadata,
 			};
 
 			await updateMessage(updatedMessage);
@@ -939,38 +952,23 @@ const ConversationIdPage = ({
 
 			startProgressBarInterval();
 
-			let wordData: {
-				_id: string;
-				word: string;
-				startTime: number;
-				endTime: number;
-			}[];
-
-			if (displayedMessage.wordMetadata.length > 0) {
-				wordData = displayedMessage.wordMetadata.map(
-					({ _id, arabic, startTime, endTime }) => ({
-						_id,
-						word: arabic,
-						startTime,
-						endTime,
-					})
-				);
-			} else {
-				const words = displayedMessage.content.split(" ");
-				wordData = words.map((word, ind) => ({
-					_id: new ObjectId().toHexString(),
-					word,
-					startTime: ind,
-					endTime: ind + 1,
-				}));
-			}
+			const wordDataFromCurrentMetadata = displayedMessage.wordMetadata.map(
+				({ _id, arabic, startTime, endTime }) => ({
+					_id,
+					word: arabic,
+					startTime,
+					endTime,
+				})
+			);
 
 			setActiveTask("ASSISTANT_TRANSLATE");
-			const wordMetadata = await generateWordMetadataTranslations(wordData);
+			const updatedWordMetadata = await generateWordMetadataTranslations(
+				wordDataFromCurrentMetadata
+			);
 
 			const updatedMessage = {
 				...displayedMessage,
-				wordMetadata: wordMetadata ?? [],
+				wordMetadata: updatedWordMetadata,
 			};
 
 			await updateMessage(updatedMessage);
