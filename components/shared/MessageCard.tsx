@@ -21,6 +21,7 @@ import { useUser } from "@clerk/nextjs";
 import { SpeakerWaveIcon } from "@heroicons/react/24/outline";
 import { DialectBadge } from "@/components/shared/DialectBadge";
 import { Badge } from "@/components/ui/badge";
+import { TranslateIcon } from "@/components/shared/icons/Translate";
 
 const TranslationWrapper = ({
 	arabicWordContent,
@@ -101,6 +102,9 @@ const MessageCard = ({
 		</>
 	);
 
+	const hasTranslation =
+		wordMetadata.length > 0 && wordMetadata[0].english !== null;
+
 	const topBarContent = (
 		<div className="flex justify-between">
 			<div className="flex gap-2">
@@ -109,8 +113,13 @@ const MessageCard = ({
 					dialect={dialect}
 					shorten
 				/>
+				{hasTranslation && (
+					<span className="self-start bg-muted text-muted-foreground inline-flex items-center rounded-md px-2 py-1 text-xs font-medium text-nowrap">
+						<TranslateIcon className="w-6 h-6" />
+					</span>
+				)}
 				{isPlaying && (
-					<SpeakerWaveIcon className="w-6 h-6 sm:w-7 sm:h-7 text-slate-400 transition ease-in-out" />
+					<SpeakerWaveIcon className="self-start w-7 h-7 text-slate-400 transition ease-in-out" />
 				)}
 			</div>
 

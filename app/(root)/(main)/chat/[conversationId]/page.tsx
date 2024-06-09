@@ -11,7 +11,7 @@ import React, {
 import Image from "next/image";
 
 import { useLogger } from "@/hooks/useLogger";
-import { WordData, useAudioService } from "@/hooks/useAudioService";
+import { useAudioService } from "@/hooks/useAudioService";
 import { useChatService } from "@/hooks/useChatService";
 import { useAudioPlayer } from "@/hooks/useAudioPlayer";
 import { useRecording } from "@/hooks/useRecording";
@@ -31,7 +31,7 @@ import SkewLoader from "react-spinners/SkewLoader";
 import ScaleLoader from "react-spinners/ScaleLoader";
 import { ToastAction } from "@radix-ui/react-toast";
 
-import { IMessage } from "@/lib/database/models/message.model";
+import { IMessage, WordMetadata } from "@/lib/database/models/message.model";
 import { useUser } from "@clerk/nextjs";
 
 import SupportCard from "@/components/shared/SupportCard";
@@ -48,51 +48,8 @@ import { DictionaryDrawer } from "@/components/shared/DictionaryDrawer";
 import ChatPanel from "@/components/shared/ChatPanel";
 import { status, type Status } from "@/types/types";
 import { chatPartners } from "@/lib/chatPartners";
+import { nonWordCharactersRegExp } from "@/lib/constants";
 const { ObjectId } = require("bson");
-
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import {
-	ExclamationCircleIcon,
-	InformationCircleIcon,
-	NoSymbolIcon,
-} from "@heroicons/react/20/solid";
-
-const MessageAlert = ({
-	dictionaryMode,
-	translationMode,
-}: {
-	dictionaryMode: boolean;
-	translationMode: boolean;
-}) => {
-	const content = useMemo(() => {
-		if (dictionaryMode && translationMode) {
-			return "This is a transcribed user message, so translation and dictionary data are not available.";
-		} else if (dictionaryMode) {
-			return "This is a transcribed user message, so dictionary data is not available.";
-		} else if (translationMode) {
-			return "This is a transcribed user message, so translation data is not available.";
-		} else {
-			return "";
-		}
-	}, [dictionaryMode, translationMode]);
-
-	return (
-		<Alert variant="indigo" className="flex gap-1">
-			<div>
-				<NoSymbolIcon className="h-5 w-5 fill-inherit" />
-			</div>
-			<AlertDescription>
-				{content}
-				{/* <div
-				href="#"
-				className="font-medium text-purple-700 underline hover:text-purple-600 cursor-pointer"
-			>
-				Upgrade your account to unlock all dialects for every chat partner.
-			</div> */}
-			</AlertDescription>
-		</Alert>
-	);
-};
 
 const task = {
 	SPEECH_TO_TEXT: "SPEECH_TO_TEXT",
@@ -388,8 +345,17 @@ const ConversationIdPage = ({
 		[isPlaying, stopPlaying, stopProgressBar, toast]
 	);
 
-	const getWordMetadata = useCallback(
-		async (wordData: WordData[], role: "assistant" | "user") => {
+	const [translationMode, setTranslationMode] = useState(false);
+
+	const generateWordMetadataTranslations = useCallback(
+		async (
+			wordData: {
+				_id: string;
+				word: string;
+				startTime: number;
+				endTime: number;
+			}[]
+		) => {
 			try {
 				if (!chatPartnerId || !chatDialect) {
 					throw new Error("chatPartnerId or chatDialect is null");
@@ -398,7 +364,7 @@ const ConversationIdPage = ({
 				const wordMetadataCompletionStream = await makeChatCompletionStream(
 					[
 						{
-							role,
+							role: "user",
 							content: JSON.stringify(
 								wordData.map(({ _id, word }) => ({ _id, arabic: word }))
 							),
@@ -439,7 +405,7 @@ const ConversationIdPage = ({
 
 						return {
 							_id,
-							arabic,
+							arabic: wordInd !== -1 ? wordData[wordInd].word : arabic,
 							english,
 							startTime:
 								wordInd !== -1
@@ -453,6 +419,8 @@ const ConversationIdPage = ({
 					}
 				);
 
+				logger.log("generated word metadata translations", wordMetadata);
+
 				return wordMetadata;
 			} catch (error) {
 				toast({
@@ -461,6 +429,8 @@ const ConversationIdPage = ({
 					className: "error-toast",
 					duration: 5000,
 				});
+
+				return [];
 			}
 		},
 		[chatDialect, chatPartnerId, makeChatCompletionStream, toast]
@@ -603,10 +573,20 @@ const ConversationIdPage = ({
 
 				latestMessageInd++;
 
+				const transcriptionMetaData: WordMetadata[] = _.words(
+					(transcription as string).replace(nonWordCharactersRegExp, "")
+				).map((word) => ({
+					_id: new ObjectId().toHexString(),
+					arabic: word,
+					english: null,
+					startTime: 0,
+					endTime: 0,
+				}));
+
 				await createMessage({
 					role: "user",
 					content: transcription,
-					wordMetadata: [],
+					wordMetadata: transcriptionMetaData,
 				});
 
 				updateDisplayedMessageInd(latestMessageInd);
@@ -642,12 +622,12 @@ const ConversationIdPage = ({
 				};
 
 				latestMessageInd++;
+				updateDisplayedMessageInd(latestMessageInd);
 
 				for await (const data of completionStream) {
 					completionMessage.content = data.content;
 					completionMessage.role = data.role;
 					await upsertMessageInCache(completionMessage);
-					updateDisplayedMessageInd(latestMessageInd);
 				}
 
 				setActiveTask("TEXT_TO_SPEECH");
@@ -660,11 +640,23 @@ const ConversationIdPage = ({
 					}
 				);
 
-				setActiveTask("ASSISTANT_TRANSLATE");
+				let wordMetadata: WordMetadata[];
 
-				const wordMetadata = await getWordMetadata(wordData, "assistant");
+				if (translationMode) {
+					setActiveTask("ASSISTANT_TRANSLATE");
 
-				completionMessage.wordMetadata = wordMetadata ?? [];
+					wordMetadata = await generateWordMetadataTranslations(wordData);
+				} else {
+					wordMetadata = wordData.map(({ _id, word, startTime, endTime }) => ({
+						_id,
+						arabic: word,
+						english: null,
+						startTime,
+						endTime,
+					}));
+				}
+
+				completionMessage.wordMetadata = wordMetadata;
 
 				await upsertMessageInCache(completionMessage);
 
@@ -704,17 +696,18 @@ const ConversationIdPage = ({
 			speechToText,
 			messages,
 			createMessage,
+			updateDisplayedMessageInd,
 			makeChatCompletionStream,
 			user,
 			conversationId,
 			textToSpeech,
-			getWordMetadata,
+			translationMode,
 			upsertMessageInCache,
 			audioElementInitialized,
 			playAudio,
 			updateConversation,
 			stopProgressBar,
-			updateDisplayedMessageInd,
+			generateWordMetadataTranslations,
 			initAudioElement,
 			logger,
 			handleError,
@@ -743,16 +736,43 @@ const ConversationIdPage = ({
 				}
 			);
 
-			setActiveTask("ASSISTANT_TRANSLATE");
+			const displayedMessageAlreadyHasTranslation =
+				displayedMessage.wordMetadata.length > 0 &&
+				displayedMessage.wordMetadata[0].english !== null;
 
-			const wordMetadata = await getWordMetadata(
-				wordData,
-				displayedMessage.role
-			);
+			let updatedWordMetadata: WordMetadata[];
+
+			if (displayedMessageAlreadyHasTranslation) {
+				updatedWordMetadata = wordData.map(
+					({ _id, word, startTime, endTime }, ind) => {
+						return {
+							_id,
+							arabic: word,
+							english: displayedMessage.wordMetadata[ind].english,
+							startTime,
+							endTime,
+						};
+					}
+				);
+			} else if (translationMode) {
+				setActiveTask("ASSISTANT_TRANSLATE");
+
+				updatedWordMetadata = await generateWordMetadataTranslations(wordData);
+			} else {
+				updatedWordMetadata = wordData.map(
+					({ _id, word, startTime, endTime }) => ({
+						_id,
+						arabic: word,
+						english: null,
+						startTime,
+						endTime,
+					})
+				);
+			}
 
 			const updatedMessage = {
 				...displayedMessage,
-				wordMetadata: wordMetadata ?? [],
+				wordMetadata: updatedWordMetadata,
 			};
 
 			await updateMessage(updatedMessage);
@@ -774,7 +794,7 @@ const ConversationIdPage = ({
 		chatDialect,
 		chatPartnerId,
 		displayedMessage,
-		getWordMetadata,
+		generateWordMetadataTranslations,
 		handleError,
 		initAudioElement,
 		logger,
@@ -782,6 +802,7 @@ const ConversationIdPage = ({
 		startProgressBarInterval,
 		stopProgressBar,
 		textToSpeech,
+		translationMode,
 		updateMessage,
 	]);
 
@@ -852,14 +873,23 @@ const ConversationIdPage = ({
 					}
 				);
 
-				setActiveTask("ASSISTANT_TRANSLATE");
+				let wordMetadata: WordMetadata[];
 
-				const wordMetadata = await getWordMetadata(
-					wordData,
-					displayedMessage.role
-				);
+				if (translationMode) {
+					setActiveTask("ASSISTANT_TRANSLATE");
 
-				completionMessage.wordMetadata = wordMetadata ?? [];
+					wordMetadata = await generateWordMetadataTranslations(wordData);
+				} else {
+					wordMetadata = wordData.map(({ _id, word, startTime, endTime }) => ({
+						_id,
+						arabic: word,
+						english: null,
+						startTime,
+						endTime,
+					}));
+				}
+
+				completionMessage.wordMetadata = wordMetadata;
 
 				await updateMessage(completionMessage);
 
@@ -890,7 +920,7 @@ const ConversationIdPage = ({
 			chatPartnerId,
 			displayedMessage,
 			displayedMessageInd,
-			getWordMetadata,
+			generateWordMetadataTranslations,
 			handleError,
 			initAudioElement,
 			logger,
@@ -900,16 +930,70 @@ const ConversationIdPage = ({
 			startProgressBarInterval,
 			stopProgressBar,
 			textToSpeech,
+			translationMode,
 			updateMessage,
 			upsertMessageInCache,
 		]
 	);
 
-	const [translationMode, setTranslationMode] = useState(false);
-
 	const toggleTranslationHandler = () => {
 		setTranslationMode((prev) => !prev);
 	};
+
+	const translateBtnHandler = useCallback(async () => {
+		try {
+			if (!chatPartnerId || !chatDialect) {
+				throw new Error("chatPartnerId or chatDialect is null");
+			}
+
+			if (!displayedMessage) {
+				throw new Error("displayedMessage is null");
+			}
+
+			startProgressBarInterval();
+
+			const wordDataFromCurrentMetadata = displayedMessage.wordMetadata.map(
+				({ _id, arabic, startTime, endTime }) => ({
+					_id,
+					word: arabic,
+					startTime,
+					endTime,
+				})
+			);
+
+			setActiveTask("ASSISTANT_TRANSLATE");
+			const updatedWordMetadata = await generateWordMetadataTranslations(
+				wordDataFromCurrentMetadata
+			);
+
+			const updatedMessage = {
+				...displayedMessage,
+				wordMetadata: updatedWordMetadata,
+			};
+
+			await updateMessage(updatedMessage);
+
+			setActiveTask(null);
+
+			setTranslationMode(true);
+
+			stopProgressBar();
+		} catch (error) {
+			logger.error("translateBtnHandler", error);
+
+			handleError(error, "There was a problem translating this message");
+		}
+	}, [
+		chatDialect,
+		chatPartnerId,
+		displayedMessage,
+		generateWordMetadataTranslations,
+		handleError,
+		logger,
+		startProgressBarInterval,
+		stopProgressBar,
+		updateMessage,
+	]);
 
 	const [drawerOpen, setDrawerOpen] = useState(false);
 
@@ -980,6 +1064,7 @@ const ConversationIdPage = ({
 			toggleRecordingHandler={toggleRecordingHandler}
 			toggleDictionaryHandler={toggleDictionaryHandler}
 			toggleTranslationHandler={toggleTranslationHandler}
+			translateBtnHandler={translateBtnHandler}
 			dictionaryMode={dictionaryMode}
 			translationMode={translationMode}
 		/>
@@ -1013,15 +1098,6 @@ const ConversationIdPage = ({
 			<div className="text-slate-400 mt-1 w-full flex justify-end px-4 text-sm">
 				{(displayedMessageInd ?? 0) + 1} / {messages.length}
 			</div>
-		);
-
-	const messageAlertContent = displayedMessage &&
-		displayedMessage.wordMetadata.length === 0 &&
-		(dictionaryMode || translationMode) && (
-			<MessageAlert
-				dictionaryMode={dictionaryMode}
-				translationMode={translationMode}
-			/>
 		);
 
 	const progressBarContent = (
@@ -1098,7 +1174,6 @@ const ConversationIdPage = ({
 				<div className="hidden md:block">{chatPanelContent}</div>
 				{/* chat bubble and pagination wrapper */}
 				<div className="flex-1 min-h-0 basis-0 flex flex-col justify-center items-center w-full h-full max-w-2xl gap-2">
-					{messageAlertContent}
 					{/* message card container */}
 					<div className={cn("min-h-0 w-full max-w-2xl ")}>
 						{messageCardContent}
