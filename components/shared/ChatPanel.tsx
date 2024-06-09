@@ -65,6 +65,7 @@ const ChatPanel = ({
 	toggleRecordingHandler,
 	toggleDictionaryHandler,
 	toggleTranslationHandler,
+	translateBtnHandler,
 	dictionaryMode,
 	translationMode,
 }: {
@@ -83,11 +84,17 @@ const ChatPanel = ({
 	toggleRecordingHandler: () => void;
 	toggleDictionaryHandler: () => void;
 	toggleTranslationHandler: () => void;
+	translateBtnHandler: () => void;
 	dictionaryMode: boolean;
 	translationMode: boolean;
 }) => {
 	const isMessage = message !== null;
 	const isUserMessage = message?.role === "user";
+
+	const hasTranslation =
+		message &&
+		message.wordMetadata.length > 0 &&
+		message.wordMetadata[0].english !== null;
 
 	const isIdle = chatStatus === status.IDLE;
 	const isRecording = chatStatus === status.RECORDING;
@@ -168,16 +175,27 @@ const ChatPanel = ({
 				pressed: dictionaryMode,
 				onPressed: toggleDictionaryHandler,
 				icon: BookOpenIcon,
-				disabled: false,
+				disabled: isPlaying || isRecording,
 			},
-			{
-				label: "Translate",
-				icon: TranslateIcon,
-				isToggle: true,
-				pressed: translationMode,
-				onPressed: toggleTranslationHandler,
-				disabled: false,
-			},
+			...(hasTranslation || !isMessage
+				? [
+						{
+							label: "Translate",
+							icon: TranslateIcon,
+							isToggle: true,
+							pressed: translationMode,
+							onPressed: toggleTranslationHandler,
+							disabled: isRecording || isPlaying || isProcessing,
+						},
+				  ]
+				: [
+						{
+							label: "Translate",
+							icon: TranslateIcon,
+							onClick: translateBtnHandler,
+							disabled: isRecording || isPlaying || isProcessing,
+						},
+				  ]),
 			{
 				label: "Next",
 				icon: () => <span>Next</span>,
@@ -200,8 +218,10 @@ const ChatPanel = ({
 		toggleRecordingHandler,
 		dictionaryMode,
 		toggleDictionaryHandler,
+		hasTranslation,
 		translationMode,
 		toggleTranslationHandler,
+		translateBtnHandler,
 		nextMessageHandler,
 		isLastMessage,
 		redoCompletionHandler,

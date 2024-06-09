@@ -248,7 +248,7 @@ const PreferencesPage = () => {
 					</ToastAction>
 				),
 				className: "error-toast",
-				duration: Infinity,
+				duration: 5000,
 			});
 		}
 	}, [isPending, error, refetch, toast]);

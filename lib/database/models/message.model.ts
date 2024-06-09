@@ -3,7 +3,7 @@ import { Schema, model, models } from "mongoose";
 export interface WordMetadata {
 	_id: string;
 	arabic: string;
-	english: string;
+	english: string | null;
 	startTime: number;
 	endTime: number;
 }
@@ -21,10 +21,10 @@ export interface IMessage {
 }
 
 const WordMetadataSchema = new Schema({
-	arabic: { type: String },
-	english: { type: String },
-	startTime: { type: Number },
-	endTime: { type: Number },
+	arabic: { type: String, required: true },
+	english: { type: String, required: false, default: null },
+	startTime: { type: Number, required: true },
+	endTime: { type: Number, required: true },
 });
 
 const MessageSchema = new Schema(
