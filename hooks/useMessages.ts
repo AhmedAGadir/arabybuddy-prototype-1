@@ -15,7 +15,13 @@ const useMessages = ({ conversationId }: { conversationId: string }) => {
 
 	const queryKey = ["messages", user?.id, conversationId];
 
-	const { isPending, error, data, refetch, isLoading } = useQuery({
+	const {
+		isPending,
+		error,
+		data,
+		refetch,
+		isLoading: isLoadingMessages,
+	} = useQuery({
 		queryKey,
 		refetchOnWindowFocus: true,
 		queryFn: async () => {
@@ -223,7 +229,7 @@ const useMessages = ({ conversationId }: { conversationId: string }) => {
 		updateMessage,
 		deleteMessages,
 		upsertMessageInCache,
-		isLoading,
+		isLoadingMessages,
 	};
 };
 

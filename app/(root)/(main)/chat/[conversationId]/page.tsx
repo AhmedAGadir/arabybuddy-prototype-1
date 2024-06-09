@@ -8,8 +8,6 @@ import React, {
 	useCallback,
 } from "react";
 
-import Image from "next/image";
-
 import { useLogger } from "@/hooks/useLogger";
 import { useAudioService } from "@/hooks/useAudioService";
 import { useChatService } from "@/hooks/useChatService";
@@ -37,17 +35,15 @@ import { useUser } from "@clerk/nextjs";
 import SupportCard from "@/components/shared/SupportCard";
 
 import _ from "lodash";
-import { Transition } from "@headlessui/react";
 
 import { cn } from "@/lib/utils";
 import { cairo } from "@/lib/fonts";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useCyclingText } from "@/hooks/useCyclingText";
 import { DictionaryDrawer } from "@/components/shared/DictionaryDrawer";
 import ChatPanel from "@/components/shared/ChatPanel";
-import { status, type Status } from "@/types/types";
-import { chatPartners } from "@/lib/chatPartners";
+import { ArabicDialect, status, type Status } from "@/types/types";
+import { ChatPartner, chatPartners } from "@/lib/chatPartners";
 import { nonWordCharactersRegExp } from "@/lib/constants";
 const { ObjectId } = require("bson");
 
@@ -75,8 +71,12 @@ const ConversationIdPage = ({
 
 	const { user } = useUser();
 
-	const { conversations, updateConversation, deleteConversation } =
-		useConversations();
+	const {
+		conversations,
+		updateConversation,
+		deleteConversation,
+		isLoadingConversations,
+	} = useConversations();
 
 	const conversation = conversations.find((c) => c._id === conversationId);
 
@@ -95,7 +95,7 @@ const ConversationIdPage = ({
 		deleteMessages,
 		refetch,
 		upsertMessageInCache,
-		isLoading,
+		isLoadingMessages,
 	} = useMessages({
 		conversationId,
 	});
@@ -140,10 +140,10 @@ const ConversationIdPage = ({
 	const pathname = usePathname();
 	const searchParams = useSearchParams();
 
+	const isNewChat = searchParams.get("new") === "true";
+
 	const displayedMessageInd =
 		searchParams.get("ind") !== null ? Number(searchParams.get("ind")) : null;
-
-	const isNewChat = searchParams.get("new") === "true";
 
 	const updateQueryStr = useCallback(
 		(name: string, value: string) => {
@@ -167,15 +167,23 @@ const ConversationIdPage = ({
 		updateDisplayedMessageInd(messages.length - 1);
 	}
 
+	// if (
+	// 	displayedMessageInd !== null &&
+	// 	messages.length > 0 &&
+	// 	displayedMessageInd >= messages.length
+	// ) {
+	// 	logger.log("reset displayedMessageInd to last message index");
+	// 	updateDisplayedMessageInd(messages.length - 1);
+	// }
+
 	const displayedMessage = useMemo(() => {
-		// first load
-		if (displayedMessageInd === null) return null;
+		if (isLoadingMessages || displayedMessageInd === null) {
+			return null;
+		}
 
-		// if search params are out of bounds
-		if (messages[displayedMessageInd] === undefined) return null;
-
-		return messages[displayedMessageInd];
-	}, [displayedMessageInd, messages]);
+		const message = messages[displayedMessageInd];
+		return message;
+	}, [displayedMessageInd, isLoadingMessages, messages]);
 
 	// const pathname = usePathname();
 	// const searchParams = useSearchParams();
@@ -291,11 +299,13 @@ const ConversationIdPage = ({
 					duration: 10000,
 				});
 			}
+
+			setActiveTask(null);
+
 			if (isPlaying) {
 				stopPlaying();
 			}
 
-			setActiveTask(null);
 			stopProgressBar();
 		},
 		[isPlaying, stopPlaying, stopProgressBar, toast]
@@ -389,7 +399,7 @@ const ConversationIdPage = ({
 				return [];
 			}
 		},
-		[chatDialect, chatPartnerId, makeChatCompletionStream, toast]
+		[chatDialect, chatPartnerId, logger, makeChatCompletionStream, toast]
 	);
 
 	// const generateGreeting = useCallback(async () => {
@@ -856,8 +866,6 @@ const ConversationIdPage = ({
 				}
 				await playAudio(base64Audio);
 
-				setActiveTask(null);
-
 				stopProgressBar();
 			} catch (error) {
 				logger.error("redoCompletion", error);
@@ -1020,32 +1028,83 @@ const ConversationIdPage = ({
 			translateBtnHandler={translateBtnHandler}
 			dictionaryMode={dictionaryMode}
 			translationMode={translationMode}
+			disabled={isLoadingMessages}
 		/>
 	);
 
-	const onDictionaryWordClicked = (id: string) => {
-		// using the index instead of the id allows us to use pagination in the drawer
-		updateQueryStr("wordId", id);
-		setDrawerOpen(true);
-	};
-
-	const messageCardContent = displayedMessage && chatPartner && chatDialect && (
-		<MessageCard
-			message={displayedMessage}
-			assistant={chatPartner}
-			dialect={chatDialect}
-			isPlaying={isPlaying}
-			currentTime={currentTime}
-			dictionaryMode={dictionaryMode && STATUS === status.IDLE}
-			translationMode={translationMode}
-			onDictionaryWordClicked={onDictionaryWordClicked}
-			showLoadingOverlay={STATUS === status.PROCESSING}
-			// isLoading is only true for the first fetch
-			showSkeleton={isLoading}
-			messageInd={displayedMessageInd ?? 0}
-			totalMessageCount={messages.length}
-		/>
+	const onDictionaryWordClicked = useCallback(
+		(id: string) => {
+			// using the index instead of the id allows us to use pagination in the drawer
+			updateQueryStr("wordId", id);
+			setDrawerOpen(true);
+		},
+		[updateQueryStr]
 	);
+
+	const messageCardContent = useMemo(() => {
+		if (
+			!isLoadingMessages &&
+			messages.length > 0 &&
+			displayedMessageInd !== null &&
+			displayedMessageInd >= 0 &&
+			displayedMessageInd < messages.length
+		) {
+			return (
+				<MessageCard
+					isLoading={false}
+					message={displayedMessage as IMessage}
+					assistant={chatPartner}
+					dialect={chatDialect}
+					messageInd={displayedMessageInd}
+					isProcessing={activeTask !== null}
+					isPlaying={isPlaying}
+					currentTime={currentTime}
+					dictionaryMode={dictionaryMode && STATUS === status.IDLE}
+					translationMode={translationMode}
+					onDictionaryWordClicked={onDictionaryWordClicked}
+					showLoadingOverlay={STATUS === status.PROCESSING}
+					totalMessageCount={messages.length}
+				/>
+			);
+		}
+
+		if (isLoadingMessages && !isNewChat) {
+			return (
+				<MessageCard
+					isLoading={true}
+					message={null}
+					assistant={undefined}
+					dialect={undefined}
+					messageInd={null}
+					totalMessageCount={0}
+					isProcessing={false}
+					isPlaying={false}
+					currentTime={0}
+					dictionaryMode={false}
+					translationMode={false}
+					onDictionaryWordClicked={() => {}}
+					showLoadingOverlay={false}
+				/>
+			);
+		}
+
+		return null;
+	}, [
+		STATUS,
+		activeTask,
+		chatDialect,
+		chatPartner,
+		currentTime,
+		dictionaryMode,
+		displayedMessage,
+		displayedMessageInd,
+		isLoadingMessages,
+		isNewChat,
+		isPlaying,
+		messages.length,
+		onDictionaryWordClicked,
+		translationMode,
+	]);
 
 	const progressBarContent = (
 		<Progress
@@ -1097,12 +1156,12 @@ const ConversationIdPage = ({
 				{progressBarContent}
 			</div>
 			{/* wrapper */}
-			<div className="flex-1 flex flex-col items-center justify-between mx-auto gap-4 px-4 py-4 md:pt-6 md:pb-14">
-				<div className="hidden md:block">{chatPanelContent}</div>
+			<div className="flex-1 flex flex-col items-center justify-between mx-auto gap-4 p-4">
+				<div className="hidden md:block mt-8">{chatPanelContent}</div>
 				{/* chat bubble and pagination wrapper */}
 				<div className="flex-1 min-h-0 basis-0 flex flex-col justify-center items-center w-full h-full max-w-2xl gap-2">
 					{/* message card container */}
-					<div className={cn("min-h-0 w-full max-w-2xl ")}>
+					<div className={cn("min-h-0 w-full max-w-2xl")}>
 						{messageCardContent}
 					</div>
 				</div>
@@ -1121,12 +1180,14 @@ const ConversationIdPage = ({
 				chatPartnerId={chatPartnerId}
 				chatDialect={chatDialect}
 			/>
-			<SupportCard className="fixed bottom-0 right-0" />
+			<SupportCard className="fixed bottom-0 right-0 py-6" />
 		</div>
 	);
 
 	{
 		/* divs to view each size */
+	}
+	{
 		/* <div className="sm:hidden">
 					<h1>xs</h1>
 				</div>

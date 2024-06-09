@@ -68,6 +68,7 @@ const ChatPanel = ({
 	translateBtnHandler,
 	dictionaryMode,
 	translationMode,
+	disabled,
 }: {
 	chatStatus: Status;
 	message: IMessage | null;
@@ -87,6 +88,7 @@ const ChatPanel = ({
 	translateBtnHandler: () => void;
 	dictionaryMode: boolean;
 	translationMode: boolean;
+	disabled: boolean;
 }) => {
 	const isMessage = message !== null;
 	const isUserMessage = message?.role === "user";
@@ -115,7 +117,7 @@ const ChatPanel = ({
 							label: "Replay",
 							icon: PlayIcon,
 							onClick: replayBtnHandler,
-							disabled: !isMessage || !isIdle,
+							disabled: !isMessage || !isIdle || disabled,
 						},
 				  ]
 				: []),
@@ -128,7 +130,7 @@ const ChatPanel = ({
 							isToggle: true,
 							pressed: true,
 							onPressed: abortProcessingBtnHandler,
-							disabled: false,
+							disabled: false || disabled,
 						},
 				  ]
 				: []),
@@ -139,7 +141,7 @@ const ChatPanel = ({
 							icon: StopIcon,
 							iconClasses: "text-indigo-600 w-8 h-8",
 							onClick: stopPlayingHandler,
-							disabled: false,
+							disabled: false || disabled,
 						},
 				  ]
 				: []),
@@ -150,7 +152,7 @@ const ChatPanel = ({
 							icon: SparklesIcon,
 							new: true,
 							onClick: () => redoCompletionHandler({ mode: "REPHRASE" }),
-							disabled: !isMessage || !isIdle,
+							disabled: !isMessage || !isIdle || disabled,
 						},
 				  ]
 				: [
@@ -158,7 +160,7 @@ const ChatPanel = ({
 							label: "Regenerate",
 							icon: ArrowPathIcon,
 							onClick: () => redoCompletionHandler({ mode: "REGENERATE" }),
-							disabled: !isMessage || !isIdle,
+							disabled: !isMessage || !isIdle || disabled,
 						},
 				  ]),
 			{
@@ -167,7 +169,7 @@ const ChatPanel = ({
 				pressed: isRecording,
 				onPressed: toggleRecordingHandler,
 				icon: MicrophoneIconOutline,
-				disabled: isProcessing,
+				disabled: isProcessing || disabled,
 			},
 			{
 				label: "Dictionary",
@@ -175,7 +177,7 @@ const ChatPanel = ({
 				pressed: dictionaryMode,
 				onPressed: toggleDictionaryHandler,
 				icon: BookOpenIcon,
-				disabled: isPlaying || isRecording,
+				disabled: isPlaying || isRecording || disabled,
 			},
 			...(hasTranslation || !isMessage
 				? [
@@ -185,7 +187,7 @@ const ChatPanel = ({
 							isToggle: true,
 							pressed: translationMode,
 							onPressed: toggleTranslationHandler,
-							disabled: isRecording || isPlaying || isProcessing,
+							disabled: isRecording || isPlaying || isProcessing || disabled,
 						},
 				  ]
 				: [
@@ -193,14 +195,15 @@ const ChatPanel = ({
 							label: "Translate",
 							icon: TranslateIcon,
 							onClick: translateBtnHandler,
-							disabled: isRecording || isPlaying || isProcessing,
+							disabled: isRecording || isPlaying || isProcessing || disabled,
 						},
 				  ]),
 			{
 				label: "Next",
 				icon: () => <span>Next</span>,
 				onClick: nextMessageHandler,
-				disabled: !isMessage || isLastMessage || isRecording || isPlaying,
+				disabled:
+					!isMessage || isLastMessage || isRecording || isPlaying || disabled,
 			},
 		];
 	}, [
@@ -211,6 +214,7 @@ const ChatPanel = ({
 		isPlaying,
 		isIdle,
 		replayBtnHandler,
+		disabled,
 		isProcessing,
 		abortProcessingBtnHandler,
 		stopPlayingHandler,

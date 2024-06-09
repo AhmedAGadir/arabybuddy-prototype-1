@@ -41,77 +41,112 @@ const TranslationWrapper = ({
 	</div>
 );
 
-const MessageCard = ({
-	message,
-	assistant,
-	dialect,
-	isPlaying,
-	currentTime,
-	dictionaryMode,
-	translationMode,
-	onDictionaryWordClicked,
-	showLoadingOverlay = false,
-	showSkeleton = false,
-	messageInd,
-	totalMessageCount,
-}: {
-	message: IMessage;
-	assistant: ChatPartner;
-	dialect: ArabicDialect;
+type BaseState = {
+	totalMessageCount: number;
+	isProcessing: boolean;
 	isPlaying: boolean;
 	currentTime: number;
 	dictionaryMode: boolean;
 	onDictionaryWordClicked: (id: string) => void;
 	translationMode: boolean;
-	showLoadingOverlay?: boolean;
-	showSkeleton?: boolean;
-	messageInd: number;
-	totalMessageCount: number;
-}) => {
-	const { role, content, wordMetadata } = message;
+	showLoadingOverlay: boolean;
+};
 
+type MessageLoadedState = {
+	isLoading: false;
+	message: IMessage;
+	assistant: ChatPartner | undefined;
+	dialect: ArabicDialect | undefined;
+	messageInd: number;
+};
+
+type MessageLoadingState = {
+	isLoading: true;
+	message: null;
+	assistant: undefined;
+	dialect: undefined;
+	messageInd: null;
+};
+
+type MessageCard = BaseState & (MessageLoadedState | MessageLoadingState);
+
+const MessageCard = ({
+	isLoading,
+	message,
+	assistant,
+	dialect,
+	messageInd,
+	totalMessageCount,
+	isProcessing,
+	isPlaying,
+	currentTime,
+	dictionaryMode,
+	translationMode,
+	onDictionaryWordClicked,
+	showLoadingOverlay,
+}: MessageCard) => {
 	const { user } = useUser();
 
-	const name = role === "assistant" ? assistant.name : "You";
-	const avatarSrc =
-		role === "assistant"
-			? assistant.image
-			: user?.imageUrl ?? "/assets/user.svg";
-	const avatarAlt =
-		role === "assistant" ? assistant.name : user?.username ?? "User avatar";
+	const allContentLoaded = !isLoading && message && assistant && dialect;
 
-	const nameContent = (
-		<>
-			{showSkeleton && <Skeleton className="h-6 sm:h-7 w-[100px]" />}
-			{!showSkeleton && name && <span>{name}</span>}
-		</>
-	);
+	const nameContent = useMemo(() => {
+		if (!allContentLoaded) {
+			return <Skeleton className="h-6 sm:h-7 w-[100px]" />;
+		}
 
-	const avatarContent = (
-		<>
-			{showSkeleton && (
-				<Skeleton className="w-16 h-16 sm:w-20 sm:h-20 rounded-full" />
-			)}
-			{!showSkeleton && (
-				<Image
-					className="w-16 h-16 sm:w-20 sm:h-20 rounded-full"
-					width={20}
-					height={20}
-					src={avatarSrc}
-					alt={avatarAlt}
-					unoptimized
-					priority
-				/>
-			)}
-		</>
-	);
+		const { role } = message;
+		const { name: assistantName } = assistant;
+		const name = role === "assistant" ? assistantName : "You";
 
-	const hasTranslation =
-		wordMetadata.length > 0 && wordMetadata[0].english !== null;
+		return <span>{name}</span>;
+	}, [allContentLoaded, assistant, message]);
 
-	const topBarContent = (
-		<div className="flex justify-between">
-			<div className="flex gap-2">
+	const avatarContent = useMemo(() => {
+		if (!allContentLoaded) {
+			return <Skeleton className="w-16 h-16 sm:w-20 sm:h-20 rounded-full" />;
+		}
+
+		const { role } = message;
+		const { name: assistantName, image: assistantImage } = assistant;
+
+		const avatarSrc =
+			role === "assistant"
+				? assistantImage
+				: user?.imageUrl ?? "/assets/user.svg";
+
+		const avatarAlt =
+			role === "assistant" ? assistantName : user?.username ?? "User avatar";
+
+		return (
+			<Image
+				className="w-16 h-16 sm:w-20 sm:h-20 rounded-full"
+				width={20}
+				height={20}
+				src={avatarSrc}
+				alt={avatarAlt}
+				unoptimized
+				priority
+			/>
+		);
+	}, [allContentLoaded, assistant, message, user?.imageUrl, user?.username]);
+
+	const badgesContent = useMemo(() => {
+		if (!allContentLoaded) {
+			return (
+				<div className="self-start flex gap-3 items-center">
+					<Skeleton className="w-10 h-8" />
+					<Skeleton className="w-8 h-8" />
+				</div>
+			);
+		}
+
+		const { wordMetadata } = message;
+
+		const hasTranslation =
+			wordMetadata.length > 0 && wordMetadata[0].english !== null;
+
+		return (
+			<div className="self-start flex gap-3 items-center">
 				<DialectBadge
 					className="self-start text-md"
 					dialect={dialect}
@@ -122,21 +157,48 @@ const MessageCard = ({
 						<TranslateIcon className="w-6 h-6" />
 					</span>
 				)}
+				{/* {isProcessing && (
+					<span>
+						<SendIcon className="self-start h-6 w-6 text-muted-foreground" />
+					</span>
+				)} */}
 				{isPlaying && (
-					<SpeakerWaveIcon className="self-start w-7 h-7 text-slate-400 transition ease-in-out" />
+					<span>
+						<SpeakerWaveIcon className="self-start w-7 h-7 text-slate-400 transition ease-in-out" />
+					</span>
 				)}
 			</div>
+		);
+	}, [allContentLoaded, dialect, isPlaying, message]);
 
-			<div className="flex items-center gap-2">
-				<span className="text-md sm:text-lg font-medium md:font-semibold">
-					{nameContent}
-				</span>
-				{avatarContent}
+	const topBarContent = useMemo(() => {
+		return (
+			<div className="flex justify-between">
+				{badgesContent}
+
+				<div className="flex items-center gap-2">
+					<span className="text-md sm:text-lg font-medium md:font-semibold">
+						{nameContent}
+					</span>
+					{avatarContent}
+				</div>
 			</div>
-		</div>
-	);
+		);
+	}, [avatarContent, badgesContent, nameContent]);
 
 	const textContent = useMemo(() => {
+		if (!allContentLoaded) {
+			return (
+				<div className="space-y-3 w-full">
+					<Skeleton className="w-full h-6 sm:h-7 " />
+					<Skeleton className="w-full h-6 sm:h-7 " />
+					<Skeleton className="w-1/2 h-6 sm:h-7 " />
+				</div>
+			);
+		}
+
+		const { content, wordMetadata } = message;
+
 		const isShowingTranslation = translationMode && wordMetadata.length > 0;
 		// && (!dictionaryMode || isPlaying);
 
@@ -227,16 +289,16 @@ const MessageCard = ({
 			</div>
 		);
 	}, [
+		allContentLoaded,
+		message,
 		translationMode,
-		wordMetadata,
 		dictionaryMode,
 		isPlaying,
-		content,
 		currentTime,
 		onDictionaryWordClicked,
 	]);
 
-	const messageIndexContent = (
+	const messageIndexContent = !isLoading && (
 		<div className="text-slate-400 mt-1 w-full text-right text-sm">
 			{messageInd + 1} / {totalMessageCount}
 		</div>
@@ -255,18 +317,10 @@ const MessageCard = ({
 					)}
 					style={{ direction: "rtl" }}
 				>
-					{showSkeleton && (
-						<div className="space-y-3">
-							<Skeleton className="w-full h-6 sm:h-7 " />
-							{/* <Skeleton className="w-full h-6 sm:h-7 " /> */}
-							<Skeleton className="w-1/2 h-6 sm:h-7 " />
-						</div>
-					)}
-
-					{!showSkeleton && textContent}
+					{textContent}
 				</div>
 				{showLoadingOverlay && (
-					<Skeleton className="absolute inset-0 w-full h-full bg-white bg-opacity-60 flex items-center justify-center" />
+					<div className="absolute inset-0 w-full h-full bg-white bg-opacity-60 flex items-center justify-center"></div>
 				)}
 			</CardContent>
 			<CardFooter className="px-4 pb-4 sm:px-6 dm:pb-6 pt-[0.5rem]">

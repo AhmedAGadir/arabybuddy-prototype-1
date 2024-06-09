@@ -15,7 +15,13 @@ const useConversations = () => {
 
 	const queryKey = ["conversations", user?.id];
 
-	const { isPending, error, data, refetch } = useQuery({
+	const {
+		isPending,
+		error,
+		data,
+		refetch,
+		isLoading: isLoadingConversations,
+	} = useQuery({
 		queryKey,
 		refetchOnWindowFocus: true,
 		queryFn: async () => {
@@ -177,6 +183,7 @@ const useConversations = () => {
 		deleteConversation,
 		updateConversation,
 		isCreatingConversation,
+		isLoadingConversations,
 	};
 };
 
