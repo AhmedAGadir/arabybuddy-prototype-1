@@ -151,9 +151,9 @@ const MessageCard = ({
 				}}
 				className={cn(
 					"flex flex-wrap p-1",
-					dictionaryMode && "gap-2",
 					isPlaying && "gap-1",
-					isShowingTranslation && "gap-2"
+					dictionaryMode && "gap-1 sm:gap-2",
+					isShowingTranslation && "gap-1 sm:gap-2"
 				)}
 			>
 				{message?.wordMetadata.map(
