@@ -359,7 +359,7 @@ const DictionaryDrawer = ({
 			{/* <DrawerTrigger asChild>
 				<Button variant="outline">Open Drawer</Button>
 			</DrawerTrigger> */}
-			<DrawerContent className="p-4 ">
+			<DrawerContent className="p-4">
 				<div className="mx-auto w-full max-w-2xl ">
 					<DrawerHeader>
 						<DrawerTitle>Dictionary</DrawerTitle>
@@ -401,8 +401,8 @@ const DictionaryDrawer = ({
 						</div>
 					</div>
 				</div>
+				<DrawerFooter />
 			</DrawerContent>
-			<DrawerFooter />
 		</Drawer>
 	);
 };

@@ -52,6 +52,8 @@ const MessageCard = ({
 	onDictionaryWordClicked,
 	showLoadingOverlay = false,
 	showSkeleton = false,
+	messageInd,
+	totalMessageCount,
 }: {
 	message: IMessage;
 	assistant: ChatPartner;
@@ -63,6 +65,8 @@ const MessageCard = ({
 	translationMode: boolean;
 	showLoadingOverlay?: boolean;
 	showSkeleton?: boolean;
+	messageInd: number;
+	totalMessageCount: number;
 }) => {
 	const { role, content, wordMetadata } = message;
 
@@ -133,15 +137,13 @@ const MessageCard = ({
 	);
 
 	const textContent = useMemo(() => {
-		const isShowingTranslation =
-			translationMode && message.wordMetadata.length > 0;
+		const isShowingTranslation = translationMode && wordMetadata.length > 0;
 		// && (!dictionaryMode || isPlaying);
 
-		const isShowingDictionary =
-			dictionaryMode && message.wordMetadata.length > 0;
+		const isShowingDictionary = dictionaryMode && wordMetadata.length > 0;
 
 		if (!isShowingDictionary && !isShowingTranslation && !isPlaying) {
-			return <span>{message?.content}</span>;
+			return <span>{content}</span>;
 		}
 
 		return (
@@ -156,92 +158,96 @@ const MessageCard = ({
 					isShowingTranslation && "gap-1 sm:gap-2"
 				)}
 			>
-				{message?.wordMetadata.map(
-					({ _id, arabic, english, startTime }, ind) => {
-						const isLastWord = ind === message.wordMetadata.length - 1;
+				{wordMetadata.map(({ _id, arabic, english, startTime }, ind) => {
+					const isLastWord = ind === wordMetadata.length - 1;
 
-						const currentTimeMoreThanStartTime = currentTime >= startTime;
+					const currentTimeMoreThanStartTime = currentTime >= startTime;
 
-						const nextWordStarted = isLastWord
-							? false
-							: currentTime >= message.wordMetadata[ind + 1].startTime;
+					const nextWordStarted = isLastWord
+						? false
+						: currentTime >= wordMetadata[ind + 1].startTime;
 
-						const isActive = currentTimeMoreThanStartTime && !nextWordStarted;
+					const isActive = currentTimeMoreThanStartTime && !nextWordStarted;
 
-						const playingWord = (
-							<span
-								key={_id}
-								className={cn(
-									isActive && "bg-indigo-600 text-white",
-									"rounded-md p-1"
-								)}
-							>
-								{arabic}
-							</span>
-						);
+					const playingWord = (
+						<span
+							key={_id}
+							className={cn(
+								isActive && "bg-indigo-600 text-white",
+								"rounded-md p-1"
+							)}
+						>
+							{arabic}
+						</span>
+					);
 
-						const dictionaryWord = (
-							<Badge
-								key={_id}
-								variant="secondary"
-								className="text-lg cursor-pointer hover:bg-primary hover:text-white"
-								onClick={() => {
-									onDictionaryWordClicked(_id);
-								}}
-							>
-								{arabic}
-							</Badge>
-						);
+					const dictionaryWord = (
+						<Badge
+							key={_id}
+							variant="secondary"
+							className="text-lg cursor-pointer hover:bg-primary hover:text-white"
+							onClick={() => {
+								onDictionaryWordClicked(_id);
+							}}
+						>
+							{arabic}
+						</Badge>
+					);
 
-						if (isShowingTranslation) {
-							let arabicWordContent;
-
-							if (isPlaying) {
-								arabicWordContent = playingWord;
-							} else if (isShowingDictionary) {
-								arabicWordContent = dictionaryWord;
-							} else {
-								arabicWordContent = <span>{arabic}</span>;
-							}
-
-							return (
-								<TranslationWrapper
-									key={_id}
-									arabicWordContent={arabicWordContent}
-									englishWordContent={<span>{english}</span>}
-								/>
-							);
-						}
+					if (isShowingTranslation) {
+						let arabicWordContent;
 
 						if (isPlaying) {
-							return playingWord;
+							arabicWordContent = playingWord;
+						} else if (isShowingDictionary) {
+							arabicWordContent = dictionaryWord;
+						} else {
+							arabicWordContent = <span>{arabic}</span>;
 						}
 
-						if (isShowingDictionary) {
-							return dictionaryWord;
-						}
-
-						return <span key={_id}>{arabic}</span>;
+						return (
+							<TranslationWrapper
+								key={_id}
+								arabicWordContent={arabicWordContent}
+								englishWordContent={<span>{english}</span>}
+							/>
+						);
 					}
-				)}
+
+					if (isPlaying) {
+						return playingWord;
+					}
+
+					if (isShowingDictionary) {
+						return dictionaryWord;
+					}
+
+					return <span key={_id}>{arabic}</span>;
+				})}
 			</div>
 		);
 	}, [
 		translationMode,
-		message.wordMetadata,
-		message?.content,
+		wordMetadata,
 		dictionaryMode,
 		isPlaying,
+		content,
 		currentTime,
 		onDictionaryWordClicked,
 	]);
 
+	const messageIndexContent = (
+		<div className="text-slate-400 mt-1 w-full text-right text-sm">
+			{messageInd + 1} / {totalMessageCount}
+		</div>
+	);
+
 	return (
 		<Card className="relative flex-1 flex flex-col shadow-xl h-full bg-white text-slate-900">
-			<CardHeader className="p-4 sm:p-6 pb-[0.5rem] sm:pb-[0.5rem]">
+			<CardHeader className="px-4 pt-4 sm:px-6 dm:pt-6 pb-[0.5rem]">
 				{topBarContent}
 			</CardHeader>
-			<CardContent className="p-4 pt-0 sm:p-6 sm:pt-0 bg-opacity-50 overflow-y-scroll">
+			<CardContent className="px-4 sm:px-6 pt-0 pb-0 bg-opacity-50 overflow-y-scroll">
 				<div
 					className={cn(
 						"text-lg leading-loose sm:text-xl sm:leading-loose font-normal   min-w-[130px] lg:min-w-[250px]",
@@ -263,9 +269,9 @@ const MessageCard = ({
 					<div className="absolute inset-0 w-full h-full bg-white bg-opacity-60 flex items-center justify-center"></div>
 				)}
 			</CardContent>
-			{/* <CardFooter className="sm:hidden"> */}
-			{/* <div className="mx-auto">{menuContent}</div> */}
-			{/* </CardFooter> */}
+			<CardFooter className="px-4 pb-4 sm:px-6 dm:pb-6 pt-[0.5rem]">
+				{messageIndexContent}
+			</CardFooter>
 		</Card>
 	);
 };

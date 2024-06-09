@@ -1089,16 +1089,10 @@ const ConversationIdPage = ({
 			showLoadingOverlay={STATUS === status.PROCESSING}
 			// isLoading is only true for the first fetch
 			showSkeleton={isLoading}
+			messageInd={displayedMessageInd ?? 0}
+			totalMessageCount={messages.length}
 		/>
 	);
-
-	const messageIndexContent = displayedMessage &&
-		chatPartner &&
-		chatDialect && (
-			<div className="text-slate-400 mt-1 w-full flex justify-end px-4 text-sm">
-				{(displayedMessageInd ?? 0) + 1} / {messages.length}
-			</div>
-		);
 
 	const progressBarContent = (
 		<Progress
@@ -1178,7 +1172,6 @@ const ConversationIdPage = ({
 					<div className={cn("min-h-0 w-full max-w-2xl ")}>
 						{messageCardContent}
 					</div>
-					{messageIndexContent}
 				</div>
 				{recordingIndicator}
 				<div className="h-12 w-full text-center">{instructionContent}</div>
