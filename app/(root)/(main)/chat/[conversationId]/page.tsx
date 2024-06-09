@@ -1121,23 +1121,24 @@ const ConversationIdPage = ({
 	);
 
 	const instructionContent = (
-		<Transition
-			className={cn(
-				cairo.className,
-				// "font-extrabold text-2xl md:text-3xl tracking-tight",
-				"text-lg sm:text-xl tracking-tight",
-				"text-transparent bg-clip-text bg-gradient-to-r to-araby-purple from-araby-blue py-4 text-gray-500"
-			)}
-			show={showInstruction}
-			enter="transition-all ease-in-out duration-500 delay-200"
-			enterFrom="opacity-0 translate-y-6"
-			enterTo="opacity-100 translate-y-0"
-			leave="transition-all ease-in-out duration-300"
-			leaveFrom="opacity-100"
-			leaveTo="opacity-0"
-		>
-			{instruction}
-		</Transition>
+		<div className="h-10 w-full relative text-center">
+			<Transition
+				className={cn(
+					cairo.className,
+					// "font-extrabold text-2xl md:text-3xl tracking-tight",
+					"text-lg sm:text-xl tracking-tight text-gray-500 py-2"
+				)}
+				show={showInstruction}
+				enter="transition-all ease-in-out duration-500 delay-200"
+				enterFrom="opacity-0 translate-y-6"
+				enterTo="opacity-100 translate-y-0"
+				leave="transition-all ease-in-out duration-300"
+				leaveFrom="opacity-100"
+				leaveTo="opacity-0"
+			>
+				{instruction}
+			</Transition>
+		</div>
 	);
 
 	// if (isPending) {
@@ -1174,7 +1175,7 @@ const ConversationIdPage = ({
 					</div>
 				</div>
 				{recordingIndicator}
-				<div className="h-12 w-full text-center">{instructionContent}</div>
+				{instructionContent}
 				<div className="md:hidden mb-8">{chatPanelContent}</div>
 			</div>
 			<DictionaryDrawer

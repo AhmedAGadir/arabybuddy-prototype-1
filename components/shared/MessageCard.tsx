@@ -266,7 +266,7 @@ const MessageCard = ({
 					{!showSkeleton && textContent}
 				</div>
 				{showLoadingOverlay && (
-					<div className="absolute inset-0 w-full h-full bg-white bg-opacity-60 flex items-center justify-center"></div>
+					<Skeleton className="absolute inset-0 w-full h-full bg-white bg-opacity-60 flex items-center justify-center" />
 				)}
 			</CardContent>
 			<CardFooter className="px-4 pb-4 sm:px-6 dm:pb-6 pt-[0.5rem]">
