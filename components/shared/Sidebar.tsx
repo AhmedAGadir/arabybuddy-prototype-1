@@ -122,15 +122,21 @@ export default function Sidebar({ onClick }: { onClick?: () => void }) {
 		}
 	};
 
-	const openConversation = useCallback(async (href: string) => {
-		router.push(href);
-		onClick?.();
-	}, []);
+	const openConversation = useCallback(
+		async (href: string) => {
+			router.push(href);
+			onClick?.();
+		},
+		[onClick, router]
+	);
 
-	const openPage = useCallback(async (href: string) => {
-		router.push(href);
-		onClick?.();
-	}, []);
+	const openPage = useCallback(
+		async (href: string) => {
+			router.push(href);
+			onClick?.();
+		},
+		[onClick, router]
+	);
 
 	const conversationListContent = useMemo(() => {
 		if (isPending) {

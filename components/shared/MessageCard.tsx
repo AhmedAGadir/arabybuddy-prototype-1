@@ -199,7 +199,10 @@ const MessageCard = ({
 
 		const { content, wordMetadata } = message;
 
-		const isShowingTranslation = translationMode && wordMetadata.length > 0;
+		const isShowingTranslation =
+			translationMode &&
+			wordMetadata.length > 0 &&
+			wordMetadata[0].english !== null;
 		// && (!dictionaryMode || isPlaying);
 
 		const isShowingDictionary = dictionaryMode && wordMetadata.length > 0;
@@ -217,7 +220,7 @@ const MessageCard = ({
 					"flex flex-wrap p-1",
 					isPlaying && "gap-1",
 					dictionaryMode && "gap-1 sm:gap-2",
-					isShowingTranslation && "gap-1 sm:gap-2"
+					isShowingTranslation && "gap-1"
 				)}
 			>
 				{wordMetadata.map(({ _id, arabic, english, startTime }, ind) => {

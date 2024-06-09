@@ -435,7 +435,8 @@ const ConversationIdPage = ({
 	// 		for await (const data of completionStream) {
 	// 			completionMessage.content = data.content;
 	// 			completionMessage.role = data.role;
-	// 			await upsertMessageInCache(completionMessage);
+	// 			// spread completion to create a new object and rerender message card
+	// 			await upsertMessageInCache({ ...completionMessage });
 	// 		}
 
 	// 		setActiveTask("TEXT_TO_SPEECH");
@@ -593,7 +594,8 @@ const ConversationIdPage = ({
 				for await (const data of completionStream) {
 					completionMessage.content = data.content;
 					completionMessage.role = data.role;
-					await upsertMessageInCache(completionMessage);
+					// spread completion to create a new object and rerender message card
+					await upsertMessageInCache({ ...completionMessage });
 				}
 
 				setActiveTask("TEXT_TO_SPEECH");
@@ -624,7 +626,8 @@ const ConversationIdPage = ({
 
 				completionMessage.wordMetadata = wordMetadata;
 
-				await upsertMessageInCache(completionMessage);
+				// spread completion to create a new object and rerender message card
+				await upsertMessageInCache({ ...completionMessage });
 
 				setActiveTask(null);
 
@@ -826,7 +829,8 @@ const ConversationIdPage = ({
 
 				for await (const data of completionStream) {
 					completionMessage.content = data.content;
-					await upsertMessageInCache(completionMessage);
+					// spread completion to create a new object and rerender message card
+					await upsertMessageInCache({ ...completionMessage });
 				}
 
 				setActiveTask("TEXT_TO_SPEECH");
