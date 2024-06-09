@@ -240,50 +240,6 @@ const ConversationIdPage = ({
 		return status.IDLE;
 	}, [activeTask, isPlaying, isRecording]);
 
-	const instructions: {
-		[key in Status]: string[];
-	} = useMemo(
-		() => ({
-			// idle: "Press ⬇️ the blue blob to start recording",
-			IDLE: [
-				...(messages.length === 0 ? ["Welcome to ArabyBuddy!"] : []),
-				"Click the microphone to start recording",
-				"Ask a question or say something in Arabic...",
-				// "هيا بنا",
-			],
-			RECORDING: [
-				"Listening...",
-				"Click again to stop recording",
-				"Say something in Arabic...",
-			],
-			PLAYING: [""],
-			PROCESSING: [
-				...(activeTask === "SPEECH_TO_TEXT" ? ["Transcribing..."] : []),
-				...(activeTask === "ASSISTANT" ? ["Generating a response..."] : []),
-				...(activeTask === "TEXT_TO_SPEECH" ? ["Preparing audio..."] : []),
-				...(activeTask === "TEXT_TO_SPEECH_REPLAY"
-					? ["Regenerating audio..."]
-					: []),
-				...(activeTask === "ASSISTANT_REGENERATE"
-					? ["Regenerating response..."]
-					: []),
-				...(activeTask === "ASSISTANT_REPHRASE"
-					? ["Rephrasing your message to make it sound more natural..."]
-					: []),
-				...(activeTask === "ASSISTANT_TRANSLATE"
-					? ["Translating your message..."]
-					: []),
-			],
-		}),
-		[activeTask, messages.length]
-	);
-
-	const {
-		text: instruction,
-		showText: showInstruction,
-		hideText: hideInstruction,
-	} = useCyclingText(instructions[STATUS]);
-
 	const abortProcessingBtnHandler = useCallback(() => {
 		if (STATUS !== status.PROCESSING) return;
 		switch (activeTask) {
@@ -1004,8 +960,6 @@ const ConversationIdPage = ({
 	};
 
 	const toggleRecordingHandler = useCallback(async () => {
-		hideInstruction();
-
 		if (isPlaying) {
 			stopPlaying();
 			return;
@@ -1033,7 +987,6 @@ const ConversationIdPage = ({
 		}
 	}, [
 		audioElementInitialized,
-		hideInstruction,
 		initAudioElement,
 		isPlaying,
 		isRecording,
@@ -1120,27 +1073,6 @@ const ConversationIdPage = ({
 		</div>
 	);
 
-	const instructionContent = (
-		<div className="h-10 w-full relative text-center">
-			<Transition
-				className={cn(
-					cairo.className,
-					// "font-extrabold text-2xl md:text-3xl tracking-tight",
-					"text-lg sm:text-xl tracking-tight text-gray-500 py-2"
-				)}
-				show={showInstruction}
-				enter="transition-all ease-in-out duration-500 delay-200"
-				enterFrom="opacity-0 translate-y-6"
-				enterTo="opacity-100 translate-y-0"
-				leave="transition-all ease-in-out duration-300"
-				leaveFrom="opacity-100"
-				leaveTo="opacity-0"
-			>
-				{instruction}
-			</Transition>
-		</div>
-	);
-
 	// if (isPending) {
 	// 	return (
 	// 		<div className="flex-1 flex items-center justify-center background-texture">
@@ -1175,7 +1107,6 @@ const ConversationIdPage = ({
 					</div>
 				</div>
 				{recordingIndicator}
-				{instructionContent}
 				<div className="md:hidden mb-8">{chatPanelContent}</div>
 			</div>
 			<DictionaryDrawer
