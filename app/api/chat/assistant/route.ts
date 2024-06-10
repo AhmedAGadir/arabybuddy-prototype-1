@@ -12,7 +12,6 @@ import { ChatPartnerId } from "@/lib/chatPartners";
 import { ArabicDialect } from "@/types/types";
 
 export const maxDuration = 60; // seconds
-
 // export const runtime = "edge";
 
 // remember API calls wont work if the account balance is 0

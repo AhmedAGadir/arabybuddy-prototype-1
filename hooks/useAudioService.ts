@@ -200,6 +200,8 @@ const useAudioService = () => {
 						}
 					);
 
+				logger.log("wordData", wordData);
+
 				return {
 					base64Audio: concatBase64Strs(base64Audios),
 					wordData,

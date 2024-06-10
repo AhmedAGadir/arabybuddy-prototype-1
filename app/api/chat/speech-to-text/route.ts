@@ -5,6 +5,7 @@ import OpenAI from "openai";
 import { auth } from "@clerk/nextjs/server";
 
 export const maxDuration = 60; // seconds
+// export const runtime = "edge";
 
 // remember API calls wont work if the account balance is 0
 const openai = new OpenAI({
@@ -59,11 +60,16 @@ const openAISpeechToText = async (base64Audio: string, type: string) => {
 
 	// transcribe the audio file
 	console.log("openAI transcribing audio file");
-	const transcription = await openai.audio.transcriptions.create({
-		file: fs.createReadStream(filePath),
-		model: "whisper-1",
-		language: "ar",
-	});
+	const transcription = await openai.audio.transcriptions.create(
+		{
+			file: fs.createReadStream(filePath),
+			model: "whisper-1",
+			language: "ar",
+		},
+		{
+			maxRetries: 5,
+		}
+	);
 
 	// remove tmp files
 	console.log("removing tmp files");

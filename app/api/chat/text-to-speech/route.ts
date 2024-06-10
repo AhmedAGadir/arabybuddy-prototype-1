@@ -4,6 +4,7 @@ import { ArabicDialect } from "@/types/types";
 import { IPreferences } from "@/lib/database/models/preferences.model";
 import { ChatPartnerId } from "@/lib/chatPartners";
 
+export const maxDuration = 60; // seconds
 // export const runtime = "edge";
 
 export type TextToSpeechPayload = {

@@ -705,34 +705,24 @@ const ConversationIdPage = ({
 				}
 			);
 
-			const displayedMessageAlreadyHasTranslation =
+			const displayedMessageAlreadyHasValidTranslation =
 				displayedMessage.wordMetadata.length > 0 &&
-				displayedMessage.wordMetadata[0].english !== null;
+				displayedMessage.wordMetadata[0].english !== null &&
+				wordData.length === displayedMessage.wordMetadata.length;
 
 			let updatedWordMetadata: WordMetadata[];
 
-			if (displayedMessageAlreadyHasTranslation) {
-				updatedWordMetadata = wordData.map(
-					({ _id, word, startTime, endTime }, ind) => {
-						return {
-							_id,
-							arabic: word,
-							english: displayedMessage.wordMetadata[ind].english,
-							startTime,
-							endTime,
-						};
-					}
-				);
-			} else if (translationMode) {
+			if (translationMode && !displayedMessageAlreadyHasValidTranslation) {
 				setActiveTask("ASSISTANT_TRANSLATE");
-
 				updatedWordMetadata = await generateWordMetadataTranslations(wordData);
 			} else {
 				updatedWordMetadata = wordData.map(
-					({ _id, word, startTime, endTime }) => ({
+					({ _id, word, startTime, endTime }, ind) => ({
 						_id,
 						arabic: word,
-						english: null,
+						english: displayedMessageAlreadyHasValidTranslation
+							? displayedMessage.wordMetadata[ind].english
+							: null,
 						startTime,
 						endTime,
 					})
