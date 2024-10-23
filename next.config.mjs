@@ -36,6 +36,15 @@ const nextConfig = {
 		// IMPORTANT: Return the modified config
 		return config;
 	},
+	async redirects() {
+		return [
+			{
+				source: "/((?!maintenance).*)",
+				destination: "/maintenance",
+				permanent: false,
+			},
+		];
+	},
 };
 
 export default nextConfig;
