@@ -5,7 +5,7 @@ export default function Maintenance() {
 				We are currently under maintenance
 			</h1>
 			<p className="mt-4 text-lg text-center">
-				We'll be back shortly. Thank you for your patience.
+				We&apos;ll be back shortly. Thank you for your patience.
 			</p>
 		</div>
 	);
